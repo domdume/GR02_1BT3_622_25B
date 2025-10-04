@@ -5,4 +5,3 @@ public interface Sujeto {
     void desuscribir(Observador observador);
     void notificar(String mensaje);
 }
-
