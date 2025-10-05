@@ -9,7 +9,7 @@ public class Hogar {
     private Hogar() {
         this.miembros = new ArrayList<>();
     }
-    static Hogar getInstance() {
+    public static Hogar getInstance() {
         return instance;
     }
     public void registrarMiembro(MiembroHogar miembro){
@@ -54,11 +54,11 @@ public class Hogar {
         // prueba para ver que esten inscritos
         jefe.mostrarMiembrosRegistrados();
         //prueba para ver que se registran quehaceres
-        jefe.organizarQuehaceres("Lavar los platos", Dificultad.FACIL, 1);
-        jefe.organizarQuehaceres("Limpiar el baño", Dificultad.DIFICIL, 3);
-        jefe.organizarQuehaceres("Pasear al perro", Dificultad.MEDIO, 0);
-        jefe.organizarQuehaceres("Barrer la casa", Dificultad.FACIL, 0);
-        jefe.organizarQuehaceres("Trapear el bano", Dificultad.MEDIO, 0);
+        jefe.organizarQuehaceres("Lavar los platos", 1);
+        jefe.organizarQuehaceres("Limpiar el baño", 3);
+        jefe.organizarQuehaceres("Pasear al perro", 0);
+        jefe.organizarQuehaceres("Barrer la casa", 0);
+        jefe.organizarQuehaceres("Trapear el bano", 0);
         // --- Obtenemos referencias a los miembros ---
         MiembroHogar juan = miHogar.buscarMiembroPorNombre("Juan");
         MiembroHogar lucia = miHogar.buscarMiembroPorNombre("Lucía");

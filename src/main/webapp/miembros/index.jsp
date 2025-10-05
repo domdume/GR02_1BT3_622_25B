@@ -31,6 +31,7 @@
                     <th>ID</th>
                     <th>Nombre</th>
                     <th>Edad</th>
+                    <th>Puntos</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -40,6 +41,7 @@
                         <td><c:out value="${miembro.id}" /></td>
                         <td><c:out value="${miembro.nombre}" /></td>
                         <td><c:out value="${miembro.edad}" /></td>
+                        <td style="font-weight: bold; color: #2e7d32;"><c:out value="${miembro.puntos}" /> pts</td>
                         <td>
                             <a href="miembros?action=edit&id=<c:out value='${miembro.id}' />">Editar</a>
                             &nbsp;&nbsp;&nbsp;&nbsp;
@@ -47,6 +49,11 @@
                         </td>
                     </tr>
                 </c:forEach>
+                <c:if test="${empty listaMiembros}">
+                    <tr>
+                        <td colspan="5">No hay miembros registrados.</td>
+                    </tr>
+                </c:if>
             </tbody>
         </table>
     </div>

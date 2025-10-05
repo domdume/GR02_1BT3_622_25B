@@ -16,9 +16,10 @@ public class JefeDelHogar extends MiembroHogar {
         System.out.println("\n" + getNombre() + " está registrando a un nuevo miembro...");
         Hogar.getInstance().registrarMiembro(miembro);
     }
-    public void organizarQuehaceres(String nombre, Dificultad d, int diasLimite ){
-        System.out.println("\n" + getNombre() + " está asigno una nueva tarea...");
-        Quehacer nuevoQuehacer = new Quehacer(nombre,d, LocalDateTime.now().plusDays(diasLimite));
+    public void organizarQuehaceres(String nombre, int diasLimite ){
+        System.out.println("\n" + getNombre() + " está asignando una nueva tarea...");
+        // Usar dificultad MEDIO por defecto para mantener compatibilidad
+        Quehacer nuevoQuehacer = new Quehacer(nombre, LocalDateTime.now().plusDays(diasLimite), Dificultad.MEDIO);
         Hogar.getInstance().registrarQuehacer(nuevoQuehacer);
     }
 

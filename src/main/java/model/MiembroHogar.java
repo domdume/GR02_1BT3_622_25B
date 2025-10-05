@@ -13,6 +13,7 @@ public class MiembroHogar implements Observador {
 
     private String nombre;
     private int edad;
+    private int puntos; // Added for rewards
 
     @OneToMany(mappedBy = "miembroHogar", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Quehacer> quehaceres;
@@ -20,8 +21,8 @@ public class MiembroHogar implements Observador {
     @OneToMany(mappedBy = "miembroHogar", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Incentivo> incentivos;
 
-    @Transient // Ignorado por JPA por ahora
-    private int factorDeCarga;
+    @Transient // Temporalmente como @Transient para evitar problemas de BD
+    private int factorDeCarga; // Campo requerido según diagrama UML
 
     // Constructor vacío requerido por JPA
     public MiembroHogar() {
@@ -34,6 +35,7 @@ public class MiembroHogar implements Observador {
         this.edad = edad;
         this.quehaceres = new ArrayList<>();
         this.incentivos = new ArrayList<>();
+        this.puntos = 0; // Initialize points
         this.factorDeCarga = 0;
     }
 
@@ -105,6 +107,25 @@ public class MiembroHogar implements Observador {
     public void asignarQuehacer(Quehacer q) {
         if (!this.quehaceres.contains(q)) {
             this.quehaceres.add(q);
+        }
+    }
+
+    public int getPuntos() {
+        return puntos;
+    }
+
+    public void setPuntos(int puntos) {
+        this.puntos = puntos;
+    }
+
+    // Método según diagrama UML
+    public void realizarQuehacer(Quehacer q) {
+        if (this.quehaceres.contains(q)) {
+            q.marcarCompletado();
+            this.quehaceres.remove(q);
+            System.out.println(this.nombre + " ha realizado el quehacer: " + q.getNombre());
+        } else {
+            System.out.println("AVISO: " + this.nombre + " no puede realizar una tarea que no tiene asignada.");
         }
     }
 }

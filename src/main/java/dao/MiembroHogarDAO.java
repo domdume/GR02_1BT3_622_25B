@@ -5,22 +5,20 @@ import jakarta.persistence.EntityTransaction;
 import model.MiembroHogar;
 import util.JPAUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class MiembroHogarDAO {
 
     public void create(MiembroHogar miembro) {
         EntityManager em = JPAUtil.getEntityManager();
-        EntityTransaction tx = em.getTransaction();
         try {
-            tx.begin();
+            em.getTransaction().begin();
             em.persist(miembro);
-            tx.commit();
+            em.getTransaction().commit();
         } catch (Exception e) {
-            if (tx.isActive()) {
-                tx.rollback();
-            }
-            e.printStackTrace();
+            em.getTransaction().rollback();
+            throw e;
         } finally {
             em.close();
         }
@@ -29,7 +27,11 @@ public class MiembroHogarDAO {
     public MiembroHogar findById(Long id) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.find(MiembroHogar.class, id);
+            return em.createQuery("SELECT m FROM MiembroHogar m LEFT JOIN FETCH m.quehaceres WHERE m.id = :id", MiembroHogar.class)
+                     .setParameter("id", id)
+                     .getSingleResult();
+        } catch (Exception e) {
+            return null;
         } finally {
             em.close();
         }
@@ -38,7 +40,13 @@ public class MiembroHogarDAO {
     public List<MiembroHogar> findAll() {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery("SELECT m FROM MiembroHogar m", MiembroHogar.class).getResultList();
+            List<MiembroHogar> miembros = em.createQuery("SELECT m FROM MiembroHogar m", MiembroHogar.class).getResultList();
+            System.out.println("Miembros recuperados: " + miembros);
+            return miembros;
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Error al recuperar miembros: " + e.getMessage());
+            return new ArrayList<>(); // Devuelve una lista vacía en caso de error
         } finally {
             em.close();
         }
@@ -49,7 +57,9 @@ public class MiembroHogarDAO {
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
-            em.merge(miembro);
+            if (miembro != null) {
+                em.merge(miembro);
+            }
             tx.commit();
         } catch (Exception e) {
             if (tx.isActive()) {
@@ -76,6 +86,22 @@ public class MiembroHogarDAO {
                 tx.rollback();
             }
             e.printStackTrace();
+        } finally {
+            em.close();
+        }
+    }
+
+    public List<MiembroHogar> obtenerTodos() {
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            jakarta.persistence.TypedQuery<MiembroHogar> query = em.createQuery("SELECT m FROM MiembroHogar m", MiembroHogar.class);
+            List<MiembroHogar> miembros = query.getResultList();
+            System.out.println("Miembros obtenidos con obtenerTodos(): " + miembros);
+            return miembros;
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Error en obtenerTodos(): " + e.getMessage());
+            return new ArrayList<>();
         } finally {
             em.close();
         }

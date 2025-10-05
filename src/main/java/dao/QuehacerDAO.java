@@ -44,6 +44,15 @@ public class QuehacerDAO {
         }
     }
 
+    public List<Quehacer> findAllWithMiembroHogar() {
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            return em.createQuery("SELECT q FROM Quehacer q LEFT JOIN FETCH q.miembroHogar", Quehacer.class).getResultList();
+        } finally {
+            em.close();
+        }
+    }
+
     public void update(Quehacer quehacer) {
         EntityManager em = JPAUtil.getEntityManager();
         EntityTransaction tx = em.getTransaction();

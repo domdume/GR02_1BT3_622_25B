@@ -2,6 +2,8 @@ package model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Random;
 
 @Entity
 public class Quehacer {
@@ -14,22 +16,24 @@ public class Quehacer {
     private boolean estadoCompletado;
     private LocalDateTime tiempoLimite;
     private LocalDateTime fechaFinalizacion;
-
-    @Enumerated(EnumType.STRING)
-    private Dificultad dificultad;
+    private Dificultad dificultad; // Campo agregado según diagrama UML
 
     @ManyToOne
     @JoinColumn(name = "miembro_hogar_id")
     private MiembroHogar miembroHogar;
 
+    private String recompensa; // Ejemplo: "5 puntos"
+    private String penalizacion; // Ejemplo: "No completado a tiempo"
+    private boolean estadoFinalizado; // Indica si el quehacer está finalizado
+
     // Constructor vacío para JPA
     public Quehacer() {
     }
 
-    public Quehacer(String nombre, Dificultad dificultad, LocalDateTime tiempoLimite) {
+    public Quehacer(String nombre, LocalDateTime tiempoLimite, Dificultad dificultad) {
         this.nombre = nombre;
-        this.dificultad = dificultad;
         this.tiempoLimite = tiempoLimite;
+        this.dificultad = dificultad;
     }
 
     // Getters y Setters
@@ -57,6 +61,14 @@ public class Quehacer {
         this.estadoCompletado = estadoCompletado;
     }
 
+    public Dificultad getDificultad() {
+        return dificultad;
+    }
+
+    public void setDificultad(Dificultad dificultad) {
+        this.dificultad = dificultad;
+    }
+
     public LocalDateTime getTiempoLimite() {
         return tiempoLimite;
     }
@@ -73,14 +85,6 @@ public class Quehacer {
         this.fechaFinalizacion = fechaFinalizacion;
     }
 
-    public Dificultad getDificultad() {
-        return dificultad;
-    }
-
-    public void setDificultad(Dificultad dificultad) {
-        this.dificultad = dificultad;
-    }
-
     public MiembroHogar getMiembroHogar() {
         return miembroHogar;
     }
@@ -89,7 +93,44 @@ public class Quehacer {
         this.miembroHogar = miembroHogar;
     }
 
+    public String getRecompensa() {
+        return recompensa;
+    }
+
+    public void setRecompensa(String recompensa) {
+        this.recompensa = recompensa;
+    }
+
+    public String getPenalizacion() {
+        return penalizacion;
+    }
+
+    public void setPenalizacion(String penalizacion) {
+        this.penalizacion = penalizacion;
+    }
+
+    public boolean isEstadoFinalizado() {
+        return estadoFinalizado;
+    }
+
+    public void setEstadoFinalizado(boolean estadoFinalizado) {
+        this.estadoFinalizado = estadoFinalizado;
+    }
+
     // Lógica de negocio
+    
+    // Métodos según diagrama UML
+    public boolean estaCompletado() {
+        return this.estadoCompletado;
+    }
+
+    public void marcarCompletado() {
+        this.estadoCompletado = true;
+        this.estadoFinalizado = true;
+        this.fechaFinalizacion = LocalDateTime.now();
+    }
+
+    // Método para marcado completo manual (usado por el sistema web)
     public void marcarComoCompletado() {
         this.estadoCompletado = true;
         this.fechaFinalizacion = LocalDateTime.now();
@@ -99,7 +140,34 @@ public class Quehacer {
         if (!estadoCompletado || fechaFinalizacion == null) {
             return false;
         }
-        return fechaFinalizacion.isBefore(tiempoLimite);
+        return fechaFinalizacion.isBefore(tiempoLimite) || fechaFinalizacion.isEqual(tiempoLimite);
+    }
+
+    @Transient
+    public int getRewardPoints() {
+        if (!estadoCompletado || !fueCompletadoATiempo()) {
+            return 0;
+        }
+        return 20; // Puntos fijos para todos los quehaceres
+    }
+
+    public boolean isOverdue() {
+        return !estadoCompletado && LocalDateTime.now().isAfter(tiempoLimite);
+    }
+
+    // Método para asignar penalización automáticamente
+    public void asignarPenalizacion(List<String> listaPenalizaciones) {
+        if (!estadoFinalizado && LocalDateTime.now().isAfter(tiempoLimite)) {
+            this.estadoFinalizado = true;
+            this.penalizacion = listaPenalizaciones.get(new Random().nextInt(listaPenalizaciones.size()));
+        }
+    }
+
+    // Método para asignar recompensa automáticamente
+    public void asignarRecompensa(List<String> listaRecompensas) {
+        if (estadoFinalizado && estadoCompletado) {
+            this.recompensa = listaRecompensas.get(new Random().nextInt(listaRecompensas.size()));
+        }
     }
 
     @Override
@@ -108,7 +176,6 @@ public class Quehacer {
                 "id=" + id +
                 ", nombre='" + nombre + '\'' +
                 ", estadoCompletado=" + estadoCompletado +
-                ", dificultad=" + dificultad +
                 '}';
     }
 }

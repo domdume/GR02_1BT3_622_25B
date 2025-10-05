@@ -2,58 +2,121 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <html>
 <head>
-    <title>Formulario de Quehacer</title>
+    <title>Establecer Quehacer</title>
     <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/css/style.css">
 </head>
 <body>
-    <header>
-        <div class="container">
-            <div id="branding">
-                <h1><c:if test="${quehacer != null}">Editar</c:if><c:if test="${quehacer == null}">Nuevo</c:if> Quehacer</h1>
-            </div>
-            <nav>
-                <ul>
-                    <li><a href="${pageContext.request.contextPath}/quehaceres">Volver a la Lista</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
-    <div class="container main">
-        <form action="quehaceres?action=<c:if test="${quehacer != null}">update</c:if><c:if test="${quehacer == null}">insert</c:if>" method="post">
-            <c:if test="${quehacer != null}">
-                <input type="hidden" name="id" value="<c:out value='${quehacer.id}' />" />
-            </c:if>
+<header>
+    <h1>Establecer Quehacer</h1>
+    <nav>
+        <a href="${pageContext.request.contextPath}/quehaceres">Volver al Tablero</a>
+    </nav>
+</header>
+<div class="container">
+    
+    <form action="quehaceres" method="post">
+        <input type="hidden" name="action" value="insert" />
+        <fieldset>
+            <label for="nombre">Nombre del Quehacer:</label>
+            <input type="text" id="nombre" name="nombre" required />
+        </fieldset>
+        <fieldset>
+            <label for="tiempoLimite">Fecha Límite:</label>
+            <input type="datetime-local" id="tiempoLimite" name="tiempoLimite" required />
+        </fieldset>
+        <fieldset>
+            <label for="miembroId">Asignado a:</label>
+            <select id="miembroId" name="miembroId" required>
+                <c:forEach var="miembro" items="${listaMiembros}">
+                    <option value="${miembro.id}">${miembro.nombre}</option>
+                </c:forEach>
+                <c:if test="${empty listaMiembros}">
+                    <option disabled>No hay miembros disponibles</option>
+                </c:if>
+            </select>
+        </fieldset>
+        <fieldset>
+            <label for="dificultad">Dificultad:</label>
+            <select id="dificultad" name="dificultad" required>
+                <option value="FACIL">Fácil</option>
+                <option value="MEDIO" selected>Medio</option>
+                <option value="DIFICIL">Difícil</option>
+            </select>
+        </fieldset>
+        <button type="submit">Agregar Quehacer</button>
+    </form>
+    <c:if test="${not empty errorMessage}">
+        <p style="color: red;">${errorMessage}</p>
+    </c:if>
 
-            <fieldset>
-                <label for="nombre">Descripción:</label>
-                <input type="text" id="nombre" name="nombre" value="<c:out value='${quehacer.nombre}' />" required>
-            </fieldset>
-
-            <fieldset>
-                <label for="dificultad">Dificultad:</label>
-                <select id="dificultad" name="dificultad" required>
-                    <c:forEach var="d" items="${dificultades}">
-                        <option value="${d}" ${quehacer.dificultad == d ? 'selected' : ''}>${d}</option>
+    <!-- Tabla de Quehaceres Existentes -->
+    <h2>Quehaceres Registrados</h2>
+    <c:choose>
+        <c:when test="${not empty listaQuehaceres}">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Dificultad</th>
+                        <th>Asignado a</th>
+                        <th>Puntos</th>
+                        <th>Fecha Límite</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <c:forEach var="quehacer" items="${listaQuehaceres}">
+                        <tr>
+                            <td>${quehacer.id}</td>
+                            <td>${quehacer.nombre}</td>
+                            <td>
+                                <c:choose>
+                                    <c:when test="${quehacer.dificultad == 'FACIL'}">
+                                        <span style="color: green; font-weight: bold;">🟢 Fácil</span>
+                                    </c:when>
+                                    <c:when test="${quehacer.dificultad == 'MEDIO'}">
+                                        <span style="color: orange; font-weight: bold;">🟡 Medio</span>
+                                    </c:when>
+                                    <c:when test="${quehacer.dificultad == 'DIFICIL'}">
+                                        <span style="color: red; font-weight: bold;">🔴 Difícil</span>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <span style="color: gray;">❔ No definida</span>
+                                    </c:otherwise>
+                                </c:choose>
+                            </td>
+                            <td>${quehacer.miembroHogar.nombre}</td>
+                            <td>${quehacer.miembroHogar.puntos}</td>
+                            <td>${quehacer.tiempoLimite}</td>
+                            <td>
+                                <c:choose>
+                                    <c:when test="${quehacer.estadoCompletado}">
+                                        <span style="color: green;">✓ Completado</span>
+                                    </c:when>
+                                    <c:when test="${quehacer.estadoFinalizado}">
+                                        <span style="color: red;">✗ Finalizado (Vencido)</span>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <span style="color: orange;">⏳ Pendiente</span>
+                                    </c:otherwise>
+                                </c:choose>
+                            </td>
+                            <td>
+                                <a href="quehaceres?action=edit&id=${quehacer.id}">Editar</a>
+                                <a href="quehaceres?action=delete&id=${quehacer.id}" 
+                                   onclick="return confirm('¿Está seguro de eliminar este quehacer?')">Eliminar</a>
+                            </td>
+                        </tr>
                     </c:forEach>
-                </select>
-            </fieldset>
-
-            <fieldset>
-                <label for="tiempoLimite">Fecha Límite:</label>
-                <input type="datetime-local" id="tiempoLimite" name="tiempoLimite" value="${quehacer.tiempoLimite}" required>
-            </fieldset>
-
-            <fieldset>
-                <label for="miembroId">Asignar a:</label>
-                <select id="miembroId" name="miembroId" required>
-                    <c:forEach var="miembro" items="${listaMiembros}">
-                        <option value="${miembro.id}" ${quehacer.miembroHogar.id == miembro.id ? 'selected' : ''}>${miembro.nombre}</option>
-                    </c:forEach>
-                </select>
-            </fieldset>
-
-            <input type="submit" value="Guardar">
-        </form>
-    </div>
+                </tbody>
+            </table>
+        </c:when>
+        <c:otherwise>
+            <p>No hay quehaceres registrados.</p>
+        </c:otherwise>
+    </c:choose>
+</div>
 </body>
 </html>

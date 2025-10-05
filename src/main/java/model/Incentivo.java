@@ -1,7 +1,6 @@
 package model;
 
 import jakarta.persistence.*;
-import java.util.Comparator;
 
 @Entity
 public class Incentivo {
@@ -23,25 +22,12 @@ public class Incentivo {
     public void aplicar(MiembroHogar miembro, Quehacer quehacerCompletado) {
         if (quehacerCompletado.fueCompletadoATiempo()) {
             this.tipoIncentivo = TipoIncentivo.Positivo;
-            System.out.println("👍 ¡Felicidades! " + miembro.getNombre() + " terminó '" + quehacerCompletado.getNombre() + "' a tiempo.");
-            miembro.reducirFactorDeCarga();
-
-            Quehacer tareaExonerada = miembro.getQuehaceres().stream()
-                    .filter(q -> !q.isEstadoCompletado())
-                    .min(Comparator.comparing(q -> q.getDificultad().ordinal()))
-                    .orElse(null);
-
-            if (tareaExonerada != null) {
-                miembro.removerQuehacer(tareaExonerada); // Asumiendo que este método existe y funciona
-                System.out.println("✨ INCENTIVO: Como premio, se te ha quitado la tarea '" + tareaExonerada.getNombre() + "'.");
-            } else {
-                System.out.println("✨ INCENTIVO: ¡No tienes más tareas! Tu factor de carga ahora es " + miembro.getFactorDeCarga());
-            }
+            int points = 20; // Puntos fijos para todos los quehaceres
+            miembro.setPuntos(miembro.getPuntos() + points);
+            System.out.println("👍 ¡Felicidades! " + miembro.getNombre() + " terminó '" + quehacerCompletado.getNombre() + "' a tiempo. Puntos añadidos: " + points);
         } else {
             this.tipoIncentivo = TipoIncentivo.Negativo;
-            System.out.println("👎 Lástima, " + miembro.getNombre() + " se retrasó con '" + quehacerCompletado.getNombre() + "'.");
-            miembro.aumentarFactorDeCarga();
-            System.out.println(" PENALIZACIÓN: Se te asignarán más tareas en el futuro. Tu factor de carga ahora es " + miembro.getFactorDeCarga());
+            System.out.println("👎 Lástima, " + miembro.getNombre() + " se retrasó con '" + quehacerCompletado.getNombre() + "'. No se otorga recompensa.");
         }
         miembro.addIncentivo(this);
     }
@@ -69,5 +55,11 @@ public class Incentivo {
 
     public void setMiembroHogar(MiembroHogar miembroHogar) {
         this.miembroHogar = miembroHogar;
+    }
+
+    // Método estático según diagrama UML
+    public static void aplicarIncentivo(MiembroHogar miembro, Quehacer quehacer) {
+        Incentivo incentivo = new Incentivo();
+        incentivo.aplicar(miembro, quehacer);
     }
 }
