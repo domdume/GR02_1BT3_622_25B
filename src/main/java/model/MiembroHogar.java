@@ -1,25 +1,80 @@
 package model;
 
-
+import jakarta.persistence.*;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 
-public class MiembroHogar implements Observador{
+@Entity
+public class MiembroHogar implements Observador {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     private String nombre;
     private int edad;
+
+    @OneToMany(mappedBy = "miembroHogar", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Quehacer> quehaceres;
+
+    @OneToMany(mappedBy = "miembroHogar", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Incentivo> incentivos;
+
+    @Transient // Ignorado por JPA por ahora
     private int factorDeCarga;
 
-    public MiembroHogar(String nombre, int edad){
+    // Constructor vacío requerido por JPA
+    public MiembroHogar() {
+        this.quehaceres = new ArrayList<>();
+        this.incentivos = new ArrayList<>();
+    }
+
+    public MiembroHogar(String nombre, int edad) {
         this.nombre = nombre;
         this.edad = edad;
         this.quehaceres = new ArrayList<>();
         this.incentivos = new ArrayList<>();
         this.factorDeCarga = 0;
     }
+
+    // Getters y Setters para JPA y JSP
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
+
+    public void setEdad(int edad) {
+        this.edad = edad;
+    }
+
+    public List<Quehacer> getQuehaceres() {
+        return quehaceres;
+    }
+
+    public void setQuehaceres(List<Quehacer> quehaceres) {
+        this.quehaceres = quehaceres;
+    }
+
+    public List<Incentivo> getIncentivos() {
+        return incentivos;
+    }
+
+    public void setIncentivos(List<Incentivo> incentivos) {
+        this.incentivos = incentivos;
+    }
+
+    public void addIncentivo(Incentivo incentivo) {
+        this.incentivos.add(incentivo);
+        incentivo.setMiembroHogar(this);
+    }
+
     @Override
     public void actualizar(String mensaje) {
         System.out.println("[Notificación para " + nombre + "]: " + mensaje);
@@ -44,47 +99,13 @@ public class MiembroHogar implements Observador{
     public String getNombre() {
         return nombre;
     }
-    protected int getEdad() {
+    public int getEdad() { // Cambiado a public para acceso desde JSP
         return edad;
     }
     public void asignarQuehacer(Quehacer q) {
-        this.quehaceres.add(q); }
-    public List<Quehacer> getQuehaceresAsignados() { return quehaceres; }
-
-    @Override
-    public String toString() {
-        return "MiembroHogar{" +
-                "nombre='" + nombre + '\'' +
-                ", edad=" + edad +
-                ", quehaceres=" + quehaceres +
-                ", incentivos=" + incentivos +
-
-                ", factorDeCarga=" + factorDeCarga +
-                '}';
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;  // 1️⃣ Mismo objeto en memoria
-        if (!(o instanceof MiembroHogar)) return false;  // 2️⃣ Verifica que sea de la misma clase
-        MiembroHogar otro = (MiembroHogar) o;  // 3️⃣ Castea
-
-        // 4️⃣ Compara los atributos que definen la identidad de un miembro
-        return this.nombre.equals(otro.nombre) && this.edad == otro.edad;
-    }
-
-    @Override
-    public int hashCode() {
-        // Siempre que sobrescribes equals(), también debes sobrescribir hashCode()
-        return java.util.Objects.hash(nombre, edad);
-    }
-
-    public void setIncentivo(Incentivo incentivo) {
-        this.incentivos.add(incentivo);
-    }
-
-    public List<Incentivo> getIncentivos() {
-        return this.incentivos;
+        if (!this.quehaceres.contains(q)) {
+            this.quehaceres.add(q);
+        }
     }
 }
 

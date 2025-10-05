@@ -1,5 +1,4 @@
 package model;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,17 +15,16 @@ public class Hogar {
     public void registrarMiembro(MiembroHogar miembro){
         this.miembros.add(miembro);
     }
-    public void registrarQuehacer(String nombre, Dificultad d, int diasLimite) {
-        Quehacer quehacer = new Quehacer(nombre, d, LocalDateTime.now().plusDays(diasLimite));
+    public void registrarQuehacer(Quehacer quehacer) {
         if (miembros.isEmpty()) return;
         MiembroHogar miembroAsignado = miembros.get(0);
         for (MiembroHogar m : miembros) {
-            if (m.getQuehaceresAsignados().size() < miembroAsignado.getQuehaceresAsignados().size()) {
+            if (m.getQuehaceres().size() < miembroAsignado.getQuehaceres().size()) {
                 miembroAsignado = m;
             }
         }
         miembroAsignado.asignarQuehacer(quehacer);
-        System.out.println(miembroAsignado.getNombre()+ " esta realizando la tarea" + miembroAsignado.getQuehaceresAsignados());
+        System.out.println(miembroAsignado.getNombre()+ " esta realizando la tarea" + miembroAsignado.getQuehaceres());
     }
     public List<MiembroHogar> getRegistroMiembro(){
         return miembros;
@@ -68,14 +66,14 @@ public class Hogar {
         System.out.println("\n====== INICIO DE LA SIMULACIÓN DE COMPLETAR TAREAS ======");
 
         // --- PRUEBA 1: Juan completa una tarea A TIEMPO ---
-        if (!juan.getQuehaceresAsignados().isEmpty()) {
-            Quehacer tareaDeJuan = juan.getQuehaceresAsignados().get(0);
+        if (!juan.getQuehaceres().isEmpty()) {
+            Quehacer tareaDeJuan = juan.getQuehaceres().get(0);
             juan.registrarQuehacerCompleto(tareaDeJuan);
         }
 
         // --- PRUEBA 2: Lucía completa una tarea TARDE ---
-        if (!lucia.getQuehaceresAsignados().isEmpty()) {
-            Quehacer tareaDeLucia = lucia.getQuehaceresAsignados().get(0);
+        if (!lucia.getQuehaceres().isEmpty()) {
+            Quehacer tareaDeLucia = lucia.getQuehaceres().get(0);
             lucia.registrarQuehacerCompleto(tareaDeLucia);
         }
 
@@ -95,17 +93,17 @@ public class Hogar {
             if(miHogar.getRegistroMiembro().get(i).getIncentivos().isEmpty()){
                 System.out.println("\tNo tiene incentivos");
             }
-            for(int j =0; j< miHogar.getRegistroMiembro().get(i).getIncentivos().size();i++){
-                System.out.println("\t" + miHogar.getRegistroMiembro().get(i).getIncentivos().get(j).getTipo());
+            for(int j =0; j< miHogar.getRegistroMiembro().get(i).getIncentivos().size();j++){
+                System.out.println("\t" + miHogar.getRegistroMiembro().get(i).getIncentivos().get(j).getTipoIncentivo());
             }
         }
 
 
         System.out.println("\n====== FIN DE LA SIMULACIÓN ======");
-        System.out.println("Tareas restantes de Juan: " + juan.getQuehaceresAsignados().size());
-        System.out.println("Tareas restantes de Lucía: " + lucia.getQuehaceresAsignados().size());
-        System.out.println("Tareas restantes de Sonia: " + sonia.getQuehaceresAsignados().size());
-        System.out.println("Tareas restantes de Ana: " + ana.getQuehaceresAsignados().size());
+        System.out.println("Tareas restantes de Juan: " + juan.getQuehaceres().size());
+        System.out.println("Tareas restantes de Lucía: " + lucia.getQuehaceres().size());
+        System.out.println("Tareas restantes de Sonia: " + sonia.getQuehaceres().size());
+        System.out.println("Tareas restantes de Ana: " + ana.getQuehaceres().size());
     }
 
     private List<Quehacer> getListaQuehaceresPendientes(MiembroHogar miembro) {
@@ -119,11 +117,11 @@ public class Hogar {
             System.out.println("El miembro no existe en el registro");
             return null;
         }
-        if(miembro.getQuehaceresAsignados().isEmpty()){
+        if(miembro.getQuehaceres().isEmpty()){
             System.out.println("No hay tareas pendientes");
             return null;
         }
-        return miembro.getQuehaceresAsignados();
+        return miembro.getQuehaceres();
     }
 
 }

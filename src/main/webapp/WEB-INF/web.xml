@@ -3,4 +3,27 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
          version="6.0">
+
+    <welcome-file-list>
+        <welcome-file>index.jsp</welcome-file>
+    </welcome-file-list>
+
+    <servlet>
+        <servlet-name>MiembroServlet</servlet-name>
+        <servlet-class>servlet.MiembroServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>MiembroServlet</servlet-name>
+        <url-pattern>/miembros</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>QuehacerServlet</servlet-name>
+        <servlet-class>servlet.QuehacerServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>QuehacerServlet</servlet-name>
+        <url-pattern>/quehaceres</url-pattern>
+    </servlet-mapping>
+
 </web-app>

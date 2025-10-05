@@ -1,58 +1,73 @@
 package model;
 
+import jakarta.persistence.*;
 import java.util.Comparator;
 
+@Entity
 public class Incentivo {
-    private static TipoIncentivo tipoIncentivo;
 
-    //    private Quehacer quehacerPenalizado;
-//    private Quehacer quehacerExonerado;
-//    private Incentivo(Quehacer exonerado, Quehacer penalizado) {
-//        this.quehacerExonerado = exonerado;
-//        this.quehacerPenalizado = penalizado;
-//    }
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Enumerated(EnumType.STRING)
+    private TipoIncentivo tipoIncentivo;
+
+    @ManyToOne
+    @JoinColumn(name = "miembro_hogar_id")
+    private MiembroHogar miembroHogar;
+
+    // Constructor para JPA
+    public Incentivo() {}
+
     public void aplicar(MiembroHogar miembro, Quehacer quehacerCompletado) {
         if (quehacerCompletado.fueCompletadoATiempo()) {
-            tipoIncentivo = TipoIncentivo.Positivo;
-            // --- Lógica de Incentivo Positivo ---
+            this.tipoIncentivo = TipoIncentivo.Positivo;
             System.out.println("👍 ¡Felicidades! " + miembro.getNombre() + " terminó '" + quehacerCompletado.getNombre() + "' a tiempo.");
             miembro.reducirFactorDeCarga();
 
-            // Buscamos la tarea más fácil que le quede para exonerarla como premio
-            Quehacer tareaExonerada = miembro.getQuehaceresAsignados().stream()
-                    .min(Comparator.comparing(Quehacer::getDificultad))
+            Quehacer tareaExonerada = miembro.getQuehaceres().stream()
+                    .filter(q -> !q.isEstadoCompletado())
+                    .min(Comparator.comparing(q -> q.getDificultad().ordinal()))
                     .orElse(null);
 
             if (tareaExonerada != null) {
-                miembro.removerQuehacer(tareaExonerada);
+                miembro.removerQuehacer(tareaExonerada); // Asumiendo que este método existe y funciona
                 System.out.println("✨ INCENTIVO: Como premio, se te ha quitado la tarea '" + tareaExonerada.getNombre() + "'.");
             } else {
                 System.out.println("✨ INCENTIVO: ¡No tienes más tareas! Tu factor de carga ahora es " + miembro.getFactorDeCarga());
             }
-
-
         } else {
-            // --- Lógica de Penalización ---
-            tipoIncentivo = TipoIncentivo.Negativo;
+            this.tipoIncentivo = TipoIncentivo.Negativo;
             System.out.println("👎 Lástima, " + miembro.getNombre() + " se retrasó con '" + quehacerCompletado.getNombre() + "'.");
             miembro.aumentarFactorDeCarga();
             System.out.println(" PENALIZACIÓN: Se te asignarán más tareas en el futuro. Tu factor de carga ahora es " + miembro.getFactorDeCarga());
         }
-        miembro.setIncentivo(this);
+        miembro.addIncentivo(this);
     }
 
-    public TipoIncentivo getTipo() {
+    // Getters y Setters
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public TipoIncentivo getTipoIncentivo() {
         return tipoIncentivo;
     }
 
-//    @Override
-//    public String toString() {
-//        if (quehacerExonerado != null) {
-//            return "Incentivo Positivo: Se exoneró la tarea '" + quehacerExonerado.getNombre() + "'";
-//        }
-//        if (quehacerPenalizado != null) {
-//            return "Penalización: Se generó la tarea '" + quehacerPenalizado.getNombre() + "'";
-//        }
-//        return "Incentivo neutral.";
-//    }
+    public void setTipoIncentivo(TipoIncentivo tipoIncentivo) {
+        this.tipoIncentivo = tipoIncentivo;
+    }
+
+    public MiembroHogar getMiembroHogar() {
+        return miembroHogar;
+    }
+
+    public void setMiembroHogar(MiembroHogar miembroHogar) {
+        this.miembroHogar = miembroHogar;
+    }
 }
