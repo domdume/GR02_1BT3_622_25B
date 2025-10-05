@@ -36,4 +36,15 @@ public class Quehacer{
     public LocalDateTime getTiempoLimite() {
         return tiempoLimite;
     }
+
+    @Override
+    public String toString() {
+        return "Quehacer{" +
+                "nombre='" + nombre + '\'' +
+                ", estadoCompletado=" + estadoCompletado +
+                ", tiempoLimite=" + tiempoLimite +
+                ", fechaFinalizacion=" + fechaFinalizacion +
+                ", dificultad=" + dificultad +
+                '}';
+    }
 }

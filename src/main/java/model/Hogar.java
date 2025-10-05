@@ -79,11 +79,51 @@ public class Hogar {
             lucia.registrarQuehacerCompleto(tareaDeLucia);
         }
 
+        // --- PRUEBA 3: Revisar quehaceres pendientes de Sonia
+        //Recomendación. Primera mostrar la lista de miembros y de la lista escoger un miembro para revisar pendientes
+                                            //Método a usar
+        List<Quehacer> quehaceresPendientes = miHogar.getListaQuehaceresPendientes(juan);
+        if (quehaceresPendientes == null) {
+            System.out.println("No hay tareas pendientes");
+        }else {
+            System.out.println("Tareas pendientes de Sonia: " + quehaceresPendientes);
+        }
+
+        // --- PRUEBA 4: Revisar tipos de incentivos por miembro
+        for(int i =0; i<miHogar.getRegistroMiembro().size();i++){
+            System.out.println(miHogar.getRegistroMiembro().get(i).getNombre());
+            if(miHogar.getRegistroMiembro().get(i).getIncentivos().isEmpty()){
+                System.out.println("\tNo tiene incentivos");
+            }
+            for(int j =0; j< miHogar.getRegistroMiembro().get(i).getIncentivos().size();i++){
+                System.out.println("\t" + miHogar.getRegistroMiembro().get(i).getIncentivos().get(j).getTipo());
+            }
+        }
+
+
         System.out.println("\n====== FIN DE LA SIMULACIÓN ======");
         System.out.println("Tareas restantes de Juan: " + juan.getQuehaceresAsignados().size());
         System.out.println("Tareas restantes de Lucía: " + lucia.getQuehaceresAsignados().size());
         System.out.println("Tareas restantes de Sonia: " + sonia.getQuehaceresAsignados().size());
         System.out.println("Tareas restantes de Ana: " + ana.getQuehaceresAsignados().size());
+    }
+
+    private List<Quehacer> getListaQuehaceresPendientes(MiembroHogar miembro) {
+        //verificar si existe el objeto
+        if(miembro == null){
+            System.out.println("El miembro no existe...");
+            return null;
+        }
+        //existe el miembro registrado
+        if(!miembros.contains(miembro)){
+            System.out.println("El miembro no existe en el registro");
+            return null;
+        }
+        if(miembro.getQuehaceresAsignados().isEmpty()){
+            System.out.println("No hay tareas pendientes");
+            return null;
+        }
+        return miembro.getQuehaceresAsignados();
     }
 
 }
