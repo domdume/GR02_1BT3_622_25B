@@ -34,7 +34,6 @@ public class RegistroQuehacer implements Sujeto {
     public void notificar(String mensaje) {
         for (Observador observador : observadores) {
             observador.actualizar(mensaje);
-            System.out.println("NOTIFICADO");
         }
     }
     // --- Métodos de Lógica de Negocio (El cambio de estado) ---
@@ -47,7 +46,6 @@ public class RegistroQuehacer implements Sujeto {
         this.quehaceresPorRealizar.add(q);
         String mensaje = "¡Nuevo quehacer añadido!: " + q.getNombre() ;
         System.out.println("✅ " + mensaje);
-
         // El cambio de estado ocurre, por lo que notificamos a los suscriptores.
         notificar(mensaje);
     }

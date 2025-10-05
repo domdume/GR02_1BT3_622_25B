@@ -14,7 +14,17 @@ public class Quehacer{
         this.tiempoLimite = tiempoLimite;
         this.dificultad = dificultad;
     }
+    public void marcarComoCompletado(){
+        this.estadoCompletado = true;
+        this.fechaFinalizacion = LocalDateTime.now();
 
+    }
+    public boolean fueCompletadoATiempo() {
+        if (!estadoCompletado || fechaFinalizacion == null) {
+            return false; // No se puede saber si no se ha completado
+        }
+        return fechaFinalizacion.isBefore(tiempoLimite);
+    }
     public String getNombre() {
         return nombre;
     }
