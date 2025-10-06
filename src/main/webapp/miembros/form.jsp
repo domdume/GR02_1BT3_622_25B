@@ -13,6 +13,20 @@
     </nav>
 </header>
 <div class="container">
+    <!-- Mostrar mensajes del sistema -->
+    <c:if test="${not empty successMessage}">
+        <div style="background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 10px; margin: 10px 0; border-radius: 5px;">
+            <strong>✅ Éxito:</strong> ${successMessage}
+        </div>
+        <c:set var="successMessage" value="" scope="session" />
+    </c:if>
+    <c:if test="${not empty errorMessage}">
+        <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 10px; margin: 10px 0; border-radius: 5px;">
+            <strong>❌ Error:</strong> ${errorMessage}
+        </div>
+        <c:set var="errorMessage" value="" scope="session" />
+    </c:if>
+
     <form action="${pageContext.request.contextPath}/miembros" method="post">
         <input type="hidden" name="action" value="insert" />
         <fieldset>
@@ -25,12 +39,7 @@
         </fieldset>
         <button type="submit">Registrar Miembro</button>
     </form>
-    <c:if test="${not empty successMessage}">
-        <p style="color: green;">${successMessage}</p>
-    </c:if>
-    <c:if test="${not empty errorMessage}">
-        <p style="color: red;">${errorMessage}</p>
-    </c:if>
+    
     <h2>Miembros Registrados</h2>
     <table>
         <thead>

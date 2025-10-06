@@ -1,8 +1,17 @@
 package model;
 
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
 import java.time.LocalDateTime;
 
+@Entity
+@DiscriminatorValue("JefeDelHogar")
 public class JefeDelHogar extends MiembroHogar {
+
+    // Constructor vacío requerido por JPA
+    public JefeDelHogar() {
+        super();
+    }
 
     public JefeDelHogar(String nombre, int edad) {
         super(nombre, edad);

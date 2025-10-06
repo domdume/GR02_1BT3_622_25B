@@ -12,13 +12,33 @@ public class MiembroHogarDAO {
 
     public void create(MiembroHogar miembro) {
         EntityManager em = JPAUtil.getEntityManager();
+        EntityTransaction tx = null;
         try {
-            em.getTransaction().begin();
+            System.out.println("[DAO] Iniciando creación de miembro: " + miembro.getNombre());
+            tx = em.getTransaction();
+            tx.begin();
+            
+            // Verificar que el miembro tenga los datos necesarios
+            if (miembro.getNombre() == null || miembro.getNombre().trim().isEmpty()) {
+                throw new IllegalArgumentException("El nombre del miembro no puede estar vacío");
+            }
+            
+            if (miembro.getEdad() <= 0) {
+                throw new IllegalArgumentException("La edad debe ser mayor a 0");
+            }
+            
             em.persist(miembro);
-            em.getTransaction().commit();
+            tx.commit();
+            System.out.println("[DAO] Miembro persistido exitosamente con ID: " + miembro.getId());
+            
         } catch (Exception e) {
-            em.getTransaction().rollback();
-            throw e;
+            System.out.println("[DAO ERROR] Error al crear miembro: " + e.getMessage());
+            e.printStackTrace();
+            if (tx != null && tx.isActive()) {
+                tx.rollback();
+                System.out.println("[DAO] Transaction rollback realizado");
+            }
+            throw new RuntimeException("Error al persistir el miembro: " + e.getMessage(), e);
         } finally {
             em.close();
         }

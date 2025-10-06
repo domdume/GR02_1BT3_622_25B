@@ -82,20 +82,47 @@ public class MiembroServlet extends HttpServlet {
         String nombre = request.getParameter("nombre");
         String edadStr = request.getParameter("edad");
 
+        System.out.println("[DEBUG] Intentando agregar miembro:");
+        System.out.println("[DEBUG] - Nombre: " + nombre);
+        System.out.println("[DEBUG] - Edad: " + edadStr);
+
         try {
+            // Validación de parámetros
+            if (nombre == null || nombre.trim().isEmpty()) {
+                throw new IllegalArgumentException("El nombre es requerido");
+            }
+            
+            if (edadStr == null || edadStr.trim().isEmpty()) {
+                throw new IllegalArgumentException("La edad es requerida");
+            }
+
             int edad = Integer.parseInt(edadStr);
+            
+            if (edad <= 0) {
+                throw new IllegalArgumentException("La edad debe ser mayor a 0");
+            }
 
             MiembroHogar nuevoMiembro = new MiembroHogar();
-            nuevoMiembro.setNombre(nombre);
+            nuevoMiembro.setNombre(nombre.trim());
             nuevoMiembro.setEdad(edad);
+
+            System.out.println("[DEBUG] Creando miembro: " + nuevoMiembro.getNombre() + ", edad: " + nuevoMiembro.getEdad());
 
             miembroHogarDAO.create(nuevoMiembro);
 
-            request.getSession().setAttribute("successMessage", "Miembro agregado correctamente.");
+            System.out.println("[DEBUG] Miembro creado exitosamente con ID: " + nuevoMiembro.getId());
+            request.getSession().setAttribute("successMessage", "Miembro agregado correctamente: " + nombre);
+            
         } catch (NumberFormatException e) {
+            System.out.println("[ERROR] Error de formato en edad: " + e.getMessage());
             request.getSession().setAttribute("errorMessage", "La edad debe ser un número válido.");
+        } catch (IllegalArgumentException e) {
+            System.out.println("[ERROR] Error de validación: " + e.getMessage());
+            request.getSession().setAttribute("errorMessage", e.getMessage());
         } catch (Exception e) {
-            request.getSession().setAttribute("errorMessage", "Error al agregar el miembro.");
+            System.out.println("[ERROR] Error general al agregar miembro: " + e.getMessage());
+            e.printStackTrace();
+            request.getSession().setAttribute("errorMessage", "Error al agregar el miembro: " + e.getMessage());
         }
 
         response.sendRedirect(request.getContextPath() + "/miembros?action=list");

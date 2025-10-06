@@ -10,6 +10,20 @@
     <h1>Gestión de Quehaceres</h1>
 </header>
 <div class="container">
+    <!-- Mostrar mensajes del sistema -->
+    <c:if test="${not empty successMessage}">
+        <div style="background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 10px; margin: 10px 0; border-radius: 5px;">
+            <strong>✅ Éxito:</strong> ${successMessage}
+        </div>
+        <c:set var="successMessage" value="" scope="session" />
+    </c:if>
+    <c:if test="${not empty errorMessage}">
+        <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 10px; margin: 10px 0; border-radius: 5px;">
+            <strong>❌ Error:</strong> ${errorMessage}
+        </div>
+        <c:set var="errorMessage" value="" scope="session" />
+    </c:if>
+    
     <a href="quehaceres?action=new" class="btn btn-primary">Añadir Nuevo Quehacer</a>
     <table>
         <thead>
