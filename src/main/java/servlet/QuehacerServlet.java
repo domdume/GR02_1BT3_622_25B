@@ -16,8 +16,7 @@ import model.Quehacer;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.logging.Logger;
 
 @WebServlet(name = "QuehacerServlet", value = "/quehaceres")
@@ -46,9 +45,7 @@ public class QuehacerServlet extends HttpServlet {
             case "new":
                 showNewForm(request, response);
                 break;
-            case "edit":
-                showEditForm(request, response);
-                break;
+
             case "delete":
                 deleteQuehacer(request, response);
                 break;
@@ -84,9 +81,7 @@ public class QuehacerServlet extends HttpServlet {
             case "insert":
                 insertQuehacer(request, response);
                 break;
-            case "update":
-                updateQuehacer(request, response);
-                break;
+
             case "markComplete":
                 markComplete(request, response);
                 break;
@@ -114,8 +109,58 @@ public class QuehacerServlet extends HttpServlet {
             logger.info("Lista de miembros recuperada: " + listaMiembros);
 
             // Cargar también la lista de quehaceres existentes para mostrar en la tabla
-            List<Quehacer> listaQuehaceres = quehacerDAO.findAll();
-            System.out.println("[DEBUG] Lista de quehaceres recuperada: " + listaQuehaceres.size() + " elementos");
+            List<Quehacer> todosLosQuehaceres = quehacerDAO.findAllWithMiembroHogar();
+            System.out.println("[DEBUG] Lista de quehaceres recuperada: " + todosLosQuehaceres.size() + " elementos");
+            
+            // Aplicar lógica de puntos progresivos
+            Map<String, Integer> puntosProgresivos = new HashMap<>();
+            List<Quehacer> quehaceresCompletados = new ArrayList<>();
+            List<Quehacer> quehaceresPendientes = new ArrayList<>();
+            
+            for (Quehacer q : todosLosQuehaceres) {
+                if (q.isEstadoFinalizado()) {
+                    quehaceresCompletados.add(q);
+                } else {
+                    quehaceresPendientes.add(q);
+                }
+            }
+            
+            // Ordenar los completados por fecha de finalización
+            quehaceresCompletados.sort((q1, q2) -> {
+                if (q1.getFechaFinalizacion() == null && q2.getFechaFinalizacion() == null) return 0;
+                if (q1.getFechaFinalizacion() == null) return 1;
+                if (q2.getFechaFinalizacion() == null) return -1;
+                return q1.getFechaFinalizacion().compareTo(q2.getFechaFinalizacion());
+            });
+            
+            // Calcular puntos progresivos
+            for (Quehacer q : quehaceresCompletados) {
+                if (q.getMiembroHogar() != null) {
+                    String nombreMiembro = q.getMiembroHogar().getNombre();
+                    int puntosActuales = puntosProgresivos.getOrDefault(nombreMiembro, 0);
+                    
+                    if (q.estaCompletado()) {
+                        puntosActuales += 20;
+                    } else {
+                        puntosActuales = Math.max(0, puntosActuales - 10);
+                    }
+                    
+                    puntosProgresivos.put(nombreMiembro, puntosActuales);
+                    q.setPuntosEnEseMomento(puntosActuales);
+                }
+            }
+            
+            // Para pendientes, mostrar puntos actuales del miembro
+            for (Quehacer q : quehaceresPendientes) {
+                if (q.getMiembroHogar() != null) {
+                    q.setPuntosEnEseMomento(q.getMiembroHogar().getPuntos());
+                }
+            }
+            
+            // Recombinar las listas
+            List<Quehacer> listaQuehaceres = new ArrayList<>();
+            listaQuehaceres.addAll(quehaceresCompletados);
+            listaQuehaceres.addAll(quehaceresPendientes);
 
             if (listaMiembros.isEmpty()) {
                 System.out.println("[DEBUG] No hay miembros disponibles");
@@ -138,17 +183,6 @@ public class QuehacerServlet extends HttpServlet {
             request.setAttribute("errorMessage", "Error interno del servidor: " + e.getMessage());
             request.getRequestDispatcher("/quehaceres/form.jsp").forward(request, response);
         }
-    }
-
-    private void showEditForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        Long id = Long.parseLong(request.getParameter("id"));
-        Quehacer quehacerExistente = quehacerDAO.findById(id);
-        List<MiembroHogar> listaMiembros = miembroHogarDAO.obtenerTodos();
-        System.out.println("[DEBUG] Lista de miembros en showEditForm: " + listaMiembros);
-        request.setAttribute("quehacer", quehacerExistente);
-        request.setAttribute("listaMiembros", listaMiembros);
-        request.setAttribute("action", "update");
-        request.getRequestDispatcher("/quehaceres/form.jsp").forward(request, response);
     }
 
     private void insertQuehacer(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -196,29 +230,6 @@ public class QuehacerServlet extends HttpServlet {
         response.sendRedirect(request.getContextPath() + "/quehaceres?action=listGestion");
     }
 
-    private void updateQuehacer(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        Long id = Long.parseLong(request.getParameter("id"));
-        String nombre = request.getParameter("nombre");
-        String tiempoLimiteStr = request.getParameter("tiempoLimite");
-        String miembroIdStr = request.getParameter("miembroId");
-        String recompensa = request.getParameter("recompensa");
-        String penalizacion = request.getParameter("penalizacion");
-
-        Long miembroId = Long.parseLong(miembroIdStr);
-        MiembroHogar miembro = miembroHogarDAO.findById(miembroId);
-        LocalDateTime tiempoLimite = LocalDateTime.parse(tiempoLimiteStr);
-
-        Quehacer quehacer = quehacerDAO.findById(id);
-        quehacer.setNombre(nombre);
-        quehacer.setTiempoLimite(tiempoLimite);
-        quehacer.setMiembroHogar(miembro);
-        quehacer.setRecompensa(recompensa);
-        quehacer.setPenalizacion(penalizacion);
-
-        quehacerDAO.update(quehacer);
-        response.sendRedirect(request.getContextPath() + "/quehaceres?action=listGestion");
-    }
-
     private void deleteQuehacer(HttpServletRequest request, HttpServletResponse response) throws IOException {
         Long id = Long.parseLong(request.getParameter("id"));
         quehacerDAO.delete(id);
@@ -232,14 +243,70 @@ public class QuehacerServlet extends HttpServlet {
         finalizarTareasVencidas();
         
         // Cargar lista de quehaceres con miembros
-        List<Quehacer> listaQuehaceres = quehacerDAO.findAllWithMiembroHogar();
-        System.out.println("[DEBUG] Cargando " + listaQuehaceres.size() + " quehaceres para el tablero principal");
+        List<Quehacer> todosLosQuehaceres = quehacerDAO.findAllWithMiembroHogar();
+        System.out.println("[DEBUG] Cargando " + todosLosQuehaceres.size() + " quehaceres para el tablero principal");
+        
+        // Calcular puntos progresivos: ordenar por fecha de finalización y calcular puntos acumulados
+        Map<String, Integer> puntosProgresivos = new HashMap<>();
+        
+        // Separar completados y pendientes
+        List<Quehacer> quehaceresCompletados = new ArrayList<>();
+        List<Quehacer> quehaceresPendientes = new ArrayList<>();
+        
+        for (Quehacer q : todosLosQuehaceres) {
+            if (q.isEstadoFinalizado()) {
+                quehaceresCompletados.add(q);
+            } else {
+                quehaceresPendientes.add(q);
+            }
+        }
+        
+        // Ordenar los completados por fecha de finalización
+        quehaceresCompletados.sort((q1, q2) -> {
+            if (q1.getFechaFinalizacion() == null && q2.getFechaFinalizacion() == null) return 0;
+            if (q1.getFechaFinalizacion() == null) return 1;
+            if (q2.getFechaFinalizacion() == null) return -1;
+            return q1.getFechaFinalizacion().compareTo(q2.getFechaFinalizacion());
+        });
+        
+        // Calcular puntos progresivos para cada quehacer completado
+        for (Quehacer q : quehaceresCompletados) {
+            if (q.getMiembroHogar() != null) {
+                String nombreMiembro = q.getMiembroHogar().getNombre();
+                int puntosActuales = puntosProgresivos.getOrDefault(nombreMiembro, 0);
+                
+                if (q.estaCompletado()) {
+                    puntosActuales += 20; // Sumar 20 por completado a tiempo
+                } else {
+                    puntosActuales = Math.max(0, puntosActuales - 10); // Restar 10 por atrasado
+                }
+                
+                puntosProgresivos.put(nombreMiembro, puntosActuales);
+                
+                // Crear un atributo especial para este quehacer con sus puntos en ese momento
+                q.setPuntosEnEseMomento(puntosActuales);
+                System.out.println("[DEBUG] " + nombreMiembro + " tenía " + puntosActuales + " puntos después de " + q.getNombre());
+            }
+        }
+        
+        // Para pendientes, mostrar puntos actuales del miembro
+        for (Quehacer q : quehaceresPendientes) {
+            if (q.getMiembroHogar() != null) {
+                q.setPuntosEnEseMomento(q.getMiembroHogar().getPuntos());
+            }
+        }
+        
+        // Recombinar las listas: primero completados (ordenados por fecha), luego pendientes
+        List<Quehacer> listaQuehaceres = new ArrayList<>();
+        listaQuehaceres.addAll(quehaceresCompletados);
+        listaQuehaceres.addAll(quehaceresPendientes);
         
         // Log detallado de los quehaceres cargados
         for (Quehacer q : listaQuehaceres) {
             System.out.println("[DEBUG] - Quehacer: " + q.getNombre() + " | Asignado a: " + 
                 (q.getMiembroHogar() != null ? q.getMiembroHogar().getNombre() : "SIN ASIGNAR") + 
-                " | Estado: " + (q.estaCompletado() ? "Completado" : "Pendiente"));
+                " | Estado: " + (q.estaCompletado() ? "Completado" : "Pendiente") + 
+                " | Puntos en ese momento: " + q.getPuntosEnEseMomento());
         }
         
         request.setAttribute("listaQuehaceres", listaQuehaceres);
@@ -248,8 +315,68 @@ public class QuehacerServlet extends HttpServlet {
     }
 
     private void listGestionQuehaceres(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        List<Quehacer> listaQuehaceres = quehacerDAO.findAllWithMiembroHogar(); // Cargar quehaceres
-        request.setAttribute("listaQuehaceres", listaQuehaceres); // Pasar quehaceres al JSP
+        System.out.println("=== CARGANDO GESTIÓN DE QUEHACERES ===");
+        
+        // Finalizar automáticamente las tareas vencidas
+        finalizarTareasVencidas();
+        
+        // Cargar lista de quehaceres con miembros
+        List<Quehacer> todosLosQuehaceres = quehacerDAO.findAllWithMiembroHogar();
+        System.out.println("[DEBUG] Cargando " + todosLosQuehaceres.size() + " quehaceres para gestión");
+        
+        // Calcular puntos progresivos: ordenar por fecha de finalización y calcular puntos acumulados
+        Map<String, Integer> puntosProgresivos = new HashMap<>();
+        
+        // Separar completados y pendientes
+        List<Quehacer> quehaceresCompletados = new ArrayList<>();
+        List<Quehacer> quehaceresPendientes = new ArrayList<>();
+        
+        for (Quehacer q : todosLosQuehaceres) {
+            if (q.isEstadoFinalizado()) {
+                quehaceresCompletados.add(q);
+            } else {
+                quehaceresPendientes.add(q);
+            }
+        }
+        
+        // Ordenar los completados por fecha de finalización
+        quehaceresCompletados.sort((q1, q2) -> {
+            if (q1.getFechaFinalizacion() == null && q2.getFechaFinalizacion() == null) return 0;
+            if (q1.getFechaFinalizacion() == null) return 1;
+            if (q2.getFechaFinalizacion() == null) return -1;
+            return q1.getFechaFinalizacion().compareTo(q2.getFechaFinalizacion());
+        });
+        
+        // Calcular puntos progresivos para cada quehacer completado
+        for (Quehacer q : quehaceresCompletados) {
+            if (q.getMiembroHogar() != null) {
+                String nombreMiembro = q.getMiembroHogar().getNombre();
+                int puntosActuales = puntosProgresivos.getOrDefault(nombreMiembro, 0);
+                
+                if (q.estaCompletado()) {
+                    puntosActuales += 20; // Sumar 20 por completado a tiempo
+                } else {
+                    puntosActuales = Math.max(0, puntosActuales - 10); // Restar 10 por atrasado
+                }
+                
+                puntosProgresivos.put(nombreMiembro, puntosActuales);
+                q.setPuntosEnEseMomento(puntosActuales);
+            }
+        }
+        
+        // Para pendientes, mostrar puntos actuales del miembro
+        for (Quehacer q : quehaceresPendientes) {
+            if (q.getMiembroHogar() != null) {
+                q.setPuntosEnEseMomento(q.getMiembroHogar().getPuntos());
+            }
+        }
+        
+        // Recombinar las listas: primero completados (ordenados por fecha), luego pendientes
+        List<Quehacer> listaQuehaceres = new ArrayList<>();
+        listaQuehaceres.addAll(quehaceresCompletados);
+        listaQuehaceres.addAll(quehaceresPendientes);
+        
+        request.setAttribute("listaQuehaceres", listaQuehaceres);
         request.getRequestDispatcher("/quehaceres/index.jsp").forward(request, response);
     }
 
@@ -429,7 +556,10 @@ public class QuehacerServlet extends HttpServlet {
             System.out.println("[DEBUG] Quehacer completado A TIEMPO - recompensa asignada");
 
             quehacerDAO.update(quehacer);
-            request.getSession().setAttribute("successMessage", "Quehacer marcado como completado correctamente. ¡+" + 20 + " puntos!");
+            String nombreMiembro = miembro != null ? miembro.getNombre() : "desconocido";
+            int puntosActuales = miembro != null ? miembro.getPuntos() : 0;
+            request.getSession().setAttribute("successMessage", 
+                "¡Quehacer completado! " + nombreMiembro + " ganó +20 puntos. Total actual: " + puntosActuales + " puntos.");
             System.out.println("[DEBUG] Quehacer actualizado exitosamente");
             
         } catch (Exception e) {

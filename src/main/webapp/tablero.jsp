@@ -56,8 +56,36 @@
                         <tr class="${q.estadoFinalizado ? (q.estadoCompletado ? 'completed' : 'overdue') : ''}">
                             <td>${q.nombre}</td>
                             <td>${q.miembroHogar.nombre}</td>
-                            <td style="font-weight: bold; color: #2e7d32;">${q.miembroHogar.puntos} pts</td>
-                            <td>${q.tiempoLimite}</td>
+                            <td>
+                                <div style="text-align: center;">
+                                    <strong style="color: #2e7d32; font-size: 1.1em;">${q.puntosEnEseMomento} pts</strong><br>
+                                    <small style="color: #666;">
+                                        <c:choose>
+                                            <c:when test="${q.estadoFinalizado}">
+                                                Total después de esta tarea
+                                            </c:when>
+                                            <c:otherwise>
+                                                Total actual
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </small>
+                                </div>
+                            </td>
+                            <td>
+                                <strong>${q.tiempoLimite}</strong>
+                                <c:if test="${q.estadoFinalizado and q.fechaFinalizacion != null}">
+                                    <br><small style="color: #666;">
+                                        <c:choose>
+                                            <c:when test="${q.estadoCompletado}">
+                                                Completado: ${q.fechaFinalizacion}
+                                            </c:when>
+                                            <c:otherwise>
+                                                Expiró: ${q.fechaFinalizacion}
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </small>
+                                </c:if>
+                            </td>
                             <td>
                                 <c:choose>
                                     <c:when test="${q.estadoFinalizado}">
@@ -80,15 +108,15 @@
                                     <c:when test="${q.estadoFinalizado}">
                                         <c:choose>
                                             <c:when test="${q.estadoCompletado}">
-                                                <span style="color: #4caf50;">${q.recompensa}</span>
+                                                <span style="color: #000; font-weight: normal;" class="recompensa-text" data-quehacer-id="${q.id}">Cargando...</span>
                                             </c:when>
                                             <c:otherwise>
-                                                <span style="color: #f44336;">${q.penalizacion}</span>
+                                                <span style="color: #000; font-weight: normal;" class="penalizacion-text" data-quehacer-id="${q.id}">Cargando...</span>
                                             </c:otherwise>
                                         </c:choose>
                                     </c:when>
                                     <c:otherwise>
-                                        <span style="color: #666;">Sin asignar</span>
+                                        <span style="color: #666;">Pendiente de completar</span>
                                     </c:otherwise>
                                 </c:choose>
                             </td>
@@ -107,5 +135,59 @@
         </c:otherwise>
     </c:choose>
 </div>
+
+<script>
+// Listas de recompensas y penalizaciones divertidas
+const recompensas = [
+    "No debes lavar los platos durante una semana",
+    "Libre de hacer tu cama por 3 días",
+    "Puedes elegir la película de la noche",
+    "No tienes que sacar la basura esta semana",
+    "Día libre de cocinar",
+    "Puedes quedarte despierto 1 hora extra",
+    "Libre de aspirar por una semana",
+    "Eliges el menú del domingo",
+    "No haces limpieza del baño por 5 días",
+    "Tienes el control remoto por un día completo"
+];
+
+const penalizaciones = [
+    "Debes barrer durante una semana",
+    "Lavar los platos todos los días por 3 días",
+    "Sacar la basura durante una semana completa",
+    "Limpiar el baño por 5 días seguidos",
+    "Aspirar toda la casa durante una semana",
+    "Hacer todas las camas por 3 días",
+    "Limpiar las ventanas de toda la casa",
+    "Ordenar tu cuarto todos los días por una semana",
+    "Lavar y doblar ropa por 5 días",
+    "Cocinar la cena durante una semana"
+];
+
+// Función para obtener un elemento aleatorio de una lista basado en un ID (para consistencia)
+function getConsistentRandomItem(array, id) {
+    // Usar el ID como semilla para obtener siempre el mismo resultado para el mismo quehacer
+    const index = Math.abs(id) % array.length;
+    return array[index];
+}
+
+// Asignar recompensas y penalizaciones cuando se carga la página
+document.addEventListener('DOMContentLoaded', function() {
+    // Asignar recompensas
+    document.querySelectorAll('.recompensa-text').forEach(function(element) {
+        const quehacerId = element.getAttribute('data-quehacer-id');
+        const recompensa = getConsistentRandomItem(recompensas, parseInt(quehacerId));
+        element.innerHTML = recompensa;
+    });
+    
+    // Asignar penalizaciones
+    document.querySelectorAll('.penalizacion-text').forEach(function(element) {
+        const quehacerId = element.getAttribute('data-quehacer-id');
+        const penalizacion = getConsistentRandomItem(penalizaciones, parseInt(quehacerId));
+        element.innerHTML = penalizacion;
+    });
+});
+</script>
+
 </body>
 </html>

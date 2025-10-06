@@ -32,9 +32,7 @@ public class MiembroServlet extends HttpServlet {
             case "new":
                 showNewForm(request, response);
                 break;
-            case "edit":
-                showEditForm(request, response);
-                break;
+
             case "delete":
                 deleteMiembro(request, response);
                 break;
@@ -80,13 +78,6 @@ public class MiembroServlet extends HttpServlet {
         request.getRequestDispatcher("/miembros/form.jsp").forward(request, response);
     }
 
-    private void showEditForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        Long id = Long.parseLong(request.getParameter("id"));
-        MiembroHogar miembroExistente = miembroHogarDAO.findById(id);
-        request.setAttribute("miembro", miembroExistente);
-        request.getRequestDispatcher("/miembros/form.jsp").forward(request, response);
-    }
-
     private void insertMiembro(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String nombre = request.getParameter("nombre");
         String edadStr = request.getParameter("edad");
@@ -108,17 +99,6 @@ public class MiembroServlet extends HttpServlet {
         }
 
         response.sendRedirect(request.getContextPath() + "/miembros?action=list");
-    }
-
-    private void updateMiembro(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        Long id = Long.parseLong(request.getParameter("id"));
-        String nombre = request.getParameter("nombre");
-        int edad = Integer.parseInt(request.getParameter("edad"));
-        MiembroHogar miembro = miembroHogarDAO.findById(id);
-        miembro.setNombre(nombre);
-        miembro.setEdad(edad);
-        miembroHogarDAO.update(miembro);
-        response.sendRedirect(request.getContextPath() + "/miembros");
     }
 
     private void deleteMiembro(HttpServletRequest request, HttpServletResponse response) throws IOException {

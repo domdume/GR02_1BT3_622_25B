@@ -43,8 +43,6 @@
                         <td><c:out value="${miembro.edad}" /></td>
                         <td style="font-weight: bold; color: #2e7d32;"><c:out value="${miembro.puntos}" /> pts</td>
                         <td>
-                            <a href="miembros?action=edit&id=<c:out value='${miembro.id}' />">Editar</a>
-                            &nbsp;&nbsp;&nbsp;&nbsp;
                             <a href="miembros?action=delete&id=<c:out value='${miembro.id}' />" onclick="return confirm('¿Estás seguro de que quieres eliminar a este miembro?');">Eliminar</a>
                         </td>
                     </tr>

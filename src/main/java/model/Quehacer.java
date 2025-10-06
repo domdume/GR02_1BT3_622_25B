@@ -25,6 +25,9 @@ public class Quehacer {
     private String recompensa; // Ejemplo: "5 puntos"
     private String penalizacion; // Ejemplo: "No completado a tiempo"
     private boolean estadoFinalizado; // Indica si el quehacer está finalizado
+    
+    @Transient
+    private int puntosEnEseMomento; // Campo calculado para mostrar puntos progresivos
 
     // Constructor vacío para JPA
     public Quehacer() {
@@ -168,6 +171,14 @@ public class Quehacer {
         if (estadoFinalizado && estadoCompletado) {
             this.recompensa = listaRecompensas.get(new Random().nextInt(listaRecompensas.size()));
         }
+    }
+
+    public int getPuntosEnEseMomento() {
+        return puntosEnEseMomento;
+    }
+
+    public void setPuntosEnEseMomento(int puntosEnEseMomento) {
+        this.puntosEnEseMomento = puntosEnEseMomento;
     }
 
     @Override
