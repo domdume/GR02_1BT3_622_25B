@@ -1,6 +1,5 @@
 package model;
 
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,6 +35,7 @@ public class RegistroQuehacer implements Sujeto {
             observador.actualizar(mensaje);
         }
     }
+    
     // --- Métodos de Lógica de Negocio (El cambio de estado) ---
 
     /**
@@ -48,5 +48,12 @@ public class RegistroQuehacer implements Sujeto {
         System.out.println("✅ " + mensaje);
         // El cambio de estado ocurre, por lo que notificamos a los suscriptores.
         notificar(mensaje);
+    }
+
+    /**
+     * Getter para la lista de quehaceres.
+     */
+    public List<Quehacer> getQuehaceresPorRealizar() {
+        return quehaceresPorRealizar;
     }
 }
