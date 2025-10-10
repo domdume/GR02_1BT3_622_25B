@@ -1,13 +1,11 @@
 package servlet;
 
 import dao.MiembroHogarDAO;
-import gui.InterfazDelJefe;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import model.JefeDelHogar;
 import model.MiembroHogar;
 
 import java.io.IOException;
@@ -65,16 +63,9 @@ public class MiembroServlet extends HttpServlet {
     }
 
     private void showNewForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        // Ejecutar funcionalidad de InterfazDelJefe según diagrama UML
-        System.out.println("=== EJECUTANDO LÓGICA DEL DIAGRAMA UML: InterfazDelJefe.registrarUnMiembro() ===");
-        JefeDelHogar jefe = new JefeDelHogar("Jefe del Hogar", 45);
-        new InterfazDelJefe(jefe); // Ejecutar lógica UML
-        // La lógica se ejecuta en el constructor y métodos de la interfaz
-        
         // Cargar lista de miembros existentes para mostrar en el formulario
         List<MiembroHogar> listaMiembros = miembroHogarDAO.findAll();
         request.setAttribute("listaMiembros", listaMiembros);
-        request.setAttribute("mensaje", "🏗️ Lógica del Diagrama UML ejecutada: InterfazDelJefe.registrarUnMiembro()");
         request.getRequestDispatcher("/miembros/form.jsp").forward(request, response);
     }
 

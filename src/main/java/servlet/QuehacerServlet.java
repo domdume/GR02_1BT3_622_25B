@@ -2,15 +2,12 @@ package servlet;
 
 import dao.MiembroHogarDAO;
 import dao.QuehacerDAO;
-import gui.InterfazDelJefe;
-import gui.InterfazDelMiembroFamilia;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import model.Dificultad;
-import model.JefeDelHogar;
 import model.MiembroHogar;
 import model.Quehacer;
 
@@ -58,12 +55,6 @@ public class QuehacerServlet extends HttpServlet {
             case "listGestion":
                 listGestionQuehaceres(request, response);
                 break;
-            case "interfazJefe":
-                mostrarInterfazJefe(request, response);
-                break;
-            case "interfazMiembro":
-                mostrarInterfazMiembro(request, response);
-                break;
             default:
                 listQuehaceres(request, response);
                 break;
@@ -93,19 +84,8 @@ public class QuehacerServlet extends HttpServlet {
 
     private void showNewForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         try {
-            // Ejecutar funcionalidad de InterfazDelJefe según diagrama UML
-            System.out.println("=== EJECUTANDO LÓGICA DEL DIAGRAMA UML: InterfazDelJefe ===");
-            try {
-                JefeDelHogar jefe = new JefeDelHogar("Jefe del Hogar", 45);
-                new InterfazDelJefe(jefe); // Ejecutar lógica UML
-                request.setAttribute("mensaje", "🏗️ Lógica del Diagrama UML ejecutada: InterfazDelJefe.registrarUnQuehacer()");
-            } catch (Exception e) {
-                System.out.println("[DEBUG] Error en lógica UML: " + e.getMessage());
-                request.setAttribute("mensaje", "⚠️ Lógica UML ejecutada con advertencias");
-            }
-            
-            List<MiembroHogar> listaMiembros = miembroHogarDAO.obtenerTodos(); // Cargar miembros desde la BD usando nuevo método
-            System.out.println("[DEBUG] Lista de miembros recuperada con obtenerTodos(): " + listaMiembros);
+            List<MiembroHogar> listaMiembros = miembroHogarDAO.findAll(); // Cargar miembros desde la BD
+            System.out.println("[DEBUG] Lista de miembros recuperada: " + listaMiembros);
             logger.info("Lista de miembros recuperada: " + listaMiembros);
 
             // Cargar también la lista de quehaceres existentes para mostrar en la tabla
@@ -382,27 +362,12 @@ public class QuehacerServlet extends HttpServlet {
 
     private void showPendingForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         try {
-            // Ejecutar funcionalidad de InterfazDelMiembroFamilia según diagrama UML
-            System.out.println("=== EJECUTANDO LÓGICA DEL DIAGRAMA UML: InterfazDelMiembroFamilia.revisarQuehaceres() ===");
-            
-            // Primero, finalizar automáticamente las tareas vencidas
+            // Finalizar automáticamente las tareas vencidas
             finalizarTareasVencidas();
             
             // Cargar lista de miembros
-            List<MiembroHogar> listaMiembros = miembroHogarDAO.obtenerTodos();
+            List<MiembroHogar> listaMiembros = miembroHogarDAO.findAll();
             System.out.println("[DEBUG] Lista de miembros para pendientes: " + listaMiembros);
-            
-            // Ejecutar lógica del diagrama UML para todos los miembros (con manejo de errores)
-            try {
-                for (MiembroHogar miembro : listaMiembros) {
-                    InterfazDelMiembroFamilia interfazMiembro = new InterfazDelMiembroFamilia(miembro);
-                    interfazMiembro.revisarQuehaceres(); // Ejecutar método del diagrama UML
-                }
-                request.setAttribute("mensaje", "🏗️ Lógica del Diagrama UML ejecutada: InterfazDelMiembroFamilia.revisarQuehaceres() para todos los miembros");
-            } catch (Exception e) {
-                System.out.println("[DEBUG] Error en lógica UML: " + e.getMessage());
-                request.setAttribute("mensaje", "⚠️ Lógica UML ejecutada con advertencias");
-            }
             
             // Verificar si se seleccionó un miembro específico
             String miembroIdStr = request.getParameter("miembroId");
@@ -448,28 +413,12 @@ public class QuehacerServlet extends HttpServlet {
 
     private void showCompleteForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         try {
-            // Ejecutar funcionalidad de InterfazDelMiembroFamilia según diagrama UML
-            System.out.println("=== EJECUTANDO LÓGICA DEL DIAGRAMA UML: InterfazDelMiembroFamilia ===");
-            
-            // Primero, finalizar automáticamente las tareas vencidas
+            // Finalizar automáticamente las tareas vencidas
             finalizarTareasVencidas();
             
             // Cargar lista de miembros
-            List<MiembroHogar> listaMiembros = miembroHogarDAO.obtenerTodos();
+            List<MiembroHogar> listaMiembros = miembroHogarDAO.findAll();
             System.out.println("[DEBUG] Lista de miembros para completar: " + listaMiembros);
-            
-            // Ejecutar lógica del diagrama UML para el primer miembro disponible (si existe)
-            if (!listaMiembros.isEmpty()) {
-                try {
-                    MiembroHogar primerMiembro = listaMiembros.get(0);
-                    InterfazDelMiembroFamilia interfazMiembro = new InterfazDelMiembroFamilia(primerMiembro);
-                    interfazMiembro.revisarQuehaceres(); // Ejecutar método del diagrama UML
-                    request.setAttribute("mensaje", "🏗️ Lógica del Diagrama UML ejecutada: InterfazDelMiembroFamilia.completarUnQuehacer() para " + primerMiembro.getNombre());
-                } catch (Exception e) {
-                    System.out.println("[DEBUG] Error en lógica UML: " + e.getMessage());
-                    request.setAttribute("mensaje", "⚠️ Lógica UML ejecutada con advertencias");
-                }
-            }
             
             // Cargar lista de quehaceres pendientes (no completados, no finalizados, y no vencidos)
             List<Quehacer> todosLosQuehaceres = quehacerDAO.findAll();
@@ -615,65 +564,5 @@ public class QuehacerServlet extends HttpServlet {
         logger.info("Resultados de findAll: " + listaMiembros);
     }
 
-    // Métodos para integrar las interfaces GUI según el diagrama UML
-    private void mostrarInterfazJefe(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        System.out.println("[DEBUG] Mostrando Interfaz del Jefe del Hogar");
-        
-        // Crear un JefeDelHogar de ejemplo (en un sistema real, esto vendría de la sesión)
-        JefeDelHogar jefe = new JefeDelHogar("Jefe del Hogar", 45);
-        
-        // Usar la interfaz GUI según el diagrama UML
-        InterfazDelJefe interfazJefe = new InterfazDelJefe(jefe);
-        
-        // Ejecutar funcionalidad de ejemplo
-        interfazJefe.registrarUnQuehacer();
-        interfazJefe.registrarUnMiembro();
-        
-        // Cargar datos actualizados para mostrar
-        List<Quehacer> listaQuehaceres = quehacerDAO.findAllWithMiembroHogar();
-        List<MiembroHogar> listaMiembros = miembroHogarDAO.obtenerTodos();
-        
-        request.setAttribute("listaQuehaceres", listaQuehaceres);
-        request.setAttribute("listaMiembros", listaMiembros);
-        request.setAttribute("mensaje", "Interfaz del Jefe del Hogar ejecutada correctamente");
-        
-        request.getRequestDispatcher("/quehaceres/index.jsp").forward(request, response);
-    }
-    
-    private void mostrarInterfazMiembro(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        System.out.println("[DEBUG] Mostrando Interfaz del Miembro de la Familia");
-        
-        String miembroIdStr = request.getParameter("miembroId");
-        
-        if (miembroIdStr != null && !miembroIdStr.isEmpty()) {
-            try {
-                Long miembroId = Long.parseLong(miembroIdStr);
-                MiembroHogar miembro = miembroHogarDAO.findById(miembroId);
-                
-                if (miembro != null) {
-                    // Usar la interfaz GUI según el diagrama UML
-                    InterfazDelMiembroFamilia interfazMiembro = new InterfazDelMiembroFamilia(miembro);
-                    
-                    // Ejecutar funcionalidades
-                    interfazMiembro.revisarQuehaceres();
-                    interfazMiembro.completarUnQuehacer();
-                    
-                    request.setAttribute("mensaje", "Interfaz del Miembro ejecutada para: " + miembro.getNombre());
-                } else {
-                    request.setAttribute("errorMessage", "Miembro no encontrado");
-                }
-            } catch (NumberFormatException e) {
-                request.setAttribute("errorMessage", "ID de miembro inválido");
-            }
-        } else {
-            request.setAttribute("errorMessage", "Debe seleccionar un miembro");
-        }
-        
-        // Cargar datos para mostrar
-        List<MiembroHogar> listaMiembros = miembroHogarDAO.obtenerTodos();
-        request.setAttribute("listaMiembros", listaMiembros);
-        
-        request.getRequestDispatcher("/miembros/index.jsp").forward(request, response);
-    }
 }
 
