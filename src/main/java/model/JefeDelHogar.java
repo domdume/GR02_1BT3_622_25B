@@ -17,19 +17,15 @@ public class JefeDelHogar extends MiembroHogar {
         super(nombre, edad);
     }
     public void organizarMiembro(String nombre, int edad){
-        System.out.println("\n" + getNombre() + " está registrando a un nuevo miembro...");
-        MiembroHogar nuevoMiembro = new MiembroHogar(nombre, edad);
-        Hogar.getInstance().registrarMiembro(nuevoMiembro);
+        Hogar.getInstance().registrarMiembro(new MiembroHogar(nombre, edad));
     }
     public void organizarMiembro(MiembroHogar miembro){
         System.out.println("\n" + getNombre() + " está registrando a un nuevo miembro...");
         Hogar.getInstance().registrarMiembro(miembro);
     }
     public void organizarQuehaceres(String nombre, int diasLimite ){
-        System.out.println("\n" + getNombre() + " está asignando una nueva tarea...");
-        // Usar dificultad MEDIO por defecto para mantener compatibilidad
-        Quehacer nuevoQuehacer = new Quehacer(nombre, LocalDateTime.now().plusDays(diasLimite), Dificultad.MEDIO);
-        Hogar.getInstance().registrarQuehacer(nuevoQuehacer);
+        Hogar.getInstance().registrarQuehacer(new Quehacer(nombre, LocalDateTime.now().plusDays(diasLimite),
+                Dificultad.MEDIO));
     }
 
     public void mostrarMiembrosRegistrados() {
@@ -38,6 +34,8 @@ public class JefeDelHogar extends MiembroHogar {
             System.out.println("- Nombre: " + miembro.getNombre() + ", Edad: " + miembro.getEdad());
         }
         System.out.println("----------------------------------------");
+        organizarMiembro("Juan", 20);
+        organizarQuehaceres("Limpiar la casa", 10);
     }
 }
 
