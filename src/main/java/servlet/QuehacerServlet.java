@@ -491,17 +491,10 @@ public class QuehacerServlet extends HttpServlet {
             // Usar el método marcarCompletado del diagrama UML
             quehacer.marcarCompletado();
             quehacer.setRecompensa(listaRecompensas.get(new Random().nextInt(listaRecompensas.size())));
-            
-            // Sumar puntos por completar a tiempo
-            MiembroHogar miembro = quehacer.getMiembroHogar();
-            if (miembro != null) {
-                int puntosActuales = miembro.getPuntos();
-                int recompensaPuntos = 20; // Sumar 20 puntos por completar a tiempo
-                miembro.setPuntos(puntosActuales + recompensaPuntos);
-                miembroHogarDAO.update(miembro);
-                System.out.println("[DEBUG] Puntos sumados a " + miembro.getNombre() + ": +" + recompensaPuntos + " (Total: " + miembro.getPuntos() + ")");
-            }
-            
+
+            MiembroHogar miembro = procesarCompletamientoQuehacer(quehacer); //TODO: Refactorización 1
+
+
             System.out.println("[DEBUG] Quehacer completado A TIEMPO - recompensa asignada");
 
             quehacerDAO.update(quehacer);
@@ -518,6 +511,18 @@ public class QuehacerServlet extends HttpServlet {
         }
 
         response.sendRedirect(request.getContextPath() + "/quehaceres?action=complete");
+    }
+
+    private MiembroHogar procesarCompletamientoQuehacer(Quehacer quehacer) {
+        // Sumar puntos por completar a tiempo
+        MiembroHogar miembro = quehacer.getMiembroHogar();
+        if (miembro != null) {
+            int puntosActuales = miembro.getPuntos();
+            int recompensaPuntos = 20; // Sumar 20 puntos por completar a tiempo
+            miembro.setPuntos(puntosActuales + recompensaPuntos);
+            miembroHogarDAO.update(miembro);
+        }
+        return miembro;
     }
 
     private void finalizarTareasVencidas() {
@@ -537,18 +542,9 @@ public class QuehacerServlet extends HttpServlet {
                     quehacer.setEstadoCompletado(false);
                     quehacer.setFechaFinalizacion(ahora);
                     quehacer.setPenalizacion("Tarea no completada a tiempo");
-                    
-                    // Restar puntos por no completar a tiempo
-                    MiembroHogar miembro = quehacer.getMiembroHogar();
-                    if (miembro != null) {
-                        int puntosActuales = miembro.getPuntos();
-                        int penalizacionPuntos = 10; // Restar 10 puntos por no completar
-                        miembro.setPuntos(Math.max(0, puntosActuales - penalizacionPuntos));
-                        miembroHogarDAO.update(miembro);
-                        System.out.println("[DEBUG] Penalización aplicada a " + miembro.getNombre() + 
-                                         ": -" + penalizacionPuntos + " puntos (Total: " + miembro.getPuntos() + ")");
-                    }
-                    
+
+                    aplicarPenalizacionPorVencimiento(quehacer); //TODO: Refactorizacion 1
+
                     // Actualizar el quehacer en la base de datos
                     quehacerDAO.update(quehacer);
                 }
@@ -556,6 +552,17 @@ public class QuehacerServlet extends HttpServlet {
         } catch (Exception e) {
             System.out.println("[ERROR] Error al finalizar tareas vencidas: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    private void aplicarPenalizacionPorVencimiento(Quehacer quehacer) {
+        // Restar puntos por no completar a tiempo
+        MiembroHogar miembro = quehacer.getMiembroHogar();
+        if (miembro != null) {
+            int puntosActuales = miembro.getPuntos();
+            int penalizacionPuntos = 10; // Restar 10 puntos por no completar
+            miembro.setPuntos(Math.max(0, puntosActuales - penalizacionPuntos));
+            miembroHogarDAO.update(miembro);
         }
     }
 

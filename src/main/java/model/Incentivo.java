@@ -1,6 +1,7 @@
 package model;
 
 import jakarta.persistence.*;
+import java.util.Comparator;
 
 @Entity
 public class Incentivo {
@@ -22,7 +23,11 @@ public class Incentivo {
     public void aplicar(MiembroHogar miembro, Quehacer quehacerCompletado) {
         if (quehacerCompletado.fueCompletadoATiempo()) {
             this.tipoIncentivo = TipoIncentivo.Positivo;
-            int points = 20; // Puntos fijos para todos los quehaceres
+            int points = switch (quehacerCompletado.getDificultad()) {
+                case FACIL -> 10;
+                case MEDIO -> 20;
+                case DIFICIL -> 30;
+            };
             miembro.setPuntos(miembro.getPuntos() + points);
             System.out.println("👍 ¡Felicidades! " + miembro.getNombre() + " terminó '" + quehacerCompletado.getNombre() + "' a tiempo. Puntos añadidos: " + points);
         } else {
@@ -55,11 +60,5 @@ public class Incentivo {
 
     public void setMiembroHogar(MiembroHogar miembroHogar) {
         this.miembroHogar = miembroHogar;
-    }
-
-    // Método estático según diagrama UML
-    public static void aplicarIncentivo(MiembroHogar miembro, Quehacer quehacer) {
-        Incentivo incentivo = new Incentivo();
-        incentivo.aplicar(miembro, quehacer);
     }
 }
