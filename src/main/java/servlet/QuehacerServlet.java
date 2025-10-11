@@ -517,9 +517,7 @@ public class QuehacerServlet extends HttpServlet {
         // Sumar puntos por completar a tiempo
         MiembroHogar miembro = quehacer.getMiembroHogar();
         if (miembro != null) {
-            int puntosActuales = miembro.getPuntos();
-            int recompensaPuntos = 20; // Sumar 20 puntos por completar a tiempo
-            miembro.setPuntos(puntosActuales + recompensaPuntos);
+            miembro.setPuntos(miembro.getPuntos() + 20); //TODO: Query directa sin temp variables
             miembroHogarDAO.update(miembro);
         }
         return miembro;
@@ -559,9 +557,7 @@ public class QuehacerServlet extends HttpServlet {
         // Restar puntos por no completar a tiempo
         MiembroHogar miembro = quehacer.getMiembroHogar();
         if (miembro != null) {
-            int puntosActuales = miembro.getPuntos();
-            int penalizacionPuntos = 10; // Restar 10 puntos por no completar
-            miembro.setPuntos(Math.max(0, puntosActuales - penalizacionPuntos));
+            miembro.setPuntos(Math.max(0, miembro.getPuntos() - 10)); //TODO: Query directa sin temp variables
             miembroHogarDAO.update(miembro);
         }
     }

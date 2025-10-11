@@ -61,4 +61,6 @@ public class Incentivo {
     public void setMiembroHogar(MiembroHogar miembroHogar) {
         this.miembroHogar = miembroHogar;
     }
+
+
 }
