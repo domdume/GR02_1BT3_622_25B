@@ -19,17 +19,17 @@ public class JefeDelHogar extends MiembroHogar {
     public void organizarMiembro(String nombre, int edad){
         System.out.println("\n" + getNombre() + " está registrando a un nuevo miembro...");
         MiembroHogar nuevoMiembro = new MiembroHogar(nombre, edad);
-        Hogar.getInstance().registrarMiembro(nuevoMiembro);
+        nuevoMiembro.registrarMiembro(Hogar.getInstance());
     }
     public void organizarMiembro(MiembroHogar miembro){
         System.out.println("\n" + getNombre() + " está registrando a un nuevo miembro...");
-        Hogar.getInstance().registrarMiembro(miembro);
+        miembro.registrarMiembro(Hogar.getInstance());
     }
     public void organizarQuehaceres(String nombre, int diasLimite ){
         System.out.println("\n" + getNombre() + " está asignando una nueva tarea...");
         // Usar dificultad MEDIO por defecto para mantener compatibilidad
         Quehacer nuevoQuehacer = new Quehacer(nombre, LocalDateTime.now().plusDays(diasLimite), Dificultad.MEDIO);
-        Hogar.getInstance().registrarQuehacer(nuevoQuehacer);
+        nuevoQuehacer.registrarQuehacer(Hogar.getInstance());
     }
 
     public void mostrarMiembrosRegistrados() {

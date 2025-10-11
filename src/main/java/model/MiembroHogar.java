@@ -131,5 +131,9 @@ public class MiembroHogar implements Observador {
             System.out.println("AVISO: " + this.nombre + " no puede realizar una tarea que no tiene asignada.");
         }
     }
+
+    public void registrarMiembro(Hogar hogar){
+        hogar.miembros.add(this);
+    }
 }
 

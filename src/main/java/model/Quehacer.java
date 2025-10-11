@@ -189,4 +189,21 @@ public class Quehacer {
                 ", estadoCompletado=" + estadoCompletado +
                 '}';
     }
+
+    public void registrarQuehacer(Hogar hogar) {
+        if (hogar.miembros.isEmpty()) return;
+        MiembroHogar miembroAsignado = getMiembroHogar(hogar);
+        miembroAsignado.asignarQuehacer(this);
+        System.out.println(miembroAsignado.getNombre()+ " esta realizando la tarea" + miembroAsignado.getQuehaceres());
+    }
+
+    private static MiembroHogar getMiembroHogar(Hogar hogar) {
+        MiembroHogar miembroAsignado = hogar.miembros.get(0);
+        for (MiembroHogar m : hogar.miembros) {
+            if (m.getQuehaceres().size() < miembroAsignado.getQuehaceres().size()) {
+                miembroAsignado = m;
+            }
+        }
+        return miembroAsignado;
+    }
 }
