@@ -1,6 +1,7 @@
 package model;
 
 import jakarta.persistence.*;
+import dao.IncentivoDAO;
 
 @Entity
 public class Incentivo {
@@ -33,7 +34,14 @@ public class Incentivo {
             this.tipoIncentivo = TipoIncentivo.Negativo;
             System.out.println("👎 Lástima, " + miembro.getNombre() + " se retrasó con '" + quehacerCompletado.getNombre() + "'. No se otorga recompensa.");
         }
+
+        // Establecer la relación bidireccional
+        this.setMiembroHogar(miembro);
         miembro.addIncentivo(this);
+
+        // Persistir el incentivo directamente usando DAO
+        IncentivoDAO incentivoDAO = new IncentivoDAO();
+        incentivoDAO.create(this);
     }
 
     // Getters y Setters
@@ -66,12 +74,32 @@ public class Incentivo {
     public static void otorgarRecompensaPorCompletar(MiembroHogar miembro, Quehacer quehacer) {
         if (miembro != null) {
             miembro.setPuntos(miembro.getPuntos() + 20);
+
+            // Crear incentivo y persistirlo
+            Incentivo incentivo = new Incentivo();
+            incentivo.setTipoIncentivo(TipoIncentivo.Positivo);
+            incentivo.setMiembroHogar(miembro);
+
+            IncentivoDAO incentivoDAO = new IncentivoDAO();
+            incentivoDAO.create(incentivo);
+
+            System.out.println("[INCENTIVO] Recompensa otorgada: +20 puntos para " + miembro.getNombre());
         }
     }
 
     public static void aplicarPenalizacionPorVencer(MiembroHogar miembro, Quehacer quehacer) {
         if (miembro != null) {
             miembro.setPuntos(Math.max(0, miembro.getPuntos() - 10));
+
+            // Crear incentivo negativo y persistirlo
+            Incentivo incentivo = new Incentivo();
+            incentivo.setTipoIncentivo(TipoIncentivo.Negativo);
+            incentivo.setMiembroHogar(miembro);
+
+            IncentivoDAO incentivoDAO = new IncentivoDAO();
+            incentivoDAO.create(incentivo);
+
+            System.out.println("[INCENTIVO] Penalización aplicada: -10 puntos para " + miembro.getNombre());
         }
     }
 
