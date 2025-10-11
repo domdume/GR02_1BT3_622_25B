@@ -1,7 +1,6 @@
 package model;
 
 import jakarta.persistence.*;
-import java.util.Comparator;
 
 @Entity
 public class Incentivo {
@@ -63,4 +62,21 @@ public class Incentivo {
     }
 
 
+    // Métodos estáticos para mover lógica desde servletQuehacer
+    public static void otorgarRecompensaPorCompletar(MiembroHogar miembro, Quehacer quehacer) {
+        if (miembro != null) {
+            miembro.setPuntos(miembro.getPuntos() + 20);
+        }
+    }
+
+    public static void aplicarPenalizacionPorVencer(MiembroHogar miembro, Quehacer quehacer) {
+        if (miembro != null) {
+            miembro.setPuntos(Math.max(0, miembro.getPuntos() - 10));
+        }
+    }
+
+    public static void aplicarIncentivo(MiembroHogar miembro, Quehacer quehacer) {
+        Incentivo incentivo = new Incentivo();
+        incentivo.aplicar(miembro, quehacer);
+    }
 }
