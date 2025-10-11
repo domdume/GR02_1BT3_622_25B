@@ -152,13 +152,13 @@ public class Quehacer {
             return 0;
         }
         return 20; // Puntos fijos para todos los quehaceres
+
     }
 
     public boolean isOverdue() {
         return !estadoCompletado && LocalDateTime.now().isAfter(tiempoLimite);
     }
 
-    // Método para asignar penalización automáticamente
     public void asignarPenalizacion(List<String> listaPenalizaciones) {
         if (!estadoFinalizado && LocalDateTime.now().isAfter(tiempoLimite)) {
             this.estadoFinalizado = true;
@@ -166,7 +166,6 @@ public class Quehacer {
         }
     }
 
-    // Método para asignar recompensa automáticamente
     public void asignarRecompensa(List<String> listaRecompensas) {
         if (estadoFinalizado && estadoCompletado) {
             this.recompensa = listaRecompensas.get(new Random().nextInt(listaRecompensas.size()));

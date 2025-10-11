@@ -23,9 +23,8 @@ public class JefeDelHogar extends MiembroHogar {
         System.out.println("\n" + getNombre() + " está registrando a un nuevo miembro...");
         Hogar.getInstance().registrarMiembro(miembro);
     }
-    public void organizarQuehaceres(String nombre, int diasLimite ){
-        Hogar.getInstance().registrarQuehacer(new Quehacer(nombre, LocalDateTime.now().plusDays(diasLimite),
-                Dificultad.MEDIO));
+    public void registrarQuehacer(String nombre, int diasLimite ) {
+        Hogar.getInstance().organizarQuehacer(new Quehacer(nombre, LocalDateTime.now().plusDays(diasLimite), Dificultad.MEDIO));
     }
 
     public void mostrarMiembrosRegistrados() {
@@ -34,8 +33,6 @@ public class JefeDelHogar extends MiembroHogar {
             System.out.println("- Nombre: " + miembro.getNombre() + ", Edad: " + miembro.getEdad());
         }
         System.out.println("----------------------------------------");
-        organizarMiembro("Juan", 20);
-        organizarQuehaceres("Limpiar la casa", 10);
     }
 }
 
