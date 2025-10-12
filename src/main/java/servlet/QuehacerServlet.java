@@ -179,12 +179,9 @@ public class QuehacerServlet extends HttpServlet {
         System.out.println("[DEBUG] - Dificultad: " + dificultadStr);
 
         try {
-            Long miembroId = Long.parseLong(miembroIdStr);
-            MiembroHogar miembro = miembroHogarDAO.findById(miembroId);
-            System.out.println("[DEBUG] - Miembro encontrado: " + (miembro != null ? miembro.getNombre() : "null"));
-            
+
             LocalDateTime tiempoLimite = LocalDateTime.parse(tiempoLimiteStr);
-            
+
             // Usar dificultad del formulario o MEDIO por defecto
             Dificultad dificultad = Dificultad.MEDIO; // Valor por defecto
             if (dificultadStr != null && !dificultadStr.isEmpty()) {
@@ -193,13 +190,18 @@ public class QuehacerServlet extends HttpServlet {
                 } catch (IllegalArgumentException e) {
                     System.out.println("[DEBUG] Dificultad inválida, usando MEDIO por defecto");
                 }
+
+            Long miembroId = Long.parseLong(miembroIdStr);
+            MiembroHogar miembro = miembroHogarDAO.findById(miembroId);
+            Quehacer nuevoQuehacer = new Quehacer(nombre, tiempoLimite, dificultad);
+            nuevoQuehacer.setMiembroHogar(miembro);
+            quehacerDAO.create(nuevoQuehacer);
+
             }
 
             // Usar el nuevo constructor con dificultad según el diagrama UML
-            Quehacer nuevoQuehacer = new Quehacer(nombre, tiempoLimite, dificultad);
-            nuevoQuehacer.setMiembroHogar(miembro);
 
-            quehacerDAO.create(nuevoQuehacer);
+
             System.out.println("[DEBUG] Quehacer creado exitosamente");
             request.getSession().setAttribute("successMessage", "Quehacer agregado correctamente.");
         } catch (Exception e) {

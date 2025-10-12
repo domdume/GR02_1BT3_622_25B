@@ -96,9 +96,6 @@ public class MiembroServlet extends HttpServlet {
             MiembroHogar nuevoMiembro = new MiembroHogar();
             nuevoMiembro.setNombre(nombre.trim());
             nuevoMiembro.setEdad(edad);
-
-            System.out.println("[DEBUG] Creando miembro: " + nuevoMiembro.getNombre() + ", edad: " + nuevoMiembro.getEdad());
-
             miembroHogarDAO.create(nuevoMiembro);
 
             System.out.println("[DEBUG] Miembro creado exitosamente con ID: " + nuevoMiembro.getId());
