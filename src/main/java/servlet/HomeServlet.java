@@ -56,6 +56,6 @@ public class HomeServlet extends HttpServlet {
         request.setAttribute("tareasVencidas", tareasVencidas);
         request.setAttribute("mvpMiembro", mvpMiembro);
         
-        request.getRequestDispatcher("/index.jsp").forward(request, response);
+        request.getRequestDispatcher("/tablero.jsp").forward(request, response);
     }
 }

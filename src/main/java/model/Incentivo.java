@@ -2,6 +2,7 @@ package model;
 
 import jakarta.persistence.*;
 import dao.IncentivoDAO;
+import java.time.LocalDateTime;
 
 @Entity
 public class Incentivo {
@@ -17,26 +18,51 @@ public class Incentivo {
     @JoinColumn(name = "miembro_hogar_id")
     private MiembroHogar miembroHogar;
 
+    @ManyToOne
+    @JoinColumn(name = "quehacer_id")
+    private Quehacer quehacer;
+
+    private int puntos;
+    private String descripcion;
+    private LocalDateTime fechaCreacion;
+
     // Constructor para JPA
-    public Incentivo() {}
+    public Incentivo() {
+        this.fechaCreacion = LocalDateTime.now();
+    }
+
+    public Incentivo(TipoIncentivo tipo, int puntos, String descripcion, MiembroHogar miembro, Quehacer quehacer) {
+        this();
+        this.tipoIncentivo = tipo;
+        this.puntos = puntos;
+        this.descripcion = descripcion;
+        this.miembroHogar = miembro;
+        this.quehacer = quehacer;
+    }
 
     public void aplicar(MiembroHogar miembro, Quehacer quehacerCompletado) {
         if (quehacerCompletado.fueCompletadoATiempo()) {
-            this.tipoIncentivo = TipoIncentivo.Positivo;
+            this.tipoIncentivo = TipoIncentivo.RECOMPENSA;
             int points = switch (quehacerCompletado.getDificultad()) {
                 case FACIL -> 10;
                 case MEDIO -> 20;
                 case DIFICIL -> 30;
             };
+            this.puntos = points;
+            this.descripcion = "Completado a tiempo: " + quehacerCompletado.getNombre();
             miembro.setPuntos(miembro.getPuntos() + points);
             System.out.println("👍 ¡Felicidades! " + miembro.getNombre() + " terminó '" + quehacerCompletado.getNombre() + "' a tiempo. Puntos añadidos: " + points);
         } else {
-            this.tipoIncentivo = TipoIncentivo.Negativo;
-            System.out.println("👎 Lástima, " + miembro.getNombre() + " se retrasó con '" + quehacerCompletado.getNombre() + "'. No se otorga recompensa.");
+            this.tipoIncentivo = TipoIncentivo.PENALIZACION;
+            this.puntos = -5;
+            this.descripcion = "No completado a tiempo: " + quehacerCompletado.getNombre();
+            miembro.setPuntos(Math.max(0, miembro.getPuntos() - 5));
+            System.out.println("👎 Lástima, " + miembro.getNombre() + " se retrasó con '" + quehacerCompletado.getNombre() + "'. Penalización: -5 puntos.");
         }
 
         // Establecer la relación bidireccional
         this.setMiembroHogar(miembro);
+        this.setQuehacer(quehacerCompletado);
         miembro.addIncentivo(this);
 
         // Persistir el incentivo directamente usando DAO
@@ -69,32 +95,74 @@ public class Incentivo {
         this.miembroHogar = miembroHogar;
     }
 
+    public Quehacer getQuehacer() {
+        return quehacer;
+    }
+
+    public void setQuehacer(Quehacer quehacer) {
+        this.quehacer = quehacer;
+    }
+
+    public int getPuntos() {
+        return puntos;
+    }
+
+    public void setPuntos(int puntos) {
+        this.puntos = puntos;
+    }
+
+    public String getDescripcion() {
+        return descripcion;
+    }
+
+    public void setDescripcion(String descripcion) {
+        this.descripcion = descripcion;
+    }
+
+    public LocalDateTime getFechaCreacion() {
+        return fechaCreacion;
+    }
+
+    public void setFechaCreacion(LocalDateTime fechaCreacion) {
+        this.fechaCreacion = fechaCreacion;
+    }
+
 
     // Métodos estáticos para mover lógica desde servletQuehacer
     public static void otorgarRecompensaPorCompletar(MiembroHogar miembro, Quehacer quehacer) {
         if (miembro != null) {
-            miembro.setPuntos(miembro.getPuntos() + 20);
+            int puntosRecompensa = 20;
+            miembro.setPuntos(miembro.getPuntos() + puntosRecompensa);
 
             // Crear incentivo y persistirlo
-            Incentivo incentivo = new Incentivo();
-            incentivo.setTipoIncentivo(TipoIncentivo.Positivo);
-            incentivo.setMiembroHogar(miembro);
+            Incentivo incentivo = new Incentivo(
+                TipoIncentivo.RECOMPENSA, 
+                puntosRecompensa, 
+                "Quehacer completado: " + quehacer.getNombre(), 
+                miembro, 
+                quehacer
+            );
 
             IncentivoDAO incentivoDAO = new IncentivoDAO();
             incentivoDAO.create(incentivo);
 
-            System.out.println("[INCENTIVO] Recompensa otorgada: +20 puntos para " + miembro.getNombre());
+            System.out.println("[INCENTIVO] Recompensa otorgada: +" + puntosRecompensa + " puntos para " + miembro.getNombre());
         }
     }
 
     public static void aplicarPenalizacionPorVencer(MiembroHogar miembro, Quehacer quehacer) {
         if (miembro != null) {
+            int puntosPenalizacion = -10;
             miembro.setPuntos(Math.max(0, miembro.getPuntos() - 10));
 
             // Crear incentivo negativo y persistirlo
-            Incentivo incentivo = new Incentivo();
-            incentivo.setTipoIncentivo(TipoIncentivo.Negativo);
-            incentivo.setMiembroHogar(miembro);
+            Incentivo incentivo = new Incentivo(
+                TipoIncentivo.PENALIZACION, 
+                puntosPenalizacion, 
+                "Quehacer vencido: " + quehacer.getNombre(), 
+                miembro, 
+                quehacer
+            );
 
             IncentivoDAO incentivoDAO = new IncentivoDAO();
             incentivoDAO.create(incentivo);

@@ -495,9 +495,8 @@ public class QuehacerServlet extends HttpServlet {
             quehacer.marcarCompletado();
             quehacer.setRecompensa(listaRecompensas.get(new Random().nextInt(listaRecompensas.size())));
 
-            MiembroHogar miembro = aplicarRecompensaPorCompletamiento(quehacer); //TODO: Refactorización 1 renombrado
-
-
+            // ✅ Refactorización completada: Uso de Incentivo.otorgarRecompensaPorCompletar()
+            MiembroHogar miembro = aplicarRecompensaPorCompletamiento(quehacer);
 
             System.out.println("[DEBUG] Quehacer completado A TIEMPO - recompensa asignada");
 
@@ -520,7 +519,7 @@ public class QuehacerServlet extends HttpServlet {
     private MiembroHogar aplicarRecompensaPorCompletamiento(Quehacer quehacer) {
         // Sumar puntos por completar a tiempo
         MiembroHogar miembro = quehacer.getMiembroHogar();
-        Incentivo.otorgarRecompensaPorCompletar(miembro, quehacer);//TODO: Mover a la clase Incentivo TODO: Renombre
+        Incentivo.otorgarRecompensaPorCompletar(miembro, quehacer);
         if (miembro != null) {
             //miembro.setPuntos(miembro.getPuntos() + 20); //TODO: Query directa sin temp variables
             miembroHogarDAO.update(miembro);
@@ -561,7 +560,7 @@ public class QuehacerServlet extends HttpServlet {
     private void aplicarPenalizacionPorRetraso(Quehacer quehacer) {
         // Restar puntos por no completar a tiempo
         MiembroHogar miembro = quehacer.getMiembroHogar();
-        Incentivo.aplicarPenalizacionPorVencer(miembro, quehacer);//TODO: Mover a la clase incentivo TODO: renombrar
+        Incentivo.aplicarPenalizacionPorVencer(miembro, quehacer);
         if (miembro != null) {
             //miembro.setPuntos(Math.max(0, miembro.getPuntos() - 10)); //TODO: Query directa sin temp variables
             miembroHogarDAO.update(miembro);

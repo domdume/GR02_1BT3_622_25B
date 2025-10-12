@@ -4,6 +4,11 @@ import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Entidad que representa un miembro del hogar.
+ * Implementa el patrón Observer para recibir notificaciones.
+ * Clase base para la jerarquía de miembros (JefeDelHogar hereda de esta).
+ */
 @Entity
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "DTYPE", discriminatorType = DiscriminatorType.STRING)
