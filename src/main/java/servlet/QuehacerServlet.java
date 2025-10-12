@@ -314,11 +314,24 @@ public class QuehacerServlet extends HttpServlet {
         List<Quehacer> quehaceresCompletados = new ArrayList<>();
         List<Quehacer> quehaceresPendientes = new ArrayList<>();
         
+        // Variables para estadísticas (movidas desde JSP)
+        int totalTareas = todosLosQuehaceres.size();
+        int tareasCompletadas = 0;
+        int tareasPendientes = 0;
+        int tareasVencidas = 0;
+        
         for (Quehacer q : todosLosQuehaceres) {
             if (q.isEstadoFinalizado()) {
                 quehaceresCompletados.add(q);
+                tareasCompletadas++;
             } else {
                 quehaceresPendientes.add(q);
+                tareasPendientes++;
+                
+                // Verificar si está vencida
+                if (q.getTiempoLimite() != null && q.getTiempoLimite().isBefore(java.time.LocalDateTime.now())) {
+                    tareasVencidas++;
+                }
             }
         }
         
@@ -359,7 +372,13 @@ public class QuehacerServlet extends HttpServlet {
         listaQuehaceres.addAll(quehaceresCompletados);
         listaQuehaceres.addAll(quehaceresPendientes);
         
+        // Pasar datos y estadísticas calculadas a la vista (no calcular en JSP)
         request.setAttribute("listaQuehaceres", listaQuehaceres);
+        request.setAttribute("totalTareas", totalTareas);
+        request.setAttribute("tareasCompletadas", tareasCompletadas);
+        request.setAttribute("tareasPendientes", tareasPendientes);
+        request.setAttribute("tareasVencidas", tareasVencidas);
+        
         request.getRequestDispatcher("/quehaceres/index.jsp").forward(request, response);
     }
 

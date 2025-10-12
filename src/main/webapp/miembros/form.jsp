@@ -1,78 +1,115 @@
+<%-- 
+    Formulario de Miembros - Solo formulario de entrada
+    Responsabilidad: Capturar datos del usuario y enviar al servlet
+    Sin lógica de negocio - Solo vista pura MVC
+--%>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<html>
-<head>
-    <title>Registrar Miembro</title>
-    <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/css/style.css">
-</head>
-<body>
-<header>
-    <h1>Registrar Miembro</h1>
-    <nav>
-        <a href="${pageContext.request.contextPath}/quehaceres">Volver al Tablero</a>
-    </nav>
-</header>
-<div class="container">
-    <!-- Mostrar mensajes del sistema -->
-    <c:if test="${not empty successMessage}">
-        <div style="background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 10px; margin: 10px 0; border-radius: 5px;">
-            <strong>✅ Éxito:</strong> ${successMessage}
-        </div>
-        <c:set var="successMessage" value="" scope="session" />
-    </c:if>
-    <c:if test="${not empty errorMessage}">
-        <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 10px; margin: 10px 0; border-radius: 5px;">
-            <strong>❌ Error:</strong> ${errorMessage}
-        </div>
-        <c:set var="errorMessage" value="" scope="session" />
-    </c:if>
 
-    <form action="${pageContext.request.contextPath}/miembros" method="post">
-        <input type="hidden" name="action" value="insert" />
-        <fieldset>
-            <label for="nombre">Nombre:</label>
-            <input type="text" id="nombre" name="nombre" required />
-        </fieldset>
-        <fieldset>
-            <label for="edad">Edad:</label>
-            <input type="number" id="edad" name="edad" required />
-        </fieldset>
-        <fieldset>
-            <label for="tipoMiembro">Tipo de Miembro:</label>
-            <select id="tipoMiembro" name="tipoMiembro" required>
-                <option value="miembro">Miembro Regular</option>
-                <option value="jefe">Jefe del Hogar</option>
-            </select>
-        </fieldset>
-        <button type="submit">Registrar Miembro</button>
-    </form>
-    
-    <h2>Miembros Registrados</h2>
-    <table>
-        <thead>
-        <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Edad</th>
-            <th>Puntos</th>
-        </tr>
-        </thead>
-        <tbody>
-        <c:forEach var="miembro" items="${listaMiembros}">
-            <tr>
-                <td>${miembro.id}</td>
-                <td>${miembro.nombre}</td>
-                <td>${miembro.edad}</td>
-                <td style="font-weight: bold; color: #2e7d32;">${miembro.puntos} pts</td>
-            </tr>
-        </c:forEach>
-        <c:if test="${empty listaMiembros}">
-            <tr>
-                <td colspan="4">No hay miembros registrados.</td>
-            </tr>
-        </c:if>
-        </tbody>
-    </table>
-</div>
-</body>
-</html>
+<c:set var="pageTitle" value="Registrar Miembro" scope="request" />
+<c:set var="bodyClass" value="form-page" scope="request" />
+
+<jsp:include page="../common/layout-head.jsp" />
+<jsp:include page="../common/header.jsp" />
+
+<main class="main-content">
+    <div class="container">
+        <div class="page-header">
+            <h2>Registrar Nuevo Miembro</h2>
+            <nav class="breadcrumb">
+                <a href="${pageContext.request.contextPath}/home">Dashboard</a> >
+                <a href="${pageContext.request.contextPath}/miembros">Miembros</a> >
+                <span>Nuevo</span>
+            </nav>
+        </div>
+
+        <jsp:include page="../common/messages.jsp" />
+
+        <section class="form-section">
+            <form action="${pageContext.request.contextPath}/miembros" method="post" class="member-form">
+                <input type="hidden" name="action" value="insert" />
+                
+                <div class="form-group">
+                    <label for="nombre" class="form-label">Nombre completo:</label>
+                    <input type="text" 
+                           id="nombre" 
+                           name="nombre" 
+                           class="form-input" 
+                           placeholder="Ingrese el nombre del miembro"
+                           value="${param.nombre}"
+                           required 
+                           maxlength="100" />
+                    <small class="form-help">Nombre del miembro del hogar</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="edad" class="form-label">Edad:</label>
+                    <input type="number" 
+                           id="edad" 
+                           name="edad" 
+                           class="form-input" 
+                           placeholder="Edad en años"
+                           value="${param.edad}"
+                           min="1" 
+                           max="120" 
+                           required />
+                    <small class="form-help">Edad del miembro (1-120 años)</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="esJefe" class="form-label">Rol en el hogar:</label>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" 
+                                   name="esJefe" 
+                                   value="true" 
+                                   ${param.esJefe == 'true' ? 'checked' : ''} />
+                            <span class="radio-label">👑 Jefe del Hogar</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" 
+                                   name="esJefe" 
+                                   value="false" 
+                                   ${param.esJefe == 'false' || empty param.esJefe ? 'checked' : ''} />
+                            <span class="radio-label">👤 Miembro Regular</span>
+                        </label>
+                    </div>
+                    <small class="form-help">
+                        <c:choose>
+                            <c:when test="${tieneJefe}">
+                                ⚠️ Ya existe un jefe del hogar. Los nuevos miembros serán regulares.
+                            </c:when>
+                            <c:otherwise>
+                                💡 El primer miembro puede ser designado como jefe del hogar.
+                            </c:otherwise>
+                        </c:choose>
+                    </small>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        💾 Registrar Miembro
+                    </button>
+                    <a href="${pageContext.request.contextPath}/miembros" class="btn btn-secondary">
+                        ↩️ Cancelar
+                    </a>
+                </div>
+            </form>
+        </section>
+
+        <!-- Información del sistema Observer -->
+        <aside class="info-panel">
+            <h3>ℹ️ Información del Sistema</h3>
+            <p>Al registrar un miembro:</p>
+            <ul>
+                <li>Se suscribirá automáticamente al sistema de notificaciones</li>
+                <li>Recibirá alertas cuando se asignen nuevas tareas</li>
+                <li>Comenzará con 0 puntos de incentivos</li>
+                <li>Podrá completar quehaceres y ganar recompensas</li>
+            </ul>
+        </aside>
+    </div>
+</main>
+
+<jsp:include page="../common/footer.jsp" />
+<jsp:include page="../common/layout-foot.jsp" />

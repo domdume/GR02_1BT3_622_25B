@@ -1,59 +1,184 @@
+<%-- 
+    Lista de Miembros - Solo mostrar datos del modelo
+    Responsabilidad: Mostrar información proporcionada por MiembroServlet
+    Sin lógica de negocio - Solo vista pura MVC
+--%>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Gestionar Miembros del Hogar</title>
-    <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/css/style.css">
-</head>
-<body>
-    <header>
-        <div class="container">
-            <div id="branding">
-                <h1><span class="highlight">Gestión</span> de Miembros del Hogar</h1>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+
+<c:set var="pageTitle" value="Gestión de Miembros" scope="request" />
+<c:set var="bodyClass" value="members-page" scope="request" />
+
+<jsp:include page="../common/layout-head.jsp" />
+<jsp:include page="../common/header.jsp" />
+
+<main class="main-content">
+    <div class="container">
+        <div class="page-header">
+            <h2>Gestión de Miembros del Hogar</h2>
+            <div class="header-actions">
+                <a href="${pageContext.request.contextPath}/miembros?action=new" class="btn btn-primary">
+                    👥 Nuevo Miembro
+                </a>
+                <a href="${pageContext.request.contextPath}/home" class="btn btn-secondary">
+                    🏠 Dashboard
+                </a>
             </div>
-            <nav>
-                <ul>
-                    <li><a href="${pageContext.request.contextPath}/">Inicio</a></li>
-                </ul>
-            </nav>
         </div>
-    </header>
 
-    <div class="container main">
-        <a href="miembros?action=new" class="button">Añadir Nuevo Miembro</a>
-        <br><br>
+        <jsp:include page="../common/messages.jsp" />
 
-        <h2>Lista de Miembros</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Nombre</th>
-                    <th>Edad</th>
-                    <th>Puntos</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <c:forEach var="miembro" items="${listaMiembros}">
-                    <tr>
-                        <td><c:out value="${miembro.id}" /></td>
-                        <td><c:out value="${miembro.nombre}" /></td>
-                        <td><c:out value="${miembro.edad}" /></td>
-                        <td style="font-weight: bold; color: #2e7d32;"><c:out value="${miembro.puntos}" /> pts</td>
-                        <td>
-                            <a href="miembros?action=delete&id=<c:out value='${miembro.id}' />" onclick="return confirm('¿Estás seguro de que quieres eliminar a este miembro?');">Eliminar</a>
-                        </td>
-                    </tr>
-                </c:forEach>
-                <c:if test="${empty listaMiembros}">
-                    <tr>
-                        <td colspan="5">No hay miembros registrados.</td>
-                    </tr>
-                </c:if>
-            </tbody>
-        </table>
+        <!-- Estadísticas de miembros -->
+        <section class="stats-section">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-value">${totalMiembros}</span>
+                    <span class="stat-label">Total Miembros</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value">${jefeCount}</span>
+                    <span class="stat-label">Jefes del Hogar</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value">${totalPuntos}</span>
+                    <span class="stat-label">Puntos Totales</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value">${totalTareas}</span>
+                    <span class="stat-label">Tareas Asignadas</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Lista de miembros -->
+        <section class="members-list">
+            <h3>Lista de Miembros</h3>
+            
+            <c:choose>
+                <c:when test="${not empty listaMiembros}">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Miembro</th>
+                                    <th>Edad</th>
+                                    <th>Rol</th>
+                                    <th>Puntos</th>
+                                    <th>Tareas</th>
+                                    <th>Estado Observer</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <c:forEach var="miembro" items="${listaMiembros}">
+                                    <tr class="member-row">
+                                        <td class="member-info">
+                                            <div class="member-avatar">
+                                                <c:choose>
+                                                    <c:when test="${miembro.getClass().simpleName == 'JefeDelHogar'}">
+                                                        👑
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        👤
+                                                    </c:otherwise>
+                                                </c:choose>
+                                            </div>
+                                            <div class="member-details">
+                                                <strong><c:out value="${miembro.nombre}" /></strong>
+                                                <small>ID: ${miembro.id}</small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="age-badge">${miembro.edad} años</span>
+                                        </td>
+                                        <td>
+                                            <c:choose>
+                                                <c:when test="${miembro.getClass().simpleName == 'JefeDelHogar'}">
+                                                    <span class="role-badge jefe">👑 Jefe del Hogar</span>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span class="role-badge miembro">👤 Miembro Regular</span>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </td>
+                                        <td>
+                                            <span class="points-badge points-${miembro.puntos >= 100 ? 'high' : miembro.puntos >= 50 ? 'medium' : 'low'}">
+                                                🏆 ${miembro.puntos} pts
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="tasks-summary">
+                                                <span class="task-count">${fn:length(miembro.quehaceres)} tareas</span>
+                                                <c:if test="${fn:length(miembro.quehaceres) > 0}">
+                                                    <small class="task-details">
+                                                        <c:set var="completadas" value="0" />
+                                                        <c:forEach var="quehacer" items="${miembro.quehaceres}">
+                                                            <c:if test="${quehacer.estadoCompletado}">
+                                                                <c:set var="completadas" value="${completadas + 1}" />
+                                                            </c:if>
+                                                        </c:forEach>
+                                                        ${completadas} completadas
+                                                    </small>
+                                                </c:if>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="observer-status active">
+                                                🔔 Suscrito
+                                            </span>
+                                            <small class="observer-details">
+                                                Recibe notificaciones automáticas
+                                            </small>
+                                        </td>
+                                        <td class="actions">
+                                            <div class="action-buttons">
+                                                <a href="${pageContext.request.contextPath}/quehaceres?action=pending&miembroId=${miembro.id}" 
+                                                   class="btn btn-sm btn-outline" 
+                                                   title="Ver tareas pendientes">
+                                                    📋 Tareas
+                                                </a>
+                                                <a href="${pageContext.request.contextPath}/incentivos?miembroId=${miembro.id}" 
+                                                   class="btn btn-sm btn-outline" 
+                                                   title="Ver historial de incentivos">
+                                                    🏆 Historial
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </c:forEach>
+                            </tbody>
+                        </table>
+                    </div>
+                </c:when>
+                <c:otherwise>
+                    <div class="empty-state">
+                        <div class="empty-icon">👥</div>
+                        <h3>No hay miembros registrados</h3>
+                        <p>Comience registrando el primer miembro del hogar.</p>
+                        <a href="${pageContext.request.contextPath}/miembros?action=new" class="btn btn-primary">
+                            Registrar Primer Miembro
+                        </a>
+                    </div>
+                </c:otherwise>
+            </c:choose>
+        </section>
+
+        <!-- Información del sistema Observer -->
+        <aside class="system-info">
+            <h3>🔔 Sistema de Notificaciones Observer</h3>
+            <div class="observer-info">
+                <p>Todos los miembros están automáticamente suscritos al sistema de notificaciones:</p>
+                <ul>
+                    <li>✅ Reciben alertas cuando se crean nuevos quehaceres</li>
+                    <li>✅ Son notificados sobre cambios de estado en tareas</li>
+                    <li>✅ Obtienen información sobre incentivos y recompensas</li>
+                    <li>✅ Sistema completamente automatizado tras las refactorizaciones</li>
+                </ul>
+            </div>
+        </aside>
     </div>
-</body>
-</html>
+</main>
+
+<jsp:include page="../common/footer.jsp" />
+<jsp:include page="../common/layout-foot.jsp" />

@@ -69,9 +69,43 @@ public class MiembroServlet extends HttpServlet {
 
     private void listMiembros(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         List<MiembroHogar> listaMiembros = miembroHogarDAO.findAll(); // Recupera los datos de la BD
+        
         if (listaMiembros == null || listaMiembros.isEmpty()) {
             request.getSession().setAttribute("errorMessage", "No hay miembros registrados.");
+            // Estadísticas vacías
+            request.setAttribute("totalMiembros", 0);
+            request.setAttribute("jefeCount", 0);
+            request.setAttribute("totalPuntos", 0);
+            request.setAttribute("totalTareas", 0);
+        } else {
+            // Calcular estadísticas en el controlador (no en la vista)
+            int totalMiembros = listaMiembros.size();
+            int jefeCount = 0;
+            int totalPuntos = 0;
+            int totalTareas = 0;
+            
+            for (MiembroHogar miembro : listaMiembros) {
+                // Contar jefes del hogar
+                if (miembro.getClass().getSimpleName().equals("JefeDelHogar")) {
+                    jefeCount++;
+                }
+                
+                // Sumar puntos totales
+                totalPuntos += miembro.getPuntos();
+                
+                // Contar tareas asignadas
+                if (miembro.getQuehaceres() != null) {
+                    totalTareas += miembro.getQuehaceres().size();
+                }
+            }
+            
+            // Pasar estadísticas calculadas a la vista
+            request.setAttribute("totalMiembros", totalMiembros);
+            request.setAttribute("jefeCount", jefeCount);
+            request.setAttribute("totalPuntos", totalPuntos);
+            request.setAttribute("totalTareas", totalTareas);
         }
+        
         request.setAttribute("listaMiembros", listaMiembros); // Pasa los datos al JSP
         request.getRequestDispatcher("/miembros/index.jsp").forward(request, response); // Redirige al JSP
     }
