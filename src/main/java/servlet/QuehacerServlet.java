@@ -2,6 +2,7 @@ package servlet;
 
 import dao.MiembroHogarDAO;
 import dao.QuehacerDAO;
+import service.HogarService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -21,6 +22,7 @@ import java.util.logging.Logger;
 public class QuehacerServlet extends HttpServlet {
     private QuehacerDAO quehacerDAO;
     private MiembroHogarDAO miembroHogarDAO;
+    private HogarService hogarService;
 
     private static final Logger logger = Logger.getLogger(QuehacerServlet.class.getName());
 
@@ -28,6 +30,7 @@ public class QuehacerServlet extends HttpServlet {
     public void init() {
         quehacerDAO = new QuehacerDAO();
         miembroHogarDAO = new MiembroHogarDAO();
+        hogarService = new HogarService();
 
         testFindAllMiembros();
     }
@@ -179,7 +182,6 @@ public class QuehacerServlet extends HttpServlet {
         System.out.println("[DEBUG] - Dificultad: " + dificultadStr);
 
         try {
-
             LocalDateTime tiempoLimite = LocalDateTime.parse(tiempoLimiteStr);
 
             // Usar dificultad del formulario o MEDIO por defecto
@@ -190,20 +192,15 @@ public class QuehacerServlet extends HttpServlet {
                 } catch (IllegalArgumentException e) {
                     System.out.println("[DEBUG] Dificultad inválida, usando MEDIO por defecto");
                 }
-
-            Long miembroId = Long.parseLong(miembroIdStr);
-            MiembroHogar miembro = miembroHogarDAO.findById(miembroId);
-            Quehacer nuevoQuehacer = new Quehacer(nombre, tiempoLimite, dificultad);
-            nuevoQuehacer.setMiembroHogar(miembro);
-            quehacerDAO.create(nuevoQuehacer);
-
             }
 
-            // Usar el nuevo constructor con dificultad según el diagrama UML
-
-
-            System.out.println("[DEBUG] Quehacer creado exitosamente");
+            // ✅ USAR EL SERVICE EN LUGAR DE LÓGICA MANUAL
+            System.out.println("[QuehacerServlet] Llamando a hogarService.organizarQuehacer()");
+            hogarService.organizarQuehacer(nombre, tiempoLimite, dificultad, miembroIdStr);
+            
+            System.out.println("[DEBUG] Quehacer creado exitosamente a través de HogarService");
             request.getSession().setAttribute("successMessage", "Quehacer agregado correctamente.");
+            
         } catch (Exception e) {
             System.out.println("[DEBUG] Error al crear quehacer: " + e.getMessage());
             e.printStackTrace();

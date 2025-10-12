@@ -1,6 +1,5 @@
 package model;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 public class Hogar {
@@ -16,19 +15,29 @@ public class Hogar {
     public void registrarMiembro(MiembroHogar miembro){
         this.miembros.add(miembro);
     }
-    public void organizarQuehacer(Quehacer quehacer) {
+    public void registrarQuehacer(Quehacer quehacer) {
         if (miembros.isEmpty()) return;
-        MiembroHogar miembroAsignado = obtenerMiembroConMenosCarga();
+        MiembroHogar miembroAsignado = miembros.get(0);
+        for (MiembroHogar m : miembros) {
+            if (m.getQuehaceres().size() < miembroAsignado.getQuehaceres().size()) {
+                miembroAsignado = m;
+            }
+        }
         miembroAsignado.asignarQuehacer(quehacer);
+        System.out.println(miembroAsignado.getNombre()+ " esta realizando la tarea" + miembroAsignado.getQuehaceres());
     }
-
-    private MiembroHogar obtenerMiembroConMenosCarga() {
-        return miembros.stream()
-                .min(Comparator.comparingInt(m -> m.getQuehaceres().size()))
-                .orElse(null);
-    }
-
     public List<MiembroHogar> getRegistroMiembro(){
         return miembros;
     }
+    public MiembroHogar buscarMiembroPorNombre(String nombre) {
+        for (MiembroHogar miembro : miembros) {
+            if (miembro.getNombre().equalsIgnoreCase(nombre.trim())) {
+                return miembro;
+            }
+        }
+        return null; // Retorna null si no lo encuentra
+    }
+
+
+
 }

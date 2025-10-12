@@ -39,27 +39,114 @@ public class HogarService {
      * Método que coordinará la creación de miembros
      */
     public void organizarMiembro(String nombre, int edad, boolean esJefe) {
-        System.out.println("[HogarService] organizarMiembro() llamado - nombre: " + nombre +
-                ", edad: " + edad + ", esJefe: " + esJefe);
-        System.out.println("TODO: Implementar en Move Method - por ahora delegando a DAO directo");
+        System.out.println("[HogarService] organizarMiembro() - " + nombre + ", edad: " + edad + ", esJefe: " + esJefe);
 
-        MiembroHogar nuevoMiembro = new MiembroHogar();
-        nuevoMiembro.setNombre(nombre);
-        nuevoMiembro.setEdad(edad);
-        miembroDAO.create(nuevoMiembro);
+        try {
+            // 1. Verificar si ya existe un jefe
+            JefeDelHogar jefeActual = obtenerJefeDelHogar();
+            boolean esPrimerMiembro = hogar.getRegistroMiembro().isEmpty() && miembroDAO.findAll().isEmpty();
 
-        sincronizarConBD();
+            // 2. Determinar el tipo de miembro a crear
+            if (esJefe && jefeActual == null) {
+                // Crear nuevo jefe del hogar
+                System.out.println("[HogarService] Creando nuevo jefe del hogar: " + nombre);
+                JefeDelHogar nuevoJefe = new JefeDelHogar(nombre, edad);
+                miembroDAO.create(nuevoJefe);
+                hogar.registrarMiembro(nuevoJefe);
+
+            } else if (esPrimerMiembro) {
+                // Si es el primer miembro, automáticamente será jefe
+                System.out.println("[HogarService] Primer miembro, creando como jefe: " + nombre);
+                JefeDelHogar primerJefe = new JefeDelHogar(nombre, edad);
+                miembroDAO.create(primerJefe);
+                hogar.registrarMiembro(primerJefe);
+
+            } else if (jefeActual != null) {
+                // Ya existe jefe, usar su método organizarMiembro()
+                System.out.println("[HogarService] Usando método del dominio - JefeDelHogar.organizarMiembro()");
+                jefeActual.organizarMiembro(nombre, edad);
+
+                // Buscar el miembro recién creado en memoria y persistirlo
+                MiembroHogar miembroCreado = hogar.buscarMiembroPorNombre(nombre);
+                if (miembroCreado != null) {
+                    miembroDAO.create(miembroCreado);
+                }
+
+            } else {
+                // Caso excepcional: crear miembro regular
+                System.out.println("[HogarService] Creando miembro regular: " + nombre);
+                MiembroHogar nuevoMiembro = new MiembroHogar(nombre, edad);
+                miembroDAO.create(nuevoMiembro);
+                hogar.registrarMiembro(nuevoMiembro);
+            }
+
+            // 3. Validar consistencia final
+            validarConsistencia();
+
+            System.out.println("[HogarService] Miembro creado exitosamente: " + nombre);
+
+        } catch (Exception e) {
+            System.err.println("[HogarService] Error al organizar miembro: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Error al crear miembro: " + e.getMessage(), e);
+        }
     }
 
     /**
-     * Método que coordinará la creación de quehaceres usando asignación automática
-     * (implementación detallada en siguiente refactorización)
+     * Método que coordina la creación de quehaceres usando la lógica del dominio UML
+     * Aplica "Move Method" desde QuehacerServlet hacia HogarService
      */
-    public void organizarQuehacer(String nombre, LocalDateTime tiempoLimite, Dificultad dificultad, Long miembroId) {
-        MiembroHogar miembro = miembroDAO.findById(miembroId);
-        Quehacer nuevoQuehacer = new Quehacer(nombre, tiempoLimite, dificultad);
-        nuevoQuehacer.setMiembroHogar(miembro);
-        quehacerDAO.create(nuevoQuehacer);
+    public void organizarQuehacer(String nombre, LocalDateTime tiempoLimite, Dificultad dificultad, String miembroIdOpcional) {
+        System.out.println("[HogarService] organizarQuehacer() - " + nombre + ", miembroId: " + miembroIdOpcional);
+        
+        try {
+            // Crear el quehacer
+            Quehacer nuevoQuehacer = new Quehacer(nombre, tiempoLimite, dificultad);
+            
+            // Decidir el tipo de asignación
+            if (miembroIdOpcional == null || miembroIdOpcional.trim().isEmpty()) {
+                // ✅ USAR LÓGICA DEL DOMINIO - Asignación automática
+                System.out.println("[HogarService] Usando asignación automática del dominio");
+                hogar.registrarQuehacer(nuevoQuehacer);
+                
+                // El quehacer ya está asignado por Hogar.registrarQuehacer()
+                System.out.println("[HogarService] Quehacer asignado automáticamente a: " + 
+                    (nuevoQuehacer.getMiembroHogar() != null ? nuevoQuehacer.getMiembroHogar().getNombre() : "ninguno"));
+                
+            } else {
+                // Asignación manual específica
+                System.out.println("[HogarService] Usando asignación manual a miembro específico");
+                Long miembroId = Long.parseLong(miembroIdOpcional);
+                MiembroHogar miembroAsignado = miembroDAO.findById(miembroId);
+                
+                if (miembroAsignado == null) {
+                    throw new RuntimeException("No se encontró miembro con ID: " + miembroId);
+                }
+                
+                // Usar el método del dominio para asignar
+                miembroAsignado.asignarQuehacer(nuevoQuehacer);
+                
+                // Asegurar que el miembro esté sincronizado en memoria
+                if (!hogar.getRegistroMiembro().contains(miembroAsignado)) {
+                    hogar.registrarMiembro(miembroAsignado);
+                }
+                
+                System.out.println("[HogarService] Quehacer asignado manualmente a: " + miembroAsignado.getNombre());
+            }
+            
+            // Persistir en base de datos
+            quehacerDAO.create(nuevoQuehacer);
+            
+            // Validar consistencia
+            validarConsistencia();
+            
+            System.out.println("[HogarService] Quehacer creado exitosamente: " + nombre);
+            
+        } catch (Exception e) {
+            System.err.println("[HogarService] Error al organizar quehacer: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Error al crear quehacer: " + e.getMessage(), e);
+        }
     }
 
     public JefeDelHogar obtenerJefeDelHogar() {
@@ -114,16 +201,12 @@ public class HogarService {
         }
     }
 
-    /**
-     * Obtiene todos los miembros (delegación al DAO)
-     */
+    //Obtiene todos los miembros (delegación al DAO)
     public List<MiembroHogar> obtenerTodosLosMiembros() {
         return miembroDAO.findAll();
     }
 
-    /**
-     * Obtiene todos los quehaceres (delegación al DAO)
-     */
+    //Obtiene todos los quehaceres (delegación al DAO)
     public List<Quehacer> obtenerTodosLosQuehaceres() {
         return quehacerDAO.findAllWithMiembroHogar();
     }

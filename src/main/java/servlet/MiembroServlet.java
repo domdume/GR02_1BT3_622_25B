@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import model.MiembroHogar;
+import service.HogarService;
 
 import java.io.IOException;
 import java.util.List;
@@ -14,9 +15,22 @@ import java.util.List;
 @WebServlet(name = "MiembroServlet", value = "/miembros")
 public class MiembroServlet extends HttpServlet {
     private MiembroHogarDAO miembroHogarDAO;
+    private HogarService hogarService;
 
     public void init() {
-        miembroHogarDAO = new MiembroHogarDAO();
+        System.out.println("[MiembroServlet] Inicializando servlet...");
+        try {
+            miembroHogarDAO = new MiembroHogarDAO();
+            System.out.println("[MiembroServlet] MiembroHogarDAO creado exitosamente");
+            
+            hogarService = new HogarService();
+            System.out.println("[MiembroServlet] HogarService creado exitosamente");
+            
+        } catch (Exception e) {
+            System.err.println("[MiembroServlet] Error durante inicialización: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Error al inicializar MiembroServlet", e);
+        }
     }
 
     @Override
@@ -93,12 +107,11 @@ public class MiembroServlet extends HttpServlet {
                 throw new IllegalArgumentException("La edad debe ser mayor a 0");
             }
 
-            MiembroHogar nuevoMiembro = new MiembroHogar();
-            nuevoMiembro.setNombre(nombre.trim());
-            nuevoMiembro.setEdad(edad);
-            miembroHogarDAO.create(nuevoMiembro);
+            //USAR EL SERVICE EN LUGAR DE DAO DIRECTO
+            boolean esJefe = false; // Por ahora false, se implementará en siguiente refactorización
+            hogarService.organizarMiembro(nombre.trim(), edad, esJefe);
+            System.out.println("[MiembroServlet] Miembro creado exitosamente a través de HogarService");
 
-            System.out.println("[DEBUG] Miembro creado exitosamente con ID: " + nuevoMiembro.getId());
             request.getSession().setAttribute("successMessage", "Miembro agregado correctamente: " + nombre);
             
         } catch (NumberFormatException e) {
