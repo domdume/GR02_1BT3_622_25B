@@ -60,7 +60,7 @@ public class MiembroHogarDAO {
     public List<MiembroHogar> findAll() {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            List<MiembroHogar> miembros = em.createQuery("SELECT m FROM MiembroHogar m", MiembroHogar.class).getResultList();
+            List<MiembroHogar> miembros = em.createQuery("SELECT m FROM MiembroHogar m LEFT JOIN FETCH m.quehaceres", MiembroHogar.class).getResultList();
             System.out.println("Miembros recuperados: " + miembros);
             return miembros;
         } catch (Exception e) {

@@ -53,7 +53,7 @@ public class IncentivoDAO {
     public List<Incentivo> findAll() {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            List<Incentivo> incentivos = em.createQuery("SELECT i FROM Incentivo i", Incentivo.class).getResultList();
+            List<Incentivo> incentivos = em.createQuery("SELECT i FROM Incentivo i LEFT JOIN FETCH i.miembroHogar", Incentivo.class).getResultList();
             System.out.println("[INCENTIVO-DAO] Total de incentivos en BD: " + incentivos.size());
             return incentivos;
         } catch (Exception e) {

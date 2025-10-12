@@ -27,7 +27,7 @@ public class HomeServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         // Cargar datos para el tablero principal
         List<Quehacer> listaQuehaceres = quehacerDAO.findAllWithMiembroHogar();
-        List<MiembroHogar> listaMiembros = miembroHogarDAO.findAll();
+        List<MiembroHogar> listaMiembros = miembroHogarDAO.findAll(); // Ya usa LEFT JOIN FETCH
         
         System.out.println("[DEBUG] Cargando página principal:");
         System.out.println("[DEBUG] - Quehaceres: " + listaQuehaceres.size());
