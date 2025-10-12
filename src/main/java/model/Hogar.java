@@ -10,10 +10,12 @@ public class Hogar {
     private static final Hogar instance = new Hogar();
     private List<MiembroHogar> miembros;
     private List<Quehacer> quehaceres;
+    private RegistroQuehacer registroQuehacer;
 
     private Hogar() {
         this.miembros = new ArrayList<>();
         this.quehaceres = new ArrayList<>();
+        this.registroQuehacer = new RegistroQuehacer();
     }
 
     public static Hogar getInstance() {
@@ -21,17 +23,20 @@ public class Hogar {
     }
 
     /**
-     * Registra un nuevo miembro en el hogar
+     * Registra un nuevo miembro en el hogar y lo suscribe automáticamente
+     * al sistema de notificaciones Observer.
      */
     public void registrarMiembro(MiembroHogar miembro) {
         if (miembro != null && !miembros.contains(miembro)) {
             this.miembros.add(miembro);
+            registroQuehacer.suscribirMiembroAutomaticamente(miembro);
             System.out.println("[Hogar] Miembro registrado: " + miembro.getNombre());
         }
     }
 
     /**
      * Asigna automáticamente un quehacer al miembro con menor carga de trabajo
+     * y notifica a todos los observadores suscritos sobre la nueva tarea.
      */
     public void registrarQuehacer(Quehacer quehacer) {
         if (miembros.isEmpty()) {
@@ -49,6 +54,8 @@ public class Hogar {
 
         miembroAsignado.asignarQuehacer(quehacer);
         this.quehaceres.add(quehacer);
+        //Integración con patrón Observer
+        registroQuehacer.agregarQuehacer(quehacer);
         System.out.println("[Hogar] Tarea '" + quehacer.getNombre() + "' asignada a " + miembroAsignado.getNombre());
     }
 
@@ -70,6 +77,10 @@ public class Hogar {
 
     public List<Quehacer> getRegistroQuehacer() {
         return quehaceres;
+    }
+
+    public RegistroQuehacer getObservadorQuehacer() {
+        return registroQuehacer;
     }
 
     /**
@@ -96,4 +107,17 @@ public class Hogar {
     public boolean tieneJefe() {
         return getJefeDelHogar() != null;
     }
+
+    /**
+     * Inicializa el sistema Observer suscribiendo todos los miembros existentes
+     * al RegistroQuehacer para recibir notificaciones de nuevas tareas.
+     */
+    private void inicializarSistemaObserver() {
+        for (MiembroHogar miembro : miembros) {
+            registroQuehacer.suscribir(miembro);
+            System.out.println("[Observer] Miembro " + miembro.getNombre() + " suscrito a notificaciones");
+        }
+        System.out.println("[Observer] Sistema de notificaciones inicializado con " + miembros.size() + " observadores");
+    }
+
 }
