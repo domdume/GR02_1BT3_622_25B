@@ -37,6 +37,13 @@
             <label for="edad">Edad:</label>
             <input type="number" id="edad" name="edad" required />
         </fieldset>
+        <fieldset>
+            <label for="tipoMiembro">Tipo de Miembro:</label>
+            <select id="tipoMiembro" name="tipoMiembro" required>
+                <option value="miembro">Miembro Regular</option>
+                <option value="jefe">Jefe del Hogar</option>
+            </select>
+        </fieldset>
         <button type="submit">Registrar Miembro</button>
     </form>
     

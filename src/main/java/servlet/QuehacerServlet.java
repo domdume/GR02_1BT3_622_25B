@@ -31,7 +31,6 @@ public class QuehacerServlet extends HttpServlet {
         quehacerDAO = new QuehacerDAO();
         miembroHogarDAO = new MiembroHogarDAO();
         hogarService = new HogarService();
-
         testFindAllMiembros();
     }
 
@@ -182,6 +181,7 @@ public class QuehacerServlet extends HttpServlet {
         System.out.println("[DEBUG] - Dificultad: " + dificultadStr);
 
         try {
+
             LocalDateTime tiempoLimite = LocalDateTime.parse(tiempoLimiteStr);
 
             // Usar dificultad del formulario o MEDIO por defecto
@@ -192,15 +192,18 @@ public class QuehacerServlet extends HttpServlet {
                 } catch (IllegalArgumentException e) {
                     System.out.println("[DEBUG] Dificultad inválida, usando MEDIO por defecto");
                 }
-            }
 
-            // ✅ USAR EL SERVICE EN LUGAR DE LÓGICA MANUAL
             System.out.println("[QuehacerServlet] Llamando a hogarService.organizarQuehacer()");
             hogarService.organizarQuehacer(nombre, tiempoLimite, dificultad, miembroIdStr);
-            
             System.out.println("[DEBUG] Quehacer creado exitosamente a través de HogarService");
+
+            }
+
+            // Usar el nuevo constructor con dificultad según el diagrama UML
+
+
+            System.out.println("[DEBUG] Quehacer creado exitosamente");
             request.getSession().setAttribute("successMessage", "Quehacer agregado correctamente.");
-            
         } catch (Exception e) {
             System.out.println("[DEBUG] Error al crear quehacer: " + e.getMessage());
             e.printStackTrace();

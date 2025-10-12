@@ -35,36 +35,39 @@ public class HogarService {
         System.out.println("[HogarService] Instancia creada y sincronizada");
     }
 
-    /**
-     * Método que coordinará la creación de miembros
-     */
+    //Método que coordinará la creación de miembros
     public void organizarMiembro(String nombre, int edad, boolean esJefe) {
-        System.out.println("[HogarService] organizarMiembro() - " + nombre + ", edad: " + edad + ", esJefe: " + esJefe);
-
         try {
-            // 1. Verificar si ya existe un jefe
-            JefeDelHogar jefeActual = obtenerJefeDelHogar();
-            boolean esPrimerMiembro = hogar.getRegistroMiembro().isEmpty() && miembroDAO.findAll().isEmpty();
+            // 1.USAR EXPLAINING VARIABLE ENCAPSULADA
+            EstadoHogar estadoActual = analizarEstadoHogar();
+            boolean usuarioQuiereJefe = esJefe;
+            boolean esCreacionDeJefe = usuarioQuiereJefe && !estadoActual.existeJefe;
+            boolean esPrimerMiembroQueSeraJefe = estadoActual.esPrimerMiembro;
+            boolean debeUsarMetodoDelDominio = estadoActual.existeJefe && !usuarioQuiereJefe;
 
-            // 2. Determinar el tipo de miembro a crear
-            if (esJefe && jefeActual == null) {
+            System.out.println("[HogarService] Estado actual: " + estadoActual);
+            System.out.println("[HogarService] Decisión: crear jefe=" + esCreacionDeJefe +
+                    ", usar dominio=" + debeUsarMetodoDelDominio);
+
+            // 2. Determinar el tipo de miembro a crear usando variables explicativas
+            if (esCreacionDeJefe) {
                 // Crear nuevo jefe del hogar
                 System.out.println("[HogarService] Creando nuevo jefe del hogar: " + nombre);
                 JefeDelHogar nuevoJefe = new JefeDelHogar(nombre, edad);
                 miembroDAO.create(nuevoJefe);
                 hogar.registrarMiembro(nuevoJefe);
 
-            } else if (esPrimerMiembro) {
+            } else if (esPrimerMiembroQueSeraJefe) {
                 // Si es el primer miembro, automáticamente será jefe
                 System.out.println("[HogarService] Primer miembro, creando como jefe: " + nombre);
                 JefeDelHogar primerJefe = new JefeDelHogar(nombre, edad);
                 miembroDAO.create(primerJefe);
                 hogar.registrarMiembro(primerJefe);
 
-            } else if (jefeActual != null) {
+            } else if (debeUsarMetodoDelDominio) {
                 // Ya existe jefe, usar su método organizarMiembro()
                 System.out.println("[HogarService] Usando método del dominio - JefeDelHogar.organizarMiembro()");
-                jefeActual.organizarMiembro(nombre, edad);
+                estadoActual.jefeActual.organizarMiembro(nombre, edad); // ✅ USAR estadoActual.jefeActual
 
                 // Buscar el miembro recién creado en memoria y persistirlo
                 MiembroHogar miembroCreado = hogar.buscarMiembroPorNombre(nombre);
@@ -98,50 +101,50 @@ public class HogarService {
      */
     public void organizarQuehacer(String nombre, LocalDateTime tiempoLimite, Dificultad dificultad, String miembroIdOpcional) {
         System.out.println("[HogarService] organizarQuehacer() - " + nombre + ", miembroId: " + miembroIdOpcional);
-        
+
         try {
             // Crear el quehacer
             Quehacer nuevoQuehacer = new Quehacer(nombre, tiempoLimite, dificultad);
-            
+
             // Decidir el tipo de asignación
             if (miembroIdOpcional == null || miembroIdOpcional.trim().isEmpty()) {
                 // ✅ USAR LÓGICA DEL DOMINIO - Asignación automática
                 System.out.println("[HogarService] Usando asignación automática del dominio");
                 hogar.registrarQuehacer(nuevoQuehacer);
-                
+
                 // El quehacer ya está asignado por Hogar.registrarQuehacer()
-                System.out.println("[HogarService] Quehacer asignado automáticamente a: " + 
-                    (nuevoQuehacer.getMiembroHogar() != null ? nuevoQuehacer.getMiembroHogar().getNombre() : "ninguno"));
-                
+                System.out.println("[HogarService] Quehacer asignado automáticamente a: " +
+                        (nuevoQuehacer.getMiembroHogar() != null ? nuevoQuehacer.getMiembroHogar().getNombre() : "ninguno"));
+
             } else {
                 // Asignación manual específica
                 System.out.println("[HogarService] Usando asignación manual a miembro específico");
                 Long miembroId = Long.parseLong(miembroIdOpcional);
                 MiembroHogar miembroAsignado = miembroDAO.findById(miembroId);
-                
+
                 if (miembroAsignado == null) {
                     throw new RuntimeException("No se encontró miembro con ID: " + miembroId);
                 }
-                
+
                 // Usar el método del dominio para asignar
                 miembroAsignado.asignarQuehacer(nuevoQuehacer);
-                
+
                 // Asegurar que el miembro esté sincronizado en memoria
                 if (!hogar.getRegistroMiembro().contains(miembroAsignado)) {
                     hogar.registrarMiembro(miembroAsignado);
                 }
-                
+
                 System.out.println("[HogarService] Quehacer asignado manualmente a: " + miembroAsignado.getNombre());
             }
-            
+
             // Persistir en base de datos
             quehacerDAO.create(nuevoQuehacer);
-            
+
             // Validar consistencia
             validarConsistencia();
-            
+
             System.out.println("[HogarService] Quehacer creado exitosamente: " + nombre);
-            
+
         } catch (Exception e) {
             System.err.println("[HogarService] Error al organizar quehacer: " + e.getMessage());
             e.printStackTrace();
@@ -223,5 +226,45 @@ public class HogarService {
             System.out.println("Jefe actual: " + obtenerJefeDelHogar().getNombre());
         }
         System.out.println("========================\n");
+    }
+
+    /**
+     * ✅ INTRODUCE EXPLAINING VARIABLE: Método helper que encapsula las variables explicativas
+     * del estado del hogar para reutilización
+     */
+    public EstadoHogar analizarEstadoHogar() {
+        JefeDelHogar jefeActual = obtenerJefeDelHogar();
+        List<MiembroHogar> miembrosBD = miembroDAO.findAll();
+        List<MiembroHogar> miembrosMemoria = hogar.getRegistroMiembro();
+
+        boolean existeJefe = (jefeActual != null);
+        boolean estaVacioMemoria = miembrosMemoria.isEmpty();
+        boolean estaVacioBD = miembrosBD.isEmpty();
+        boolean esPrimerMiembro = estaVacioMemoria && estaVacioBD;
+
+        return new EstadoHogar(existeJefe, esPrimerMiembro, jefeActual, miembrosBD.size());
+    }
+
+    /**
+     * Clase inner para encapsular el estado del hogar con variables explicativas
+     */
+    public static class EstadoHogar {
+        public final boolean existeJefe;
+        public final boolean esPrimerMiembro;
+        public final JefeDelHogar jefeActual;
+        public final int totalMiembros;
+
+        public EstadoHogar(boolean existeJefe, boolean esPrimerMiembro, JefeDelHogar jefeActual, int totalMiembros) {
+            this.existeJefe = existeJefe;
+            this.esPrimerMiembro = esPrimerMiembro;
+            this.jefeActual = jefeActual;
+            this.totalMiembros = totalMiembros;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("EstadoHogar{existeJefe=%s, esPrimerMiembro=%s, totalMiembros=%d}",
+                    existeJefe, esPrimerMiembro, totalMiembros);
+        }
     }
 }

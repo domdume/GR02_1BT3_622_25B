@@ -107,9 +107,19 @@ public class MiembroServlet extends HttpServlet {
                 throw new IllegalArgumentException("La edad debe ser mayor a 0");
             }
 
-            //USAR EL SERVICE EN LUGAR DE DAO DIRECTO
-            boolean esJefe = false; // Por ahora false, se implementará en siguiente refactorización
-            hogarService.organizarMiembro(nombre.trim(), edad, esJefe);
+            //INTRODUCIR EXPLAINING VARIABLE: Determinar tipo de miembro
+            String tipoMiembroParam = request.getParameter("tipoMiembro");
+            boolean esSeleccionadoComoJefe = "jefe".equals(tipoMiembroParam);
+            boolean noExisteJefeActualmente = !hogarService.yaExisteJefe();
+            boolean debeSerJefe = esSeleccionadoComoJefe || noExisteJefeActualmente;
+
+            System.out.println("[MiembroServlet] Variables explicativas:");
+            System.out.println("  - Tipo seleccionado: " + tipoMiembroParam);
+            System.out.println("  - ¿Seleccionado como jefe?: " + esSeleccionadoComoJefe);
+            System.out.println("  - ¿No existe jefe?: " + noExisteJefeActualmente);
+            System.out.println("  - ¿Debe ser jefe?: " + debeSerJefe);
+
+            hogarService.organizarMiembro(nombre.trim(), edad, debeSerJefe);
             System.out.println("[MiembroServlet] Miembro creado exitosamente a través de HogarService");
 
             request.getSession().setAttribute("successMessage", "Miembro agregado correctamente: " + nombre);
