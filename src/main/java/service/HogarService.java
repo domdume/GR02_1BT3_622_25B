@@ -5,6 +5,9 @@ import dao.QuehacerDAO;
 import model.*;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.Set;
+import java.util.Objects;
 
 /**
  * Service que coordina operaciones entre la capa de persistencia (DAOs)
@@ -22,17 +25,16 @@ public class HogarService {
     private Hogar hogar;
 
     /**
-     * Constructor - NO es singleton, cada servlet tendrá su instancia
+     * Cada servlet tendrá su instancia
      */
     public HogarService() {
         this.miembroDAO = new MiembroHogarDAO();
         this.quehacerDAO = new QuehacerDAO();
         this.hogar = Hogar.getInstance(); // Usa el singleton existente
 
-        // Sincronizar al inicializar
-        sincronizarConBD();
-
-        System.out.println("[HogarService] Instancia creada y sincronizada");
+        //SUBSTITUTE ALGORITHM: Usar nuevo algoritmo de sincronización
+        ResultadoSincronizacion resultado = sincronizarConBD();
+        System.out.println("[HogarService] Instancia creada - " + resultado);
     }
 
     //Método que coordinará la creación de miembros
@@ -45,7 +47,10 @@ public class HogarService {
             boolean esPrimerMiembroQueSeraJefe = estadoActual.esPrimerMiembro;
             boolean debeUsarMetodoDelDominio = estadoActual.existeJefe && !usuarioQuiereJefe;
 
+            EstadisticasHogar stats = obtenerEstadisticasHogar();
             System.out.println("[HogarService] Estado actual: " + estadoActual);
+            System.out.println("[HogarService] Estadísticas: " + stats);
+            System.out.println("[HogarService] Jefe actual: " + obtenerNombreJefeDelHogar());
             System.out.println("[HogarService] Decisión: crear jefe=" + esCreacionDeJefe +
                     ", usar dominio=" + debeUsarMetodoDelDominio);
 
@@ -165,42 +170,197 @@ public class HogarService {
     }
 
     /**
-     * Sincroniza los datos entre la base de datos y la memoria (Hogar singleton)
-     * Implementa patrón "Substitute Algorithm"
+     * SUBSTITUTE ALGORITHM: Algoritmo robusto de sincronización BD-Memoria
+     * Reemplaza el algoritmo básico con detección de conflictos y resolución automática
      */
-    private void sincronizarConBD() {
+    private ResultadoSincronizacion sincronizarConBD() {
+        System.out.println("[HogarService] 🔄 Iniciando sincronización avanzada BD ↔ Memoria");
+
         try {
-            // 1. Cargar todos los miembros desde BD
-            List<MiembroHogar> miembrosBD = miembroDAO.findAll();
+            // 1. ANÁLISIS INICIAL: Detectar tipo de inconsistencia
+            TipoInconsistencia tipoDetectado = detectarTipoInconsistencia();
 
-            // 2. Limpiar la lista en memoria del singleton
-            hogar.getRegistroMiembro().clear();
-
-            // 3. Registrar cada miembro en el singleton
-            for (MiembroHogar miembro : miembrosBD) {
-                hogar.registrarMiembro(miembro);
+            if (tipoDetectado == TipoInconsistencia.NINGUNA) {
+                System.out.println("[HogarService] ✅ Sistemas ya sincronizados");
+                return new ResultadoSincronizacion(true, TipoInconsistencia.NINGUNA, 0, 0, 0,
+                        "No se requiere sincronización");
             }
 
-            System.out.println("[HogarService] Sincronización completada: " +
-                    miembrosBD.size() + " miembros cargados en memoria");
+            System.out.println("[HogarService] ⚠️ Inconsistencia detectada: " + tipoDetectado.getDescripcion());
+
+            // 2. SINCRONIZACIÓN BIDIRECCIONAL
+            int miembrosSincronizados = sincronizarMiembros();
+            int quehaceresSincronizados = sincronizarQuehaceres();
+            int conflictosResueltos = resolverConflictosDeJefe();
+
+            // 3. VALIDACIÓN FINAL
+            TipoInconsistencia estadoFinal = detectarTipoInconsistencia();
+            boolean exitoso = (estadoFinal == TipoInconsistencia.NINGUNA);
+
+            String detalles = String.format("Tipo original: %s, Estado final: %s",
+                    tipoDetectado.name(), estadoFinal.name());
+
+            System.out.println("[HogarService] 🎯 Sincronización completada: " +
+                    (exitoso ? "EXITOSA" : "CON PROBLEMAS"));
+
+            return new ResultadoSincronizacion(exitoso, tipoDetectado,
+                    miembrosSincronizados, quehaceresSincronizados, conflictosResueltos, detalles);
 
         } catch (Exception e) {
-            System.err.println("[HogarService] Error en sincronización: " + e.getMessage());
+            System.err.println("[HogarService] ❌ Error crítico en sincronización: " + e.getMessage());
             e.printStackTrace();
+            return new ResultadoSincronizacion(false, TipoInconsistencia.CANTIDAD_DIFERENTE,
+                    0, 0, 0, "Error: " + e.getMessage());
         }
     }
 
     /**
-     * Valida que los datos en BD y memoria estén sincronizados
+     * Detecta el tipo específico de inconsistencia entre BD y memoria
+     */
+    private TipoInconsistencia detectarTipoInconsistencia() {
+        List<MiembroHogar> miembrosBD = miembroDAO.findAll();
+        List<MiembroHogar> miembrosMemoria = hogar.getRegistroMiembro();
+
+        // Verificar cantidad
+        if (miembrosBD.size() != miembrosMemoria.size()) {
+            return TipoInconsistencia.CANTIDAD_DIFERENTE;
+        }
+
+        // Verificar IDs
+        Set<Long> idsBD = miembrosBD.stream()
+                .map(MiembroHogar::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Set<Long> idsMemoria = miembrosMemoria.stream()
+                .map(MiembroHogar::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        if (!idsBD.equals(idsMemoria)) {
+            return TipoInconsistencia.IDS_DIFERENTES;
+        }
+
+        // Verificar estado del jefe
+        JefeDelHogar jefeBD = miembrosBD.stream()
+                .filter(m -> m instanceof JefeDelHogar)
+                .map(m -> (JefeDelHogar) m)
+                .findFirst().orElse(null);
+        JefeDelHogar jefeMemoria = miembrosMemoria.stream()
+                .filter(m -> m instanceof JefeDelHogar)
+                .map(m -> (JefeDelHogar) m)
+                .findFirst().orElse(null);
+
+        if ((jefeBD == null) != (jefeMemoria == null)) {
+            return TipoInconsistencia.JEFE_INCONSISTENTE;
+        }
+
+        return TipoInconsistencia.NINGUNA;
+    }
+
+    /**
+     * Sincroniza miembros entre BD y memoria con resolución de conflictos
+     */
+    private int sincronizarMiembros() {
+        List<MiembroHogar> miembrosBD = miembroDAO.findAll();
+
+        // Limpiar memoria y recargar desde BD (BD es fuente de verdad)
+        hogar.getRegistroMiembro().clear();
+
+        int sincronizados = 0;
+        for (MiembroHogar miembro : miembrosBD) {
+            try {
+                hogar.registrarMiembro(miembro);
+                sincronizados++;
+            } catch (Exception e) {
+                System.err.println("[HogarService] ⚠️ Error sincronizando miembro " +
+                        miembro.getNombre() + ": " + e.getMessage());
+            }
+        }
+
+        System.out.println("[HogarService] 👥 Miembros sincronizados: " + sincronizados);
+        return sincronizados;
+    }
+
+    /**
+     * Sincroniza quehaceres asegurando referencias correctas a miembros
+     */
+    private int sincronizarQuehaceres() {
+        try {
+            List<Quehacer> quehaceresBD = quehacerDAO.findAllWithMiembroHogar();
+
+            // Verificar y corregir referencias de miembros en quehaceres
+            int sincronizados = 0;
+            for (Quehacer quehacer : quehaceresBD) {
+                if (quehacer.getMiembroHogar() != null) {
+                    // Buscar el miembro correspondiente en memoria
+                    MiembroHogar miembroEnMemoria = hogar.getRegistroMiembro().stream()
+                            .filter(m -> m.getId() != null &&
+                                    m.getId().equals(quehacer.getMiembroHogar().getId()))
+                            .findFirst().orElse(null);
+
+                    if (miembroEnMemoria != null) {
+                        // Actualizar referencia si es necesario
+                        if (!quehacer.getMiembroHogar().equals(miembroEnMemoria)) {
+                            quehacer.setMiembroHogar(miembroEnMemoria);
+                            sincronizados++;
+                        }
+                    }
+                }
+            }
+
+            System.out.println("[HogarService] 📋 Quehaceres sincronizados: " + sincronizados);
+            return sincronizados;
+
+        } catch (Exception e) {
+            System.err.println("[HogarService] ⚠️ Error sincronizando quehaceres: " + e.getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Resuelve conflictos específicos del jefe del hogar
+     */
+    private int resolverConflictosDeJefe() {
+        try {
+            JefeDelHogar jefeEnMemoria = hogar.getRegistroMiembro().stream()
+                    .filter(m -> m instanceof JefeDelHogar)
+                    .map(m -> (JefeDelHogar) m)
+                    .findFirst().orElse(null);
+
+            JefeDelHogar jefeEnBD = obtenerJefeDelHogar();
+
+            if (jefeEnMemoria != null && jefeEnBD != null) {
+                // Verificar que sean el mismo objeto
+                if (!jefeEnMemoria.getId().equals(jefeEnBD.getId())) {
+                    System.out.println("[HogarService] 🔧 Resolviendo conflicto de jefe del hogar");
+                    // BD tiene precedencia, actualizar memoria
+                    hogar.getRegistroMiembro().remove(jefeEnMemoria);
+                    hogar.registrarMiembro(jefeEnBD);
+                    return 1;
+                }
+            }
+
+            return 0;
+
+        } catch (Exception e) {
+            System.err.println("[HogarService] ⚠️ Error resolviendo conflictos de jefe: " + e.getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * SUBSTITUTE ALGORITHM: Validación avanzada de consistencia
+     * Reemplaza validación básica con detección específica de inconsistencias
      */
     private void validarConsistencia() {
-        int miembrosBD = miembroDAO.findAll().size();
-        int miembrosMemoria = hogar.getRegistroMiembro().size();
+        ResultadoSincronizacion resultado = sincronizarConBD();
 
-        if (miembrosBD != miembrosMemoria) {
-            System.out.println("⚠️ [HogarService] Inconsistencia detectada - BD: " +
-                    miembrosBD + ", Memoria: " + miembrosMemoria + " - Re-sincronizando...");
-            sincronizarConBD();
+        if (!resultado.exitoso) {
+            System.err.println("[HogarService] ❌ FALLO EN VALIDACIÓN: " + resultado.detalles);
+        } else if (resultado.tipoInconsistencia != TipoInconsistencia.NINGUNA) {
+            System.out.println("[HogarService] ✅ INCONSISTENCIA RESUELTA: " + resultado);
+        } else {
+            System.out.println("[HogarService] ✅ Sistemas consistentes");
         }
     }
 
@@ -229,20 +389,130 @@ public class HogarService {
     }
 
     /**
-     * ✅ INTRODUCE EXPLAINING VARIABLE: Método helper que encapsula las variables explicativas
+     * INTRODUCIR EXPLAINING VARIABLE: Método helper que encapsula las variables explicativas
      * del estado del hogar para reutilización
      */
     public EstadoHogar analizarEstadoHogar() {
-        JefeDelHogar jefeActual = obtenerJefeDelHogar();
-        List<MiembroHogar> miembrosBD = miembroDAO.findAll();
+        //REPLACE TEMP WITH QUERY: Usar métodos de consulta en lugar de variables temporales
+        EstadisticasHogar estadisticas = obtenerEstadisticasHogar();
         List<MiembroHogar> miembrosMemoria = hogar.getRegistroMiembro();
-
-        boolean existeJefe = (jefeActual != null);
         boolean estaVacioMemoria = miembrosMemoria.isEmpty();
-        boolean estaVacioBD = miembrosBD.isEmpty();
+        boolean estaVacioBD = (estadisticas.totalMiembros == 0);
         boolean esPrimerMiembro = estaVacioMemoria && estaVacioBD;
+        return new EstadoHogar(estadisticas.tieneJefe, esPrimerMiembro,
+                obtenerJefeDelHogar(), (int)estadisticas.totalMiembros);
+    }
 
-        return new EstadoHogar(existeJefe, esPrimerMiembro, jefeActual, miembrosBD.size());
+    /**
+     * ✅ SUBSTITUTE ALGORITHM: Algoritmo mejorado de sincronización BD-Memoria
+     * Reemplaza sincronización básica con algoritmo robusto que detecta y resuelve conflictos
+     */
+
+    /**
+     * Enum para clasificar tipos de inconsistencias
+     */
+    public enum TipoInconsistencia {
+        NINGUNA("No hay inconsistencias"),
+        CANTIDAD_DIFERENTE("Diferente cantidad de miembros"),
+        IDS_DIFERENTES("Miembros con IDs diferentes"),
+        DATOS_DIFERENTES("Datos de miembros inconsistentes"),
+        JEFE_INCONSISTENTE("Estado del jefe del hogar inconsistente"),
+        QUEHACERES_DESACTUALIZADOS("Quehaceres no sincronizados");
+
+        private final String descripcion;
+
+        TipoInconsistencia(String descripcion) {
+            this.descripcion = descripcion;
+        }
+
+        public String getDescripcion() {
+            return descripcion;
+        }
+    }
+
+    /**
+     * Clase que encapsula el resultado de una operación de sincronización
+     */
+    public static class ResultadoSincronizacion {
+        public final boolean exitoso;
+        public final TipoInconsistencia tipoInconsistencia;
+        public final int miembrosSincronizados;
+        public final int quehaceresSincronizados;
+        public final int conflictosResueltos;
+        public final String detalles;
+
+        public ResultadoSincronizacion(boolean exitoso, TipoInconsistencia tipo,
+                                       int miembros, int quehaceres, int conflictos, String detalles) {
+            this.exitoso = exitoso;
+            this.tipoInconsistencia = tipo;
+            this.miembrosSincronizados = miembros;
+            this.quehaceresSincronizados = quehaceres;
+            this.conflictosResueltos = conflictos;
+            this.detalles = detalles;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("Sincronización{exitoso=%s, tipo=%s, miembros=%d, quehaceres=%d, conflictos=%d}",
+                    exitoso, tipoInconsistencia.name(), miembrosSincronizados,
+                    quehaceresSincronizados, conflictosResueltos);
+        }
+    }
+
+    /**
+     * REPLACE TEMP WITH QUERY: Métodos de consulta reutilizables
+     * Eliminan variables temporales duplicadas y centralizan consultas comunes
+     */
+
+    /**
+     * Consulta que retorna todos los miembros regulares (no jefes)
+     */
+    public List<MiembroHogar> obtenerMiembrosRegulares() {
+        return miembroDAO.findAll().stream()
+                .filter(m -> !(m instanceof JefeDelHogar))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Consulta que retorna el nombre del jefe actual, o "Sin Jefe" si no existe
+     */
+    public String obtenerNombreJefeDelHogar() {
+        JefeDelHogar jefe = obtenerJefeDelHogar();
+        return jefe != null ? jefe.getNombre() : "Sin Jefe";
+    }
+
+    /**
+     * Consulta que retorna estadísticas básicas del hogar
+     */
+    public EstadisticasHogar obtenerEstadisticasHogar() {
+        List<MiembroHogar> todos = miembroDAO.findAll();
+        long totalMiembros = todos.size();
+        long miembrosRegulares = todos.stream()
+                .filter(m -> !(m instanceof JefeDelHogar))
+                .count();
+
+        return new EstadisticasHogar(totalMiembros, miembrosRegulares, yaExisteJefe());
+    }
+
+    /**
+     * Clase helper para estadísticas del hogar
+     */
+    public static class EstadisticasHogar {
+        public final long totalMiembros;
+        public final long miembrosRegulares;
+        public final boolean tieneJefe;
+
+        public EstadisticasHogar(long totalMiembros, long miembrosRegulares, boolean tieneJefe) {
+            this.totalMiembros = totalMiembros;
+            this.miembrosRegulares = miembrosRegulares;
+            this.tieneJefe = tieneJefe;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("EstadisticasHogar{total=%d, regulares=%d, tieneJefe=%s}",
+                    totalMiembros, miembrosRegulares, tieneJefe);
+        }
     }
 
     /**
@@ -259,12 +529,6 @@ public class HogarService {
             this.esPrimerMiembro = esPrimerMiembro;
             this.jefeActual = jefeActual;
             this.totalMiembros = totalMiembros;
-        }
-
-        @Override
-        public String toString() {
-            return String.format("EstadoHogar{existeJefe=%s, esPrimerMiembro=%s, totalMiembros=%d}",
-                    existeJefe, esPrimerMiembro, totalMiembros);
         }
     }
 }

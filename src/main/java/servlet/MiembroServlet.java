@@ -110,7 +110,8 @@ public class MiembroServlet extends HttpServlet {
             //INTRODUCIR EXPLAINING VARIABLE: Determinar tipo de miembro
             String tipoMiembroParam = request.getParameter("tipoMiembro");
             boolean esSeleccionadoComoJefe = "jefe".equals(tipoMiembroParam);
-            boolean noExisteJefeActualmente = !hogarService.yaExisteJefe();
+            //Usar método de consulta directo
+            boolean noExisteJefeActualmente = !hogarService.obtenerEstadisticasHogar().tieneJefe;
             boolean debeSerJefe = esSeleccionadoComoJefe || noExisteJefeActualmente;
 
             System.out.println("[MiembroServlet] Variables explicativas:");
