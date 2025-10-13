@@ -155,22 +155,10 @@ public class Quehacer {
 
     }
 
-    public boolean isOverdue() {
+    public boolean estaVencido() {
         return !estadoCompletado && LocalDateTime.now().isAfter(tiempoLimite);
     }
 
-    public void asignarPenalizacion(List<String> listaPenalizaciones) {
-        if (!estadoFinalizado && LocalDateTime.now().isAfter(tiempoLimite)) {
-            this.estadoFinalizado = true;
-            this.penalizacion = listaPenalizaciones.get(new Random().nextInt(listaPenalizaciones.size()));
-        }
-    }
-
-    public void asignarRecompensa(List<String> listaRecompensas) {
-        if (estadoFinalizado && estadoCompletado) {
-            this.recompensa = listaRecompensas.get(new Random().nextInt(listaRecompensas.size()));
-        }
-    }
 
     public int getPuntosEnEseMomento() {
         return puntosEnEseMomento;
