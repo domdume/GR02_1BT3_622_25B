@@ -63,7 +63,7 @@ public class Incentivo {
         // Establecer la relación bidireccional
         this.setMiembroHogar(miembro);
         this.setQuehacer(quehacerCompletado);
-        miembro.addIncentivo(this);
+        miembro.anadirIncentivo(this);
 
         // Persistir el incentivo directamente usando DAO
         IncentivoDAO incentivoDAO = new IncentivoDAO();

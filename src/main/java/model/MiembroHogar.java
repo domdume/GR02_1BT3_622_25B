@@ -80,7 +80,7 @@ public class MiembroHogar implements Observador {
         this.incentivos = incentivos;
     }
 
-    public void addIncentivo(Incentivo incentivo) {
+    public void anadirIncentivo(Incentivo incentivo) {
         this.incentivos.add(incentivo);
         incentivo.setMiembroHogar(this);
     }
@@ -102,10 +102,10 @@ public class MiembroHogar implements Observador {
         Incentivo incentivo = new Incentivo();
         incentivo.aplicar(this, quehacer);
     }
-    public void reducirFactorDeCarga() { this.factorDeCarga--; }
-    public void aumentarFactorDeCarga() { this.factorDeCarga++; }
-    public void removerQuehacer(Quehacer q) { this.quehaceres.remove(q); }
-    public int getFactorDeCarga() { return this.factorDeCarga; }
+//    public void reducirFactorDeCarga() { this.factorDeCarga--; }
+//    public void aumentarFactorDeCarga() { this.factorDeCarga++; }
+//    public void removerQuehacer(Quehacer q) { this.quehaceres.remove(q); }
+//    public int getFactorDeCarga() { return this.factorDeCarga; }
     public String getNombre() {
         return nombre;
     }
@@ -126,15 +126,15 @@ public class MiembroHogar implements Observador {
         this.puntos = puntos;
     }
 
-    // Método según diagrama UML
-    public void realizarQuehacer(Quehacer q) {
-        if (this.quehaceres.contains(q)) {
-            q.marcarCompletado();
-            this.quehaceres.remove(q);
-            System.out.println(this.nombre + " ha realizado el quehacer: " + q.getNombre());
-        } else {
-            System.out.println("AVISO: " + this.nombre + " no puede realizar una tarea que no tiene asignada.");
-        }
-    }
+//    // Método según diagrama UML
+//    public void realizarQuehacer(Quehacer q) {
+//        if (this.quehaceres.contains(q)) {
+//            q.marcarCompletado();
+//            this.quehaceres.remove(q);
+//            System.out.println(this.nombre + " ha realizado el quehacer: " + q.getNombre());
+//        } else {
+//            System.out.println("AVISO: " + this.nombre + " no puede realizar una tarea que no tiene asignada.");
+//        }
+//    }
 }
 
