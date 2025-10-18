@@ -16,7 +16,8 @@ public class MiembroHogar implements Observador {
 
     private String nombre;
     private int edad;
-    private int puntos; // Added for rewards
+    private int puntos;
+    private Liga liga; // Added for rewards
 
     @OneToMany(mappedBy = "miembroHogar", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Quehacer> quehaceres;
@@ -40,13 +41,19 @@ public class MiembroHogar implements Observador {
         this.incentivos = new ArrayList<>();
         this.puntos = 0; // Initialize points
         this.factorDeCarga = 0;
+        this.liga = null;
     }
 
     // Getters y Setters para JPA y JSP
     public Long getId() {
         return id;
     }
-
+    public Liga getLiga() {
+        return liga;
+    }
+    public void setLiga(Liga liga) {
+        this.liga = liga;
+    }
     public void setId(Long id) {
         this.id = id;
     }
