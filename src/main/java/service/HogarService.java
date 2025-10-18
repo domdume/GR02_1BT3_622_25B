@@ -391,6 +391,7 @@ public class HogarService {
     /**
      * INTRODUCIR EXPLAINING VARIABLE: Método helper que encapsula las variables explicativas
      * del estado del hogar para reutilización
+     *
      */
     public EstadoHogar analizarEstadoHogar() {
         //REPLACE TEMP WITH QUERY: Usar métodos de consulta en lugar de variables temporales
