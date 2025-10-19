@@ -17,6 +17,9 @@ public class MiembroHogar implements Observador {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    // Agregar justo después de los otros @Column existentes
+    private String liga = "BRONCE"; // Por defecto
+
     private Long id;
 
     private String nombre;
@@ -125,6 +128,10 @@ public class MiembroHogar implements Observador {
     public void setPuntos(int puntos) {
         this.puntos = puntos;
     }
+
+    public String getLiga() { return liga; }
+
+    public void setLiga(String liga) { this.liga = liga; }
 
 //    // Método según diagrama UML
 //    public void realizarQuehacer(Quehacer q) {
