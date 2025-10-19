@@ -22,7 +22,7 @@ public class MiembroHogar implements Observador {
     private String nombre;
     private int edad;
     private int puntos; // Added for rewards
-
+    private Liga liga;
     @OneToMany(mappedBy = "miembroHogar", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Quehacer> quehaceres;
 
@@ -136,5 +136,17 @@ public class MiembroHogar implements Observador {
 //            System.out.println("AVISO: " + this.nombre + " no puede realizar una tarea que no tiene asignada.");
 //        }
 //    }
+
+    public Liga getLiga() {
+        return liga;
+    }
+
+    public void setLiga(Liga liga) {
+        this.liga = liga;
+    }
+
+
+
+
 }
 
