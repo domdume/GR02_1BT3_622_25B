@@ -53,6 +53,15 @@ public class QuehacerDAO {
         }
     }
 
+    public List<model.MiembroHogar> findAllMiembrosWithQuehaceres() {
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            return em.createQuery("SELECT DISTINCT m FROM MiembroHogar m LEFT JOIN FETCH m.quehaceres", model.MiembroHogar.class).getResultList();
+        } finally {
+            em.close();
+        }
+    }
+
     public void update(Quehacer quehacer) {
         EntityManager em = JPAUtil.getEntityManager();
         EntityTransaction tx = em.getTransaction();

@@ -27,7 +27,7 @@ public class HomeServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         // Cargar datos para el tablero principal
         List<Quehacer> listaQuehaceres = quehacerDAO.findAllWithMiembroHogar();
-        List<MiembroHogar> listaMiembros = miembroHogarDAO.findAll();
+        List<MiembroHogar> listaMiembros = miembroHogarDAO.findAll(); // Ya usa LEFT JOIN FETCH
         
         System.out.println("[DEBUG] Cargando página principal:");
         System.out.println("[DEBUG] - Quehaceres: " + listaQuehaceres.size());
@@ -36,7 +36,7 @@ public class HomeServlet extends HttpServlet {
         // Calcular estadísticas del hogar
         long tareasCompletadas = listaQuehaceres.stream().filter(Quehacer::isEstadoCompletado).count();
         long tareasPendientes = listaQuehaceres.stream().filter(q -> !q.isEstadoCompletado() && !q.isEstadoFinalizado()).count();
-        long tareasVencidas = listaQuehaceres.stream().filter(q -> q.isOverdue() && !q.isEstadoFinalizado()).count();
+        long tareasVencidas = listaQuehaceres.stream().filter(q -> q.estaVencido() && !q.isEstadoFinalizado()).count();
         
         // Encontrar el miembro con más puntos (MVP del hogar)
         MiembroHogar mvpMiembro = null;
@@ -56,6 +56,6 @@ public class HomeServlet extends HttpServlet {
         request.setAttribute("tareasVencidas", tareasVencidas);
         request.setAttribute("mvpMiembro", mvpMiembro);
         
-        request.getRequestDispatcher("/index.jsp").forward(request, response);
+        request.getRequestDispatcher("/tablero.jsp").forward(request, response);
     }
 }

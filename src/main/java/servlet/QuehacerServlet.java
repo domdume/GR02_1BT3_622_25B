@@ -2,6 +2,7 @@ package servlet;
 
 import dao.MiembroHogarDAO;
 import dao.QuehacerDAO;
+import service.HogarService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -21,6 +22,7 @@ import java.util.logging.Logger;
 public class QuehacerServlet extends HttpServlet {
     private QuehacerDAO quehacerDAO;
     private MiembroHogarDAO miembroHogarDAO;
+    private HogarService hogarService;
 
     private static final Logger logger = Logger.getLogger(QuehacerServlet.class.getName());
 
@@ -28,7 +30,7 @@ public class QuehacerServlet extends HttpServlet {
     public void init() {
         quehacerDAO = new QuehacerDAO();
         miembroHogarDAO = new MiembroHogarDAO();
-
+        hogarService = new HogarService();
         testFindAllMiembros();
     }
 
@@ -184,7 +186,7 @@ public class QuehacerServlet extends HttpServlet {
             System.out.println("[DEBUG] - Miembro encontrado: " + (miembro != null ? miembro.getNombre() : "null"));
             
             LocalDateTime tiempoLimite = LocalDateTime.parse(tiempoLimiteStr);
-            
+
             // Usar dificultad del formulario o MEDIO por defecto
             Dificultad dificultad = Dificultad.MEDIO; // Valor por defecto
             if (dificultadStr != null && !dificultadStr.isEmpty()) {
@@ -193,6 +195,11 @@ public class QuehacerServlet extends HttpServlet {
                 } catch (IllegalArgumentException e) {
                     System.out.println("[DEBUG] Dificultad inválida, usando MEDIO por defecto");
                 }
+
+            System.out.println("[QuehacerServlet] Llamando a hogarService.organizarQuehacer()");
+            hogarService.organizarQuehacer(nombre, tiempoLimite, dificultad, miembroIdStr);
+            System.out.println("[DEBUG] Quehacer creado exitosamente a través de HogarService");
+
             }
 
             // Usar el nuevo constructor con dificultad según el diagrama UML
@@ -312,11 +319,24 @@ public class QuehacerServlet extends HttpServlet {
         List<Quehacer> quehaceresCompletados = new ArrayList<>();
         List<Quehacer> quehaceresPendientes = new ArrayList<>();
         
+        // Variables para estadísticas (movidas desde JSP)
+        int totalTareas = todosLosQuehaceres.size();
+        int tareasCompletadas = 0;
+        int tareasPendientes = 0;
+        int tareasVencidas = 0;
+        
         for (Quehacer q : todosLosQuehaceres) {
             if (q.isEstadoFinalizado()) {
                 quehaceresCompletados.add(q);
+                tareasCompletadas++;
             } else {
                 quehaceresPendientes.add(q);
+                tareasPendientes++;
+                
+                // Verificar si está vencida
+                if (q.getTiempoLimite() != null && q.getTiempoLimite().isBefore(java.time.LocalDateTime.now())) {
+                    tareasVencidas++;
+                }
             }
         }
         
@@ -357,7 +377,13 @@ public class QuehacerServlet extends HttpServlet {
         listaQuehaceres.addAll(quehaceresCompletados);
         listaQuehaceres.addAll(quehaceresPendientes);
         
+        // Pasar datos y estadísticas calculadas a la vista (no calcular en JSP)
         request.setAttribute("listaQuehaceres", listaQuehaceres);
+        request.setAttribute("totalTareas", totalTareas);
+        request.setAttribute("tareasCompletadas", tareasCompletadas);
+        request.setAttribute("tareasPendientes", tareasPendientes);
+        request.setAttribute("tareasVencidas", tareasVencidas);
+        
         request.getRequestDispatcher("/quehaceres/index.jsp").forward(request, response);
     }
 
@@ -518,7 +544,7 @@ public class QuehacerServlet extends HttpServlet {
     private MiembroHogar aplicarRecompensaPorCompletamiento(Quehacer quehacer) {
         // Sumar puntos por completar a tiempo
         MiembroHogar miembro = quehacer.getMiembroHogar();
-        Incentivo.otorgarRecompensaPorCompletar(miembro, quehacer);//TODO: Mover a la clase Incentivo TODO: Renombre
+        Incentivo.otorgarRecompensaPorCompletar(miembro, quehacer);
         if (miembro != null) {
             //miembro.setPuntos(miembro.getPuntos() + 20); //TODO: Query directa sin temp variables
             miembroHogarDAO.update(miembro);
@@ -559,7 +585,7 @@ public class QuehacerServlet extends HttpServlet {
     private void aplicarPenalizacionPorRetraso(Quehacer quehacer) {
         // Restar puntos por no completar a tiempo
         MiembroHogar miembro = quehacer.getMiembroHogar();
-        Incentivo.aplicarPenalizacionPorVencer(miembro, quehacer);//TODO: Mover a la clase incentivo TODO: renombrar
+        Incentivo.aplicarPenalizacionPorVencer(miembro, quehacer);
         if (miembro != null) {
             //miembro.setPuntos(Math.max(0, miembro.getPuntos() - 10)); //TODO: Query directa sin temp variables
             miembroHogarDAO.update(miembro);

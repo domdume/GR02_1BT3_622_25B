@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import model.MiembroHogar;
+import service.HogarService;
 
 import java.io.IOException;
 import java.util.List;
@@ -14,9 +15,22 @@ import java.util.List;
 @WebServlet(name = "MiembroServlet", value = "/miembros")
 public class MiembroServlet extends HttpServlet {
     private MiembroHogarDAO miembroHogarDAO;
+    private HogarService hogarService;
 
     public void init() {
-        miembroHogarDAO = new MiembroHogarDAO();
+        System.out.println("[MiembroServlet] Inicializando servlet...");
+        try {
+            miembroHogarDAO = new MiembroHogarDAO();
+            System.out.println("[MiembroServlet] MiembroHogarDAO creado exitosamente");
+            
+            hogarService = new HogarService();
+            System.out.println("[MiembroServlet] HogarService creado exitosamente");
+            
+        } catch (Exception e) {
+            System.err.println("[MiembroServlet] Error durante inicialización: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Error al inicializar MiembroServlet", e);
+        }
     }
 
     @Override
@@ -55,9 +69,43 @@ public class MiembroServlet extends HttpServlet {
 
     private void listMiembros(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         List<MiembroHogar> listaMiembros = miembroHogarDAO.findAll(); // Recupera los datos de la BD
+        
         if (listaMiembros == null || listaMiembros.isEmpty()) {
             request.getSession().setAttribute("errorMessage", "No hay miembros registrados.");
+            // Estadísticas vacías
+            request.setAttribute("totalMiembros", 0);
+            request.setAttribute("jefeCount", 0);
+            request.setAttribute("totalPuntos", 0);
+            request.setAttribute("totalTareas", 0);
+        } else {
+            // Calcular estadísticas en el controlador (no en la vista)
+            int totalMiembros = listaMiembros.size();
+            int jefeCount = 0;
+            int totalPuntos = 0;
+            int totalTareas = 0;
+            
+            for (MiembroHogar miembro : listaMiembros) {
+                // Contar jefes del hogar
+                if (miembro.getClass().getSimpleName().equals("JefeDelHogar")) {
+                    jefeCount++;
+                }
+                
+                // Sumar puntos totales
+                totalPuntos += miembro.getPuntos();
+                
+                // Contar tareas asignadas
+                if (miembro.getQuehaceres() != null) {
+                    totalTareas += miembro.getQuehaceres().size();
+                }
+            }
+            
+            // Pasar estadísticas calculadas a la vista
+            request.setAttribute("totalMiembros", totalMiembros);
+            request.setAttribute("jefeCount", jefeCount);
+            request.setAttribute("totalPuntos", totalPuntos);
+            request.setAttribute("totalTareas", totalTareas);
         }
+        
         request.setAttribute("listaMiembros", listaMiembros); // Pasa los datos al JSP
         request.getRequestDispatcher("/miembros/index.jsp").forward(request, response); // Redirige al JSP
     }
@@ -93,15 +141,22 @@ public class MiembroServlet extends HttpServlet {
                 throw new IllegalArgumentException("La edad debe ser mayor a 0");
             }
 
-            MiembroHogar nuevoMiembro = new MiembroHogar();
-            nuevoMiembro.setNombre(nombre.trim());
-            nuevoMiembro.setEdad(edad);
+            //INTRODUCIR EXPLAINING VARIABLE: Determinar tipo de miembro
+            String tipoMiembroParam = request.getParameter("tipoMiembro");
+            boolean esSeleccionadoComoJefe = "jefe".equals(tipoMiembroParam);
+            //Usar método de consulta directo
+            boolean noExisteJefeActualmente = !hogarService.obtenerEstadisticasHogar().tieneJefe;
+            boolean debeSerJefe = esSeleccionadoComoJefe || noExisteJefeActualmente;
 
-            System.out.println("[DEBUG] Creando miembro: " + nuevoMiembro.getNombre() + ", edad: " + nuevoMiembro.getEdad());
+            System.out.println("[MiembroServlet] Variables explicativas:");
+            System.out.println("  - Tipo seleccionado: " + tipoMiembroParam);
+            System.out.println("  - ¿Seleccionado como jefe?: " + esSeleccionadoComoJefe);
+            System.out.println("  - ¿No existe jefe?: " + noExisteJefeActualmente);
+            System.out.println("  - ¿Debe ser jefe?: " + debeSerJefe);
 
-            miembroHogarDAO.create(nuevoMiembro);
+            hogarService.organizarMiembro(nombre.trim(), edad, debeSerJefe);
+            System.out.println("[MiembroServlet] Miembro creado exitosamente a través de HogarService");
 
-            System.out.println("[DEBUG] Miembro creado exitosamente con ID: " + nuevoMiembro.getId());
             request.getSession().setAttribute("successMessage", "Miembro agregado correctamente: " + nombre);
             
         } catch (NumberFormatException e) {

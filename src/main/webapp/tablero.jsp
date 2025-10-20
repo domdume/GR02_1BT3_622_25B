@@ -16,6 +16,9 @@
         <!-- Funcionalidades del Miembro Familia (InterfazDelMiembroFamilia) -->
         <a href="${pageContext.request.contextPath}/quehaceres?action=complete">Completar Quehacer</a>
         <a href="${pageContext.request.contextPath}/quehaceres?action=pending">Revisar Quehaceres Pendientes</a>
+        
+        <!-- Funcionalidades de Consulta -->
+        <a href="${pageContext.request.contextPath}/incentivos">Ver Historial de Incentivos</a>
     </nav>
 </header>
 <div class="container">

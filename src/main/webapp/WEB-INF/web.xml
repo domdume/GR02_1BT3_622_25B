@@ -26,4 +26,22 @@
         <url-pattern>/quehaceres</url-pattern>
     </servlet-mapping>
 
+    <servlet>
+        <servlet-name>HomeServlet</servlet-name>
+        <servlet-class>servlet.HomeServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>HomeServlet</servlet-name>
+        <url-pattern>/home</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>IncentivoServlet</servlet-name>
+        <servlet-class>servlet.IncentivoServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>IncentivoServlet</servlet-name>
+        <url-pattern>/incentivos</url-pattern>
+    </servlet-mapping>
+
 </web-app>

@@ -56,4 +56,27 @@ public class RegistroQuehacer implements Sujeto {
     public List<Quehacer> getQuehaceresPorRealizar() {
         return quehaceresPorRealizar;
     }
+
+    /**
+     * Suscribe un miembro automáticamente con logging detallado
+     */
+    public void suscribirMiembroAutomaticamente(MiembroHogar miembro) {
+        suscribir(miembro);
+        System.out.println("[Observer] Miembro " + miembro.getNombre() + " suscrito automáticamente a notificaciones");
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

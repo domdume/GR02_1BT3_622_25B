@@ -4,6 +4,11 @@ import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Entidad que representa un miembro del hogar.
+ * Implementa el patrón Observer para recibir notificaciones.
+ * Clase base para la jerarquía de miembros (JefeDelHogar hereda de esta).
+ */
 @Entity
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "DTYPE", discriminatorType = DiscriminatorType.STRING)
@@ -12,6 +17,9 @@ public class MiembroHogar implements Observador {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    // Agregar justo después de los otros @Column existentes
+    //private String liga = "BRONCE"; // Por defecto
+
     private Long id;
 
     private String nombre;
@@ -82,7 +90,7 @@ public class MiembroHogar implements Observador {
         this.incentivos = incentivos;
     }
 
-    public void addIncentivo(Incentivo incentivo) {
+    public void anadirIncentivo(Incentivo incentivo) {
         this.incentivos.add(incentivo);
         incentivo.setMiembroHogar(this);
     }
@@ -94,24 +102,20 @@ public class MiembroHogar implements Observador {
 
     public void registrarQuehacerCompleto(Quehacer quehacer) {
         if (!this.quehaceres.contains(quehacer)) {
+            System.out.println("AVISO: " + nombre + " no puede completar una tarea que no tiene asignada.");
             return;
         }
         // 1. El miembro actualiza el estado de la tarea y su propia lista.
         quehacer.marcarComoCompletado();
         this.quehaceres.remove(quehacer);
         // 2. Llama al experto para que aplique la lógica de incentivos/penalizaciones.
-        colocarIncentivo(quehacer);
-    }
-
-    private void colocarIncentivo(Quehacer quehacer) {
         Incentivo incentivo = new Incentivo();
         incentivo.aplicar(this, quehacer);
     }
-
-    public void reducirFactorDeCarga() { this.factorDeCarga--; }
-    public void aumentarFactorDeCarga() { this.factorDeCarga++; }
-    public void removerQuehacer(Quehacer q) { this.quehaceres.remove(q); }
-    public int getFactorDeCarga() { return this.factorDeCarga; }
+//    public void reducirFactorDeCarga() { this.factorDeCarga--; }
+//    public void aumentarFactorDeCarga() { this.factorDeCarga++; }
+//    public void removerQuehacer(Quehacer q) { this.quehaceres.remove(q); }
+//    public int getFactorDeCarga() { return this.factorDeCarga; }
     public String getNombre() {
         return nombre;
     }
@@ -132,15 +136,19 @@ public class MiembroHogar implements Observador {
         this.puntos = puntos;
     }
 
-    // Método según diagrama UML
-    public void realizarQuehacer(Quehacer q) {
-        if (this.quehaceres.contains(q)) {
-            q.marcarCompletado();
-            this.quehaceres.remove(q);
-            System.out.println(this.nombre + " ha realizado el quehacer: " + q.getNombre());
-        } else {
-            System.out.println("AVISO: " + this.nombre + " no puede realizar una tarea que no tiene asignada.");
-        }
-    }
+    //public String getLiga() { return liga; }
+
+    //public void setLiga(String liga) { this.liga = liga; }
+
+//    // Método según diagrama UML
+//    public void realizarQuehacer(Quehacer q) {
+//        if (this.quehaceres.contains(q)) {
+//            q.marcarCompletado();
+//            this.quehaceres.remove(q);
+//            System.out.println(this.nombre + " ha realizado el quehacer: " + q.getNombre());
+//        } else {
+//            System.out.println("AVISO: " + this.nombre + " no puede realizar una tarea que no tiene asignada.");
+//        }
+//    }
 }
 

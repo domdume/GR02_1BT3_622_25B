@@ -1,0 +1,210 @@
+@startuml DiagramaLogicaHogar
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+
+package "Lógica de Negocio" {
+    ' Interfaces del Patrón Observer - NÚCLEO DE LA LÓGICA
+    interface Observador {
+        +actualizar(mensaje: String): void
+    }
+
+    interface Sujeto {
+        +suscribir(observador: Observador): void
+        +desuscribir(observador: Observador): void
+        +notificar(mensaje: String): void
+    }
+
+    ' Reglas de Negocio
+    enum Dificultad {
+        FACIL
+        MEDIO
+        DIFICIL
+    }
+
+    enum TipoIncentivo {
+        RECOMPENSA
+        PENALIZACION
+    }
+
+    ' COORDINADOR CENTRAL - SINGLETON CON LÓGICA PRINCIPAL
+    class Hogar {
+        <<Singleton>>
+        {static} -instance: Hogar
+        -miembros: List<MiembroHogar>
+        -quehaceres: List<Quehacer>
+        -registroQuehacer: RegistroQuehacer
+        --
+        {static} +getInstance(): Hogar
+        +registrarMiembro(miembro: MiembroHogar): void
+        +registrarQuehacer(quehacer: Quehacer): void
+        +getJefeDelHogar(): JefeDelHogar
+        +buscarMiembroPorNombre(nombre: String): MiembroHogar
+        +getTotalMiembros(): int
+        +getTotalQuehaceres(): int
+        +tieneJefe(): boolean
+        -inicializarSistemaObserver(): void
+    }
+
+    ' ACTORES DEL DOMINIO - JERARQUÍA CON LÓGICA
+    class MiembroHogar {
+        -nombre: String
+        -edad: int
+        -puntos: int
+        -factorDeCarga: int
+        --
+        +MiembroHogar(nombre: String, edad: int)
+        +asignarQuehacer(quehacer: Quehacer): void
+        +completarQuehacer(quehacer: Quehacer): void
+        +actualizar(mensaje: String): void
+        +calcularPuntos(): int
+        +getNombre(): String
+        +getEdad(): int
+    }
+
+    class JefeDelHogar {
+        +organizarMiembro(nombre: String, edad: int): void
+        +organizarMiembro(miembro: MiembroHogar): void
+        +organizarQuehaceres(nombre: String, diasLimite: int): void
+        +organizarQuehaceres(quehacer: Quehacer): void
+        +asignarIncentivo(miembro: MiembroHogar, incentivo: Incentivo): void
+    }
+
+    ' ENTIDADES CON LÓGICA DE NEGOCIO
+    class Quehacer {
+        -nombre: String
+        -estadoCompletado: boolean
+        -dificultad: Dificultad
+        -estadoFinalizado: boolean
+        --
+        +Quehacer(nombre: String, tiempoLimite: LocalDateTime, dificultad: Dificultad)
+        +completar(): void
+        +calcularRecompensa(): String
+        +estaVencido(): boolean
+        +getNombre(): String
+        +getDificultad(): Dificultad
+    }
+
+    class Incentivo {
+        -tipoIncentivo: TipoIncentivo
+        -puntos: int
+        -descripcion: String
+        --
+        +Incentivo(tipo: TipoIncentivo, puntos: int)
+        +aplicar(): void
+        +getTipoIncentivo(): TipoIncentivo
+        +getPuntos(): int
+    }
+
+    ' PATRÓN OBSERVER - LÓGICA DE NOTIFICACIONES
+    class RegistroQuehacer {
+        -quehaceresPorRealizar: List<Quehacer>
+        -observadores: List<Observador>
+        --
+        +suscribir(observador: Observador): void
+        +desuscribir(observador: Observador): void
+        +notificar(mensaje: String): void
+        +agregarQuehacer(quehacer: Quehacer): void
+        +suscribirMiembroAutomaticamente(miembro: MiembroHogar): void
+    }
+
+    ' COORDINADOR DE LÓGICA DE NEGOCIO
+    class HogarService {
+        -hogar: Hogar
+        --
+        +organizarMiembro(nombre: String, edad: int, esJefe: boolean): void
+        +organizarQuehacer(nombre: String, dificultad: Dificultad): void
+        +obtenerJefeDelHogar(): JefeDelHogar
+        +yaExisteJefe(): boolean
+        +sincronizarBDConMemoria(): ResultadoSincronizacion
+        +obtenerMiembrosRegulares(): List<MiembroHogar>
+        +obtenerNombreJefeDelHogar(): String
+        +obtenerEstadisticasHogar(): EstadisticasHogar
+    }
+
+    ' CLASES HELPER CON LÓGICA
+    class ResultadoSincronizacion {
+        +miembrosAgregados: int
+        +miembrosActualizados: int
+        +quehaceresAgregados: int
+        --
+        +esExitoso(): boolean
+        +getResumen(): String
+    }
+
+    class EstadisticasHogar {
+        +totalMiembros: long
+        +miembrosRegulares: long
+        +tieneJefe: boolean
+        --
+        +toString(): String
+    }
+}
+
+package "Capa de Datos" {
+    ' REPRESENTACIÓN MÍNIMA DE PERSISTENCIA
+    class PersistenceLayer {
+        <<Generic Data Access>>
+        +save(entity: Object): void
+        +findById(id: Long): Object
+        +findAll(entityType: Class): List<Object>
+        +update(entity: Object): void
+        +delete(id: Long): void
+    }
+}
+
+package "Capa de Presentación" {
+    ' REPRESENTACIÓN GENÉRICA DE LA GUI
+    class WebUserInterface {
+        <<Generic Web Interface>>
+        +displayMemberManagement(): void
+        +displayTaskManagement(): void
+        +displayIncentiveManagement(): void
+        +displayDashboard(): void
+        +processUserInput(action: String): void
+        +showNotifications(): void
+    }
+}
+
+' RELACIONES DE HERENCIA Y LÓGICA
+JefeDelHogar --|> MiembroHogar : hereda
+
+' IMPLEMENTACIÓN DEL PATRÓN OBSERVER
+MiembroHogar ..|> Observador : implementa
+RegistroQuehacer ..|> Sujeto : implementa
+
+' COMPOSICIÓN Y AGREGACIÓN - LÓGICA CENTRAL
+Hogar *-- RegistroQuehacer : contiene
+Hogar o-- MiembroHogar : administra
+Hogar o-- Quehacer : coordina
+
+' RELACIONES DE DOMINIO
+MiembroHogar ||--o{ Quehacer : realiza
+MiembroHogar ||--o{ Incentivo : recibe
+Quehacer ||--o{ Incentivo : genera
+
+' PATRÓN OBSERVER EN ACCIÓN
+RegistroQuehacer o-- Observador : notifica
+RegistroQuehacer o-- Quehacer : gestiona
+
+' REGLAS DE NEGOCIO
+Quehacer --> Dificultad : tiene
+Incentivo --> TipoIncentivo : tiene
+
+' COORDINACIÓN DE LÓGICA
+HogarService --> Hogar : coordina
+HogarService --> MiembroHogar : gestiona
+HogarService --> Quehacer : gestiona
+HogarService +-- ResultadoSincronizacion : utiliza
+HogarService +-- EstadisticasHogar : utiliza
+
+' CONEXIÓN CON CAPAS EXTERNAS
+HogarService ..> PersistenceLayer : utiliza
+WebUserInterface --> HogarService : utiliza
+
+note top of Hogar : Núcleo de la Lógica\nCoordinador Singleton\nAsignación Automática
+note top of RegistroQuehacer : Patrón Observer\nNotificaciones en Tiempo Real\nSuscripción Automática
+note bottom of HogarService : Facade de Lógica\nCoordinación de Operaciones\nSincronización BD-Memoria
+note bottom of MiembroHogar : Actor Principal\nObservador de Notificaciones\nGestión de Tareas y Puntos
+
+@enduml

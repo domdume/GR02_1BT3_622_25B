@@ -1,6 +1,6 @@
 package model;
 
 public enum TipoIncentivo {
-    Positivo,
-    Negativo
+    RECOMPENSA,
+    PENALIZACION
 }
