@@ -1,5 +1,6 @@
 package service;
 
+import model.Liga;
 import model.MiembroHogar;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -14,19 +15,19 @@ import static org.junit.Assert.*;
 public class LigaServiceParametersTest {
 
     private int puntosIniciales, puntosAPerder;
-    private String ligaEsperada;
+    private Liga ligaEsperada;
 
     @Parameterized.Parameters
     public static Iterable<Object[]> parameters() {
         List<Object[]> objects = new ArrayList<Object[]>();
-        objects.add(new Object[]{510, 20, "BRONCE"});
-        objects.add(new Object[]{550, 20, "PLATA"});
-        objects.add(new Object[]{1550, 100, "PLATA"});
+        objects.add(new Object[]{510, 20, Liga.BRONCE});
+        objects.add(new Object[]{550, 20, Liga.PLATA});
+        objects.add(new Object[]{1550, 100, Liga.PLATA});
         return objects;
     }
 
     // Constructor que recibe los parámetros
-    public LigaServiceParametersTest(int puntosIniciales, int puntosAPerder, String ligaEsperada) {
+    public LigaServiceParametersTest(int puntosIniciales, int puntosAPerder, Liga ligaEsperada) {
         this.puntosIniciales = puntosIniciales;
         this.puntosAPerder = puntosAPerder;
         this.ligaEsperada = ligaEsperada;

@@ -1,5 +1,6 @@
 package service;
 
+import model.Liga;
 import model.MiembroHogar;
 import org.junit.Test;
 import repository.AchievementRepository;
@@ -23,11 +24,11 @@ public class LigaServiceMockTest {
         // Crear servicio inyectando el mock
         LigaService ligaService = new LigaService(mockRepo);
         ligaService.actualizarLiga(usuario);
-        assertEquals("BRONCE", usuario.getLiga());
+        assertEquals(Liga.BRONCE, usuario.getLiga());
         //Ganar puntos para ascender a Plata
         ligaService.actualizarPuntosYLiga(usuario, 20); // 490 + 20 = 510
         //Verificar que ascendió a Plata
-        assertEquals("PLATA", usuario.getLiga());
+        assertEquals(Liga.PLATA, usuario.getLiga());
         //Verificar que NO se llamó a guardarLogro
         verify(mockRepo, never()).guardarLogro(anyLong(), eq("AscensoAPLATA"));
         //Verificar que solo tiene 510 puntos (sin bonificación de +50)
