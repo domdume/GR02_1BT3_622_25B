@@ -78,10 +78,10 @@
                                     ${param.miembroId == miembro.id ? 'selected' : ''}>
                                 <c:choose>
                                     <c:when test="${miembro.getClass().simpleName == 'JefeDelHogar'}">
-                                        👑 ${miembro.nombre} (Jefe) - ${miembro.puntos} pts
+                                        👑 ${miembro.nombre} (Jefe) - ${miembro.puntos} pts | Liga: ${miembro.liga}
                                     </c:when>
                                     <c:otherwise>
-                                        👤 ${miembro.nombre} - ${miembro.puntos} pts
+                                        👤 ${miembro.nombre} - ${miembro.puntos} pts | Liga: ${miembro.liga}
                                     </c:otherwise>
                                 </c:choose>
                             </option>

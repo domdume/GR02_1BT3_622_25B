@@ -17,9 +17,6 @@ public class MiembroHogar implements Observador {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    // Agregar justo después de los otros @Column existentes
-    //private String liga = "BRONCE"; // Por defecto
-
     private Long id;
 
     private String nombre;
@@ -136,10 +133,6 @@ public class MiembroHogar implements Observador {
         this.puntos = puntos;
     }
 
-    //public String getLiga() { return liga; }
-
-    //public void setLiga(String liga) { this.liga = liga; }
-
 //    // Método según diagrama UML
 //    public void realizarQuehacer(Quehacer q) {
 //        if (this.quehaceres.contains(q)) {
@@ -150,5 +143,8 @@ public class MiembroHogar implements Observador {
 //            System.out.println("AVISO: " + this.nombre + " no puede realizar una tarea que no tiene asignada.");
 //        }
 //    }
+
+
+
 }
 
