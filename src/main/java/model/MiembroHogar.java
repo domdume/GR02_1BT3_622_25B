@@ -41,7 +41,7 @@ public class MiembroHogar implements Observador {
         this.incentivos = new ArrayList<>();
         this.puntos = 0; // Initialize points
         this.factorDeCarga = 0;
-        this.liga = null;
+        this.liga = Liga.BRONCE;
     }
 
     // Getters y Setters para JPA y JSP

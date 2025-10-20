@@ -65,4 +65,10 @@ class ServicioNotificacionesTest {
         servicioLiga.removerPuntos(miembro, 1000);
         assertEquals(Liga.BRONCE, miembro.getLiga());
     }
+
+    @Test
+    public void dado_unMiembro_cuando_seCrea_entonces_empiezaEnLaLigaBronce(){
+        MiembroHogar miembro = new MiembroHogar("Carlos", 28);
+        assertEquals(Liga.BRONCE, miembro.getLiga());
+    }
 }
