@@ -31,19 +31,15 @@ public class LigaService {
     }
 
     public void actualizarPuntosYLiga(MiembroHogar miembro, int puntosGanados) {
-        Liga ligaAnterior = miembro.getLiga();
-
         // Actualizar puntos
-        int nuevosPuntos = miembro.getPuntos() + puntosGanados;
-        miembro.setPuntos(nuevosPuntos);
+        miembro.setPuntos(miembro.getPuntos() + puntosGanados);
 
         // Actualizar liga según nuevos puntos
         actualizarLiga(miembro);
-        Liga ligaNueva = miembro.getLiga();
 
         //Si hubo ascenso, intentar dar bonificación
-        if (detectarAscenso(ligaAnterior, ligaNueva)) {
-            aplicarBonificacionPorAscenso(miembro, ligaNueva);
+        if (detectarAscenso(miembro.getLiga(), miembro.getLiga())) {
+            aplicarBonificacionPorAscenso(miembro, miembro.getLiga());
         }
     }
 
