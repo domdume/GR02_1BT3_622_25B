@@ -5,6 +5,10 @@ import model.MiembroHogar;
 import repository.AchievementRepository;
 
 public class LigaService {
+    // Constantes extraídas
+    private static final int BONIFICACION_POR_ASCENSO = 50;
+    private static final String PREFIJO_LOGRO_ASCENSO = "AscensoA";
+
     private AchievementRepository achievementRepository;
 
     // Constructor sin parámetros para Test unitario y Test con parámetros
@@ -73,13 +77,16 @@ public class LigaService {
         boolean yaTieneLogro = achievementRepository.tieneLogro(miembro.getId(), logroId);
 
         if (!yaTieneLogro) {
-            // SOLO dar bonificación si NO tiene el logro
-            int bonificacion = 50;
-            miembro.setPuntos(miembro.getPuntos() + bonificacion);
-
-            // Guardar el logro para que no se repita
-            achievementRepository.guardarLogro(miembro.getId(), logroId);
+            otorgarBonificacionYGuardarLogro(miembro, logroId);
         }
+    }
+
+    /**
+     * Extraído: aplica la bonificación y persiste el logro.
+     */
+    private void otorgarBonificacionYGuardarLogro(MiembroHogar miembro, String logroId) {
+        miembro.setPuntos(miembro.getPuntos() + BONIFICACION_POR_ASCENSO);
+        achievementRepository.guardarLogro(miembro.getId(), logroId);
     }
 
 }
