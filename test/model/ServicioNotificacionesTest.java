@@ -1,13 +1,13 @@
 package model;
 
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 import org.mockito.Mockito;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-class ServicioNotificacionesTest {
+public class ServicioNotificacionesTest {
 
     @Test
     public void dado_miembroNuevo_cuando_ganaPuntosGradualmente_entonces_subeDeLigaCorrectamente() {

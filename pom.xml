@@ -99,6 +99,7 @@
     </dependencies>
 
     <build>
+        <testSourceDirectory>test</testSourceDirectory>
         <plugins>
             <!-- Compiler plugin: usa release 17 -->
             <plugin>

@@ -24,7 +24,7 @@ public class JefeDelHogar extends MiembroHogar {
         Hogar.getInstance().registrarMiembro(miembro);
     }
     public void registrarQuehacer(String nombre, int diasLimite ) {
-        Hogar.getInstance().organizarQuehacer(new Quehacer(nombre, LocalDateTime.now().plusDays(diasLimite), Dificultad.MEDIO));
+        Hogar.getInstance().registrarQuehacer(new Quehacer(nombre, LocalDateTime.now().plusDays(diasLimite), Dificultad.MEDIO));
     }
 
     public void mostrarMiembrosRegistrados() {

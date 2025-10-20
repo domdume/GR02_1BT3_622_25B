@@ -1,9 +1,9 @@
 package model;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.Assert.*;
 
 import org.junit.Before;
-import org.testng.annotations.Test;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -44,20 +44,23 @@ public class ServicioLigaParametersTest {
         List <Object[]> objects = new ArrayList<Object[]>();
                 // { Puntos Iniciales, Liga Inicial, Puntos a Añadir, Liga Esperada }
 
-                // Caso 1: (490 puntos + 20) -> asciende a Plata.
-                objects.add(new Object[]{490, Liga.BRONCE, 510, Liga.PLATA});
+                // Caso 1: (490 puntos + 20 = 510) -> asciende a Plata (> 500).
+                objects.add(new Object[]{490, Liga.BRONCE, 20, Liga.PLATA});
 
-                // Caso 2: (600 puntos + 50) -> permanece en Plata. (Requiere Liga Inicial = PLATA)
-        objects.add(new Object[]{600, Liga.PLATA, 650, Liga.PLATA});
+                // Caso 2: (600 puntos + 50 = 650) -> permanece en Plata. (Requiere Liga Inicial = PLATA)
+        objects.add(new Object[]{600, Liga.PLATA, 50, Liga.PLATA});
 
-                // Caso 3: (450 puntos + 20) -> permanece en Bronce.
-        objects.add(new Object[]{450, Liga.BRONCE, 470, Liga.BRONCE});
+                // Caso 3: (450 puntos + 20 = 470) -> permanece en Bronce (no supera 500).
+        objects.add(new Object[]{450, Liga.BRONCE, 20, Liga.BRONCE});
 
-                // Caso extra: Borde (499 + 1)
-        objects.add(new Object[]{499, Liga.BRONCE, 500, Liga.PLATA});
+                // Caso extra: Borde exacto (500 + 1 = 501) -> asciende a Plata (> 500)
+        objects.add(new Object[]{500, Liga.BRONCE, 1, Liga.PLATA});
 
-                // Caso extra: Salto a Oro (para comprobar la lógica del IF/ELSE IF)
-        objects.add(new Object[]{1490, Liga.PLATA, 1500, Liga.ORO});
+                // Caso extra: Borde 500 exacto (499 + 1 = 500) -> permanece en Bronce (500 NO es > 500)
+        objects.add(new Object[]{499, Liga.BRONCE, 1, Liga.BRONCE});
+
+                // Caso extra: Salto a Oro (1500 + 1 = 1501) -> asciende a Oro (> 1500)
+        objects.add(new Object[]{1500, Liga.PLATA, 1, Liga.ORO});
         return objects;
     }
 
@@ -66,11 +69,12 @@ public class ServicioLigaParametersTest {
     public void given_miembroEnBronce_when_sumaPuntos_then_subeLigaAPlata() {
         // Usamos los parámetros para inicializar el MiembroHogar
         MiembroHogar miembro = new MiembroHogar("Mario",18);
+        miembro.setPuntos(puntosIniciales); // Establecer puntos iniciales
         miembro.setLiga(ligaInicial);
         // Act (Ejecución)
         servicio.actualizarPuntos(miembro, puntosAñadidos);
 
         // Assert (Verificación)
-        assertEquals(ligaEsperada, miembro.getLiga(),"deberia ser igual");
+        assertEquals("deberia ser igual", ligaEsperada, miembro.getLiga());
     }
 }
