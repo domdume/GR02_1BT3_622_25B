@@ -5,7 +5,12 @@ import model.MiembroHogar;
 import repository.AchievementRepository;
 
 public class LigaService {
-    private AchievementRepository achievementRepository;
+    // Constantes extraídas
+    private static final int BONIFICACION_POR_ASCENSO = 50;
+    private static final String PREFIJO_LOGRO_ASCENSO = "AscensoA";
+    private static final int PUNTOS_PLATA = 500;
+    private static final int PUNTOS_ORO = 1500;
+    private final AchievementRepository achievementRepository;
 
     // Constructor sin parámetros para Test unitario y Test con parámetros
     public LigaService() {
@@ -18,52 +23,29 @@ public class LigaService {
     }
 
     public void actualizarLiga(MiembroHogar miembro) {
-        int puntos = miembro.getPuntos();
-
-        // Determinar liga según puntos
-        if (puntos >= 1500) {
-            miembro.setLiga(Liga.ORO);
-        } else if (puntos >= 500) {
-            miembro.setLiga(Liga.PLATA);
-        } else {
-            miembro.setLiga(Liga.BRONCE);
-        }
+        miembro.setLiga(calcularLigaPorPuntos(miembro.getPuntos()));
     }
-
+    private static Liga calcularLigaPorPuntos(int puntos) {
+        if (puntos >= PUNTOS_ORO) return Liga.ORO;
+        if (puntos >= PUNTOS_PLATA) return Liga.PLATA;
+        return Liga.BRONCE;
+    }
     public void actualizarPuntosYLiga(MiembroHogar miembro, int puntosGanados) {
-        Liga ligaAnterior = miembro.getLiga();
-
         // Actualizar puntos
-        int nuevosPuntos = miembro.getPuntos() + puntosGanados;
-        miembro.setPuntos(nuevosPuntos);
+        miembro.setPuntos(miembro.getPuntos() + puntosGanados);
 
         // Actualizar liga según nuevos puntos
         actualizarLiga(miembro);
-        Liga ligaNueva = miembro.getLiga();
 
         //Si hubo ascenso, intentar dar bonificación
-        if (detectarAscenso(ligaAnterior, ligaNueva)) {
-            aplicarBonificacionPorAscenso(miembro, ligaNueva);
+        if (esAscenso(miembro.getLiga(), miembro.getLiga())) {
+            aplicarBonificacionPorAscenso(miembro, miembro.getLiga());
         }
     }
-
-    //Detecta si hubo ascenso
-    private boolean detectarAscenso(Liga ligaAnterior, Liga ligaNueva) {
-        int nivelAnterior = obtenerNivelLiga(ligaAnterior);
-        int nivelNuevo = obtenerNivelLiga(ligaNueva);
-        return nivelNuevo > nivelAnterior;
+    private static boolean esAscenso(Liga anterior, Liga nueva) {
+        // Substitute algorithm: rely on enum order
+        return nueva.ordinal() > anterior.ordinal();
     }
-
-    //Convierte liga a número
-    private int obtenerNivelLiga(Liga liga) {
-        switch (liga) {
-            case BRONCE: return 1;
-            case PLATA: return 2;
-            case ORO: return 3;
-            default: return 0;
-        }
-    }
-
     //Aplica bonificación SOLO si NO tiene el logro
     private void aplicarBonificacionPorAscenso(MiembroHogar miembro, Liga ligaNueva) {
         // Si no hay repositorio, no hacer nada
@@ -77,13 +59,16 @@ public class LigaService {
         boolean yaTieneLogro = achievementRepository.tieneLogro(miembro.getId(), logroId);
 
         if (!yaTieneLogro) {
-            // SOLO dar bonificación si NO tiene el logro
-            int bonificacion = 50;
-            miembro.setPuntos(miembro.getPuntos() + bonificacion);
-
-            // Guardar el logro para que no se repita
-            achievementRepository.guardarLogro(miembro.getId(), logroId);
+            otorgarBonificacionYGuardarLogro(miembro, logroId);
         }
+    }
+
+    /**
+     * Extraído: aplica la bonificación y persiste el logro.
+     */
+    private void otorgarBonificacionYGuardarLogro(MiembroHogar miembro, String logroId) {
+        miembro.setPuntos(miembro.getPuntos() + BONIFICACION_POR_ASCENSO);
+        achievementRepository.guardarLogro(miembro.getId(), logroId);
     }
 
 }
