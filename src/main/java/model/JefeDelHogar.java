@@ -19,13 +19,13 @@ public class JefeDelHogar extends MiembroHogar {
     public void organizarMiembro(String nombre, int edad){
         Hogar.getInstance().registrarMiembro(new MiembroHogar(nombre, edad));
     }
-    public void organizarMiembro(MiembroHogar miembro){
-        System.out.println("\n" + getNombre() + " está registrando a un nuevo miembro...");
-        Hogar.getInstance().registrarMiembro(miembro);
-    }
-    public void registrarQuehacer(String nombre, int diasLimite ) {
-        Hogar.getInstance().registrarQuehacer(new Quehacer(nombre, LocalDateTime.now().plusDays(diasLimite), Dificultad.MEDIO));
-    }
+//    public void organizarMiembro(MiembroHogar miembro){
+//        System.out.println("\n" + getNombre() + " está registrando a un nuevo miembro...");
+//        Hogar.getInstance().registrarMiembro(miembro);
+//    }
+//    public void registrarQuehacer(String nombre, int diasLimite ) {
+//        Hogar.getInstance().registrarQuehacer(new Quehacer(nombre, LocalDateTime.now().plusDays(diasLimite), Dificultad.MEDIO));
+//    }
 
     public void mostrarMiembrosRegistrados() {
         System.out.println("\n--- Lista Actual de Miembros del Hogar ---");

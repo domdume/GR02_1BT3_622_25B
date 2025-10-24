@@ -76,9 +76,9 @@ public class Quehacer {
         return tiempoLimite;
     }
 
-    public void setTiempoLimite(LocalDateTime tiempoLimite) {
-        this.tiempoLimite = tiempoLimite;
-    }
+//    public void setTiempoLimite(LocalDateTime tiempoLimite) {
+//        this.tiempoLimite = tiempoLimite;
+//    }
 
     public LocalDateTime getFechaFinalizacion() {
         return fechaFinalizacion;
@@ -104,9 +104,9 @@ public class Quehacer {
         this.recompensa = recompensa;
     }
 
-    public String getPenalizacion() {
-        return penalizacion;
-    }
+//    public String getPenalizacion() {
+//        return penalizacion;
+//    }
 
     public void setPenalizacion(String penalizacion) {
         this.penalizacion = penalizacion;
@@ -146,14 +146,14 @@ public class Quehacer {
         return fechaFinalizacion.isBefore(tiempoLimite) || fechaFinalizacion.isEqual(tiempoLimite);
     }
 
-    @Transient
-    public int getRewardPoints() {
-        if (!estadoCompletado || !fueCompletadoATiempo()) {
-            return 0;
-        }
-        return 20; // Puntos fijos para todos los quehaceres
-
-    }
+//    @Transient
+//    public int getRewardPoints() {
+//        if (!estadoCompletado || !fueCompletadoATiempo()) {
+//            return 0;
+//        }
+//        return 20; // Puntos fijos para todos los quehaceres
+//
+//    }
 
     public boolean estaVencido() {
         return !estadoCompletado && LocalDateTime.now().isAfter(tiempoLimite);
