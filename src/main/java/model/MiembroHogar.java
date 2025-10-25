@@ -120,6 +120,9 @@ public class MiembroHogar implements Observador {
         return edad;
     }
     public void asignarQuehacer(Quehacer q) {
+        if (q == null) return;
+        // Set owning side so JPA persist the relationship
+        q.setMiembroHogar(this);
         if (!this.quehaceres.contains(q)) {
             this.quehaceres.add(q);
         }
@@ -147,4 +150,3 @@ public class MiembroHogar implements Observador {
 
 
 }
-

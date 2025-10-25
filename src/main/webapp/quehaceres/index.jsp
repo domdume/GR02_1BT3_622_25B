@@ -27,27 +27,43 @@
         <jsp:include page="../common/messages.jsp" />
 
         <!-- Panel de acciones principales -->
-        <section class="actions-panel">
-            <div class="actions-grid">
-                <a href="${pageContext.request.contextPath}/quehaceres?action=new" class="action-card primary">
-                    <span class="action-icon">➕</span>
-                    <h3>Crear Tarea</h3>
-                    <p>Asignar nueva tarea a un miembro</p>
-                </a>
-                
-                <a href="${pageContext.request.contextPath}/quehaceres?action=pending" class="action-card pending">
-                    <span class="action-icon">📋</span>
-                    <h3>Tareas Pendientes</h3>
-                    <p>Ver todas las tareas por completar</p>
-                </a>
-                
-                <a href="${pageContext.request.contextPath}/quehaceres?action=complete" class="action-card success">
-                    <span class="action-icon">✅</span>
-                    <h3>Marcar Completada</h3>
-                    <p>Registrar tarea terminada</p>
-                </a>
-            </div>
-        </section>
+        <c:if test="${sessionScope.viewRole == 'JEFE'}">
+            <section class="actions-panel">
+                <div class="actions-grid">
+                    <a href="${pageContext.request.contextPath}/quehaceres?action=new" class="action-card primary">
+                        <span class="action-icon">➕</span>
+                        <h3>Crear Tarea</h3>
+                        <p>Asignar nueva tarea a un miembro</p>
+                    </a>
+                    <a href="${pageContext.request.contextPath}/quehaceres?action=pending" class="action-card pending">
+                        <span class="action-icon">📋</span>
+                        <h3>Tareas Pendientes</h3>
+                        <p>Ver todas las tareas por completar</p>
+                    </a>
+                    <a href="${pageContext.request.contextPath}/quehaceres?action=complete" class="action-card success">
+                        <span class="action-icon">✅</span>
+                        <h3>Marcar Completada</h3>
+                        <p>Registrar tarea terminada</p>
+                    </a>
+                </div>
+            </section>
+        </c:if>
+        <c:if test="${sessionScope.viewRole != 'JEFE'}">
+            <section class="actions-panel">
+                <div class="actions-grid">
+                    <a href="${pageContext.request.contextPath}/quehaceres?action=pending" class="action-card pending">
+                        <span class="action-icon">📋</span>
+                        <h3>Tareas Pendientes</h3>
+                        <p>Ver todas las tareas por completar</p>
+                    </a>
+                    <a href="${pageContext.request.contextPath}/quehaceres?action=complete" class="action-card success">
+                        <span class="action-icon">✅</span>
+                        <h3>Marcar Completada</h3>
+                        <p>Registrar tarea terminada</p>
+                    </a>
+                </div>
+            </section>
+        </c:if>
 
         <!-- Estadísticas generales -->
         <section class="stats-overview">
@@ -80,10 +96,10 @@
             <div class="section-header">
                 <h3>📝 Todas las Tareas</h3>
                 <div class="filters">
-                    <button class="filter-btn active" onclick="filterTasks('all')">Todas</button>
-                    <button class="filter-btn" onclick="filterTasks('pending')">Pendientes</button>
-                    <button class="filter-btn" onclick="filterTasks('completed')">Completadas</button>
-                    <button class="filter-btn" onclick="filterTasks('overdue')">Vencidas</button>
+                    <button class="filter-btn active" onclick="filterTasks(event, 'all')">Todas</button>
+                    <button class="filter-btn" onclick="filterTasks(event, 'pending')">Pendientes</button>
+                    <button class="filter-btn" onclick="filterTasks(event, 'completed')">Completadas</button>
+                    <button class="filter-btn" onclick="filterTasks(event, 'overdue')">Vencidas</button>
                 </div>
             </div>
 
@@ -92,16 +108,18 @@
                     <div class="empty-state">
                         <h4>🏠 No hay tareas registradas</h4>
                         <p>Comience creando la primera tarea del hogar</p>
-                        <a href="${pageContext.request.contextPath}/quehaceres?action=new" class="btn btn-primary">
-                            ➕ Crear Primera Tarea
-                        </a>
+                        <c:if test="${sessionScope.viewRole == 'JEFE'}">
+                            <a href="${pageContext.request.contextPath}/quehaceres?action=new" class="btn btn-primary">
+                                ➕ Crear Primera Tarea
+                            </a>
+                        </c:if>
                     </div>
                 </c:when>
                 <c:otherwise>
                     <div class="tasks-grid">
                         <c:forEach var="quehacer" items="${listaQuehaceres}">
-                            <c:set var="isOverdue" value="${not quehacer.estadoCompletado and quehacer.tiempoLimite.time < pageContext.session.creationTime}" />
-                            
+                            <c:set var="isOverdue" value="${quehacer.estaVencido()}" />
+
                             <div class="task-card ${quehacer.estadoCompletado ? 'completed' : 'pending'} ${isOverdue ? 'overdue' : ''}"
                                  data-status="${quehacer.estadoCompletado ? 'completed' : 'pending'}"
                                  data-overdue="${isOverdue}">
@@ -131,20 +149,17 @@
                                         </span>
                                     </div>
 
-                                    <c:if test="${not empty quehacer.descripcion}">
-                                        <p class="task-description">${fn:substring(quehacer.descripcion, 0, 100)}${fn:length(quehacer.descripcion) > 100 ? '...' : ''}</p>
-                                    </c:if>
 
                                     <div class="task-timing">
                                         <div class="deadline">
                                             📅 <strong>Límite:</strong> 
-                                            <fmt:formatDate value="${quehacer.tiempoLimite}" pattern="dd/MM/yyyy HH:mm" />
+                                            <c:out value="${empty quehacer.tiempoLimiteFmt ? quehacer.tiempoLimite : quehacer.tiempoLimiteFmt}" />
                                         </div>
                                         
                                         <c:if test="${quehacer.estadoCompletado and not empty quehacer.fechaFinalizacion}">
                                             <div class="completion-time">
                                                 ✅ <strong>Completada:</strong> 
-                                                <fmt:formatDate value="${quehacer.fechaFinalizacion}" pattern="dd/MM/yyyy HH:mm" />
+                                                <c:out value="${empty quehacer.fechaFinalizacionFmt ? quehacer.fechaFinalizacion : quehacer.fechaFinalizacionFmt}" />
                                             </div>
                                         </c:if>
                                     </div>
@@ -162,14 +177,23 @@
                                             <span class="status-badge completed">✅ Completada</span>
                                         </c:when>
                                         <c:otherwise>
+                                            <c:if test="${sessionScope.viewRole == 'JEFE'}">
                                             <a href="${pageContext.request.contextPath}/quehaceres?action=complete&quehacerId=${quehacer.id}" 
                                                class="btn btn-success btn-sm">
                                                 ✅ Completar
                                             </a>
+                                            </c:if>
+                                            <c:if test="${sessionScope.viewRole == 'JEFE'}">
                                             <a href="${pageContext.request.contextPath}/quehaceres?action=edit&id=${quehacer.id}" 
                                                class="btn btn-outline btn-sm">
                                                 ✏️ Editar
                                             </a>
+                                            </c:if>
+                                            <c:if test="${sessionScope.viewRole == 'JEFE'}">
+                                                <a href="${pageContext.request.contextPath}/quehaceres?action=delete&id=${quehacer.id}"
+                                                   class="btn btn-outline btn-sm" style="color:#fca5a5; border-color: rgba(239,68,68,0.35);"
+                                                   onclick="return confirm('¿Eliminar la tarea ${quehacer.nombre}? Esta acción es irreversible.');">🗑️ Eliminar</a>
+                                            </c:if>
                                         </c:otherwise>
                                     </c:choose>
                                 </div>
@@ -200,39 +224,19 @@
                 </div>
             </section>
         </c:if>
-
-        <!-- Información del sistema Observer -->
-        <aside class="info-panel">
-            <h3>🔔 Sistema de Notificaciones Activo</h3>
-            <div class="observer-status">
-                <div class="status-item">
-                    <span class="status-icon">✅</span>
-                    <span>Observadores conectados automáticamente</span>
-                </div>
-                <div class="status-item">
-                    <span class="status-icon">🔄</span>
-                    <span>Notificaciones en tiempo real activas</span>
-                </div>
-                <div class="status-item">
-                    <span class="status-icon">📋</span>
-                    <span>Registro de cambios automático</span>
-                </div>
-            </div>
-            <p><small>Cada acción en las tareas notifica automáticamente a todos los miembros del hogar.</small></p>
-        </aside>
     </div>
 </main>
 
 <!-- JavaScript para filtros dinámicos -->
 <script>
-function filterTasks(status) {
+function filterTasks(event, status) {
     const cards = document.querySelectorAll('.task-card');
     const buttons = document.querySelectorAll('.filter-btn');
     
     // Actualizar botones activos
     buttons.forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
-    
+    if (event && event.target) event.target.classList.add('active');
+
     // Filtrar tarjetas
     cards.forEach(card => {
         const cardStatus = card.dataset.status;
