@@ -76,9 +76,9 @@ public class Quehacer {
         return tiempoLimite;
     }
 
-//    public void setTiempoLimite(LocalDateTime tiempoLimite) {
-//        this.tiempoLimite = tiempoLimite;
-//    }
+ public void setTiempoLimite(LocalDateTime tiempoLimite) {
+    this.tiempoLimite = tiempoLimite;
+}
 
     public LocalDateTime getFechaFinalizacion() {
         return fechaFinalizacion;

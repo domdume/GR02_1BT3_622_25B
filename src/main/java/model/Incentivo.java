@@ -1,8 +1,8 @@
 package model;
 
 import jakarta.persistence.*;
-import dao.IncentivoDAO;
 import java.time.LocalDateTime;
+import service.IncentivoService;
 
 @Entity
 public class Incentivo {
@@ -40,44 +40,12 @@ public class Incentivo {
         this.quehacer = quehacer;
     }
 
-    private static final int PUNTOS_FACIL = 10;
-    private static final int PUNTOS_MEDIO = 20;
-    private static final int PUNTOS_DIFICIL = 30;
-    private static final int PENALIZACION = 5;
+    public static final int PUNTOS_FACIL = 10;
+    public static final int PUNTOS_MEDIO = 20;
+    public static final int PUNTOS_DIFICIL = 30;
+    public static final int PENALIZACION = 5;
 
-    public void aplicar(MiembroHogar miembro, Quehacer quehacerCompletado) {
-        if (miembro == null || quehacerCompletado == null) {
-            throw new IllegalArgumentException("Miembro y quehacer no pueden ser nulos");
-        }
-
-        if (quehacerCompletado.fueCompletadoATiempo()) {
-            this.tipoIncentivo = TipoIncentivo.RECOMPENSA;
-            int points = switch (quehacerCompletado.getDificultad()) {
-                case FACIL -> PUNTOS_FACIL;
-                case MEDIO -> PUNTOS_MEDIO;
-                case DIFICIL -> PUNTOS_DIFICIL;
-            };
-            this.puntos = points;
-            this.descripcion = "Completado a tiempo: " + quehacerCompletado.getNombre();
-            miembro.setPuntos(miembro.getPuntos() + points);
-            System.out.println("👍 ¡Felicidades! " + miembro.getNombre() + " terminó '" + quehacerCompletado.getNombre() + "' a tiempo. Puntos añadidos: " + points);
-        } else {
-            this.tipoIncentivo = TipoIncentivo.PENALIZACION;
-            this.puntos = -PENALIZACION;
-            this.descripcion = "No completado a tiempo: " + quehacerCompletado.getNombre();
-            miembro.setPuntos(Math.max(0, miembro.getPuntos() - PENALIZACION));
-            System.out.println("👎 Lástima, " + miembro.getNombre() + " se retrasó con '" + quehacerCompletado.getNombre() + "'. Penalización: -" + PENALIZACION + " puntos.");
-        }
-
-        // Establecer la relación bidireccional
-        this.setMiembroHogar(miembro);
-        this.setQuehacer(quehacerCompletado);
-        miembro.anadirIncentivo(this);
-
-        // Persistir el incentivo directamente usando DAO
-        IncentivoDAO incentivoDAO = new IncentivoDAO();
-        incentivoDAO.create(this);
-    }
+    // La lógica de aplicar incentivos se ha movido a IncentivoService
 
     // Getters y Setters
     public Long getId() {
@@ -139,10 +107,10 @@ public class Incentivo {
 
     /**
      * Método estático de fábrica para crear y aplicar un incentivo.
-     * Reemplaza los métodos anteriores otorgarRecompensaPorCompletar y aplicarPenalizacionPorVencer.
+     * Reemplaza los métodos anteriores y delega al IncentivoService.
      */
     public static void aplicarIncentivo(MiembroHogar miembro, Quehacer quehacer) {
-        Incentivo incentivo = new Incentivo();
-        incentivo.aplicar(miembro, quehacer);
+        IncentivoService incentivoService = new IncentivoService();
+        incentivoService.aplicarIncentivo(miembro, quehacer);
     }
 }

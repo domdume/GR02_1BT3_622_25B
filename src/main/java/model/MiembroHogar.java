@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import service.IncentivoService;
 
 /**
  * Entidad que representa un miembro del hogar.
@@ -114,7 +115,8 @@ public class MiembroHogar implements Observador {
         
         // 2. Crear y aplicar el incentivo correspondiente
         Incentivo incentivo = new Incentivo();
-        incentivo.aplicar(this, quehacer);
+        IncentivoService incentivoService = new IncentivoService();
+        incentivoService.aplicarIncentivo(this, quehacer);
     }
 //    public void reducirFactorDeCarga() { this.factorDeCarga--; }
 //    public void aumentarFactorDeCarga() { this.factorDeCarga++; }
