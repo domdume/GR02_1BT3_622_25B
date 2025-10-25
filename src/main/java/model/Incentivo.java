@@ -137,49 +137,10 @@ public class Incentivo {
     }
 
 
-    // Métodos estáticos para mover lógica desde servletQuehacer
-    public static void otorgarRecompensaPorCompletar(MiembroHogar miembro, Quehacer quehacer) {
-        if (miembro != null) {
-            int puntosRecompensa = 20;
-            miembro.setPuntos(miembro.getPuntos() + puntosRecompensa);
-
-            // Crear incentivo y persistirlo
-            Incentivo incentivo = new Incentivo(
-                TipoIncentivo.RECOMPENSA, 
-                puntosRecompensa, 
-                "Quehacer completado: " + quehacer.getNombre(), 
-                miembro, 
-                quehacer
-            );
-
-            IncentivoDAO incentivoDAO = new IncentivoDAO();
-            incentivoDAO.create(incentivo);
-
-            System.out.println("[INCENTIVO] Recompensa otorgada: +" + puntosRecompensa + " puntos para " + miembro.getNombre());
-        }
-    }
-
-    public static void aplicarPenalizacionPorVencer(MiembroHogar miembro, Quehacer quehacer) {
-        if (miembro != null) {
-            int puntosPenalizacion = -10;
-            miembro.setPuntos(Math.max(0, miembro.getPuntos() - 10));
-
-            // Crear incentivo negativo y persistirlo
-            Incentivo incentivo = new Incentivo(
-                TipoIncentivo.PENALIZACION, 
-                puntosPenalizacion, 
-                "Quehacer vencido: " + quehacer.getNombre(), 
-                miembro, 
-                quehacer
-            );
-
-            IncentivoDAO incentivoDAO = new IncentivoDAO();
-            incentivoDAO.create(incentivo);
-
-            System.out.println("[INCENTIVO] Penalización aplicada: -10 puntos para " + miembro.getNombre());
-        }
-    }
-
+    /**
+     * Método estático de fábrica para crear y aplicar un incentivo.
+     * Reemplaza los métodos anteriores otorgarRecompensaPorCompletar y aplicarPenalizacionPorVencer.
+     */
     public static void aplicarIncentivo(MiembroHogar miembro, Quehacer quehacer) {
         Incentivo incentivo = new Incentivo();
         incentivo.aplicar(miembro, quehacer);
