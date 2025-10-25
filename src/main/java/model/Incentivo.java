@@ -40,13 +40,22 @@ public class Incentivo {
         this.quehacer = quehacer;
     }
 
+    private static final int PUNTOS_FACIL = 10;
+    private static final int PUNTOS_MEDIO = 20;
+    private static final int PUNTOS_DIFICIL = 30;
+    private static final int PENALIZACION = 5;
+
     public void aplicar(MiembroHogar miembro, Quehacer quehacerCompletado) {
+        if (miembro == null || quehacerCompletado == null) {
+            throw new IllegalArgumentException("Miembro y quehacer no pueden ser nulos");
+        }
+
         if (quehacerCompletado.fueCompletadoATiempo()) {
             this.tipoIncentivo = TipoIncentivo.RECOMPENSA;
             int points = switch (quehacerCompletado.getDificultad()) {
-                case FACIL -> 10;
-                case MEDIO -> 20;
-                case DIFICIL -> 30;
+                case FACIL -> PUNTOS_FACIL;
+                case MEDIO -> PUNTOS_MEDIO;
+                case DIFICIL -> PUNTOS_DIFICIL;
             };
             this.puntos = points;
             this.descripcion = "Completado a tiempo: " + quehacerCompletado.getNombre();
@@ -54,10 +63,10 @@ public class Incentivo {
             System.out.println("👍 ¡Felicidades! " + miembro.getNombre() + " terminó '" + quehacerCompletado.getNombre() + "' a tiempo. Puntos añadidos: " + points);
         } else {
             this.tipoIncentivo = TipoIncentivo.PENALIZACION;
-            this.puntos = -5;
+            this.puntos = -PENALIZACION;
             this.descripcion = "No completado a tiempo: " + quehacerCompletado.getNombre();
-            miembro.setPuntos(Math.max(0, miembro.getPuntos() - 5));
-            System.out.println("👎 Lástima, " + miembro.getNombre() + " se retrasó con '" + quehacerCompletado.getNombre() + "'. Penalización: -5 puntos.");
+            miembro.setPuntos(Math.max(0, miembro.getPuntos() - PENALIZACION));
+            System.out.println("👎 Lástima, " + miembro.getNombre() + " se retrasó con '" + quehacerCompletado.getNombre() + "'. Penalización: -" + PENALIZACION + " puntos.");
         }
 
         // Establecer la relación bidireccional

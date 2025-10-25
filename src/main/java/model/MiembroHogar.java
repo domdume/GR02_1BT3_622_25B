@@ -1,6 +1,7 @@
 package model;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -98,14 +99,20 @@ public class MiembroHogar implements Observador {
     }
 
     public void registrarQuehacerCompleto(Quehacer quehacer) {
+        if (quehacer == null) {
+            throw new IllegalArgumentException("El quehacer no puede ser nulo");
+        }
         if (!this.quehaceres.contains(quehacer)) {
             System.out.println("AVISO: " + nombre + " no puede completar una tarea que no tiene asignada.");
             return;
         }
+        
         // 1. El miembro actualiza el estado de la tarea y su propia lista.
-        quehacer.marcarComoCompletado();
+        quehacer.setFechaFinalizacion(LocalDateTime.now());
+        quehacer.setEstadoCompletado(true);
         this.quehaceres.remove(quehacer);
-        // 2. Llama al experto para que aplique la lógica de incentivos/penalizaciones.
+        
+        // 2. Crear y aplicar el incentivo correspondiente
         Incentivo incentivo = new Incentivo();
         incentivo.aplicar(this, quehacer);
     }
