@@ -31,15 +31,18 @@ public class LigaService {
         return Liga.BRONCE;
     }
     public void actualizarPuntosYLiga(MiembroHogar miembro, int puntosGanados) {
+        Liga ligaAnterior = miembro.getLiga();
+        
         // Actualizar puntos
         miembro.setPuntos(miembro.getPuntos() + puntosGanados);
 
         // Actualizar liga según nuevos puntos
         actualizarLiga(miembro);
+        Liga ligaNueva = miembro.getLiga();
 
         //Si hubo ascenso, intentar dar bonificación
-        if (esAscenso(miembro.getLiga(), miembro.getLiga())) {
-            aplicarBonificacionPorAscenso(miembro, miembro.getLiga());
+        if (esAscenso(ligaAnterior, ligaNueva)) {
+            aplicarBonificacionPorAscenso(miembro, ligaNueva);
         }
     }
     private static boolean esAscenso(Liga anterior, Liga nueva) {
@@ -53,7 +56,7 @@ public class LigaService {
             return;
         }
 
-        String logroId = "AscensoA" + ligaNueva;
+        String logroId = PREFIJO_LOGRO_ASCENSO + ligaNueva;
 
         // Verificar si YA tiene el logro
         boolean yaTieneLogro = achievementRepository.tieneLogro(miembro.getId(), logroId);
