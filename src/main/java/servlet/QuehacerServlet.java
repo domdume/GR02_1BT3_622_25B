@@ -15,6 +15,7 @@ import model.Quehacer;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -181,33 +182,31 @@ public class QuehacerServlet extends HttpServlet {
         System.out.println("[DEBUG] - Dificultad: " + dificultadStr);
 
         try {
-            Long miembroId = Long.parseLong(miembroIdStr);
-            MiembroHogar miembro = miembroHogarDAO.findById(miembroId);
-            System.out.println("[DEBUG] - Miembro encontrado: " + (miembro != null ? miembro.getNombre() : "null"));
-            
+            // Validaciones básicas
+            if (nombre == null || nombre.trim().isEmpty()) {
+                throw new IllegalArgumentException("El nombre del quehacer es requerido");
+            }
+            if (tiempoLimiteStr == null || tiempoLimiteStr.trim().isEmpty()) {
+                throw new IllegalArgumentException("La fecha/hora límite es requerida");
+            }
+
             LocalDateTime tiempoLimite = LocalDateTime.parse(tiempoLimiteStr);
 
-            // Usar dificultad del formulario o MEDIO por defecto
-            Dificultad dificultad = Dificultad.MEDIO; // Valor por defecto
+            // Determinar dificultad (por defecto MEDIO)
+            model.Dificultad dificultad = model.Dificultad.MEDIO;
             if (dificultadStr != null && !dificultadStr.isEmpty()) {
                 try {
-                    dificultad = Dificultad.valueOf(dificultadStr.toUpperCase());
+                    dificultad = model.Dificultad.valueOf(dificultadStr.toUpperCase());
                 } catch (IllegalArgumentException e) {
                     System.out.println("[DEBUG] Dificultad inválida, usando MEDIO por defecto");
                 }
-
-            System.out.println("[QuehacerServlet] Llamando a hogarService.organizarQuehacer()");
-            hogarService.organizarQuehacer(nombre, tiempoLimite, dificultad, miembroIdStr);
-            System.out.println("[DEBUG] Quehacer creado exitosamente a través de HogarService");
-
             }
 
-            // Usar el nuevo constructor con dificultad según el diagrama UML
-            Quehacer nuevoQuehacer = new Quehacer(nombre, tiempoLimite, dificultad);
-            nuevoQuehacer.setMiembroHogar(miembro);
+            // Delegar la creación y persistencia al servicio (evitar duplicados)
+            System.out.println("[QuehacerServlet] Llamando a hogarService.organizarQuehacer()");
+            hogarService.organizarQuehacer(nombre.trim(), tiempoLimite, dificultad, miembroIdStr);
+            System.out.println("[DEBUG] Quehacer creado exitosamente a través de HogarService");
 
-            quehacerDAO.create(nuevoQuehacer);
-            System.out.println("[DEBUG] Quehacer creado exitosamente");
             request.getSession().setAttribute("successMessage", "Quehacer agregado correctamente.");
         } catch (Exception e) {
             System.out.println("[DEBUG] Error al crear quehacer: " + e.getMessage());
@@ -289,6 +288,13 @@ public class QuehacerServlet extends HttpServlet {
         listaQuehaceres.addAll(quehaceresCompletados);
         listaQuehaceres.addAll(quehaceresPendientes);
         
+        // Formateo de fechas para vista
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        for (Quehacer q : listaQuehaceres) {
+            if (q.getTiempoLimite() != null) q.setTiempoLimiteFmt(q.getTiempoLimite().format(fmt));
+            if (q.getFechaFinalizacion() != null) q.setFechaFinalizacionFmt(q.getFechaFinalizacion().format(fmt));
+        }
+
         // Log detallado de los quehaceres cargados
         for (Quehacer q : listaQuehaceres) {
             System.out.println("[DEBUG] - Quehacer: " + q.getNombre() + " | Asignado a: " + 
@@ -377,6 +383,13 @@ public class QuehacerServlet extends HttpServlet {
         listaQuehaceres.addAll(quehaceresCompletados);
         listaQuehaceres.addAll(quehaceresPendientes);
         
+        // Formateo de fechas para vista
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        for (Quehacer q : listaQuehaceres) {
+            if (q.getTiempoLimite() != null) q.setTiempoLimiteFmt(q.getTiempoLimite().format(fmt));
+            if (q.getFechaFinalizacion() != null) q.setFechaFinalizacionFmt(q.getFechaFinalizacion().format(fmt));
+        }
+
         // Pasar datos y estadísticas calculadas a la vista (no calcular en JSP)
         request.setAttribute("listaQuehaceres", listaQuehaceres);
         request.setAttribute("totalTareas", totalTareas);
@@ -409,12 +422,15 @@ public class QuehacerServlet extends HttpServlet {
                         // Obtener todas las tareas y filtrar las del miembro que están realmente pendientes
                         List<Quehacer> todasLasTareas = quehacerDAO.findAll();
                         LocalDateTime ahora = LocalDateTime.now();
-                        
+                        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
                         for (Quehacer q : todasLasTareas) {
                             if (q.getMiembroHogar() != null && 
                                 q.getMiembroHogar().getId().equals(miembroId) && 
                                 !q.estaCompletado() && !q.isEstadoFinalizado() &&
                                 ahora.isBefore(q.getTiempoLimite())) { // Solo las que no han vencido
+                                if (q.getTiempoLimite() != null) q.setTiempoLimiteFmt(q.getTiempoLimite().format(fmt));
+                                if (q.getFechaFinalizacion() != null) q.setFechaFinalizacionFmt(q.getFechaFinalizacion().format(fmt));
                                 tareasPendientes.add(q);
                             }
                         }
@@ -451,15 +467,16 @@ public class QuehacerServlet extends HttpServlet {
             List<Quehacer> todosLosQuehaceres = quehacerDAO.findAll();
             List<Quehacer> listaQuehaceres = new java.util.ArrayList<>();
             java.time.LocalDateTime ahora = java.time.LocalDateTime.now();
-            
+            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
             for (Quehacer q : todosLosQuehaceres) {
                 // Solo mostrar quehaceres que están realmente pendientes (no vencidos, no completados, no finalizados)
                 if (!q.estaCompletado() && !q.isEstadoFinalizado() && ahora.isBefore(q.getTiempoLimite())) {
+                    if (q.getTiempoLimite() != null) q.setTiempoLimiteFmt(q.getTiempoLimite().format(fmt));
+                    if (q.getFechaFinalizacion() != null) q.setFechaFinalizacionFmt(q.getFechaFinalizacion().format(fmt));
                     listaQuehaceres.add(q);
                 }
             }
-            System.out.println("[DEBUG] Lista de quehaceres pendientes (solo no vencidos): " + listaQuehaceres);
-            
             request.setAttribute("listaMiembros", listaMiembros);
             request.setAttribute("listaQuehaceres", listaQuehaceres);
             request.getRequestDispatcher("/quehaceres/complete.jsp").forward(request, response);

@@ -138,11 +138,10 @@
                                     <c:if test="${not empty tarea.tiempoLimite}">
                                         <div class="task-deadline">
                                             📅 <strong>Fecha límite:</strong>
-                                            <fmt:formatDate value="${tarea.tiempoLimite}" pattern="dd/MM/yyyy HH:mm" />
-                                            
+                                            <c:out value="${tarea.tiempoLimite}" />
+
                                             <%-- Verificar si está vencida --%>
-                                            <jsp:useBean id="now" class="java.util.Date" />
-                                            <c:if test="${tarea.tiempoLimite < now}">
+                                            <c:if test="${tarea.estaVencido()}">
                                                 <span class="overdue-badge">⚠️ Vencida</span>
                                             </c:if>
                                         </div>
@@ -180,9 +179,8 @@
                     <div class="stat-item">
                         <span class="stat-value">
                             <c:set var="vencidas" value="0" />
-                            <jsp:useBean id="now2" class="java.util.Date" />
                             <c:forEach var="tarea" items="${tareasPendientes}">
-                                <c:if test="${tarea.tiempoLimite < now2}">
+                                <c:if test="${tarea.estaVencido()}">
                                     <c:set var="vencidas" value="${vencidas + 1}" />
                                 </c:if>
                             </c:forEach>

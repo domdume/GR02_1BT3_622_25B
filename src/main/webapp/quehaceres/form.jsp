@@ -113,14 +113,6 @@
 
         <!-- Información del sistema Observer -->
         <aside class="info-panel">
-            <h3>🔔 Sistema de Notificaciones</h3>
-            <p>Cuando cree el quehacer:</p>
-            <ul>
-                <li>✅ El miembro asignado recibirá una notificación automática</li>
-                <li>✅ Se activará el patrón Observer para avisar a todos los suscritos</li>
-                <li>✅ La tarea aparecerá en la lista de pendientes del miembro</li>
-                <li>✅ Se calculará automáticamente la recompensa según dificultad</li>
-            </ul>
             
             <c:if test="${not empty listaMiembros}">
                 <div class="members-preview">
@@ -137,128 +129,7 @@
     </div>
 </main>
 
-<jsp:include page="../common/footer.jsp" />
-<jsp:include page="../common/layout-foot.jsp" />
-
-    <!-- Tabla de Quehaceres Existentes -->
-    <h2>Quehaceres Registrados</h2>
-    <c:choose>
-        <c:when test="${not empty listaQuehaceres}">
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Nombre</th>
-                        <th>Dificultad</th>
-                        <th>Asignado a</th>
-                        <th>Puntos</th>
-                        <th>Fecha Límite</th>
-                        <th>Estado</th>
-                        <th>Recompensa / Penalización</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <c:forEach var="quehacer" items="${listaQuehaceres}">
-                        <tr>
-                            <td>${quehacer.id}</td>
-                            <td>${quehacer.nombre}</td>
-                            <td>
-                                <c:choose>
-                                    <c:when test="${quehacer.dificultad == 'FACIL'}">
-                                        <span style="color: green; font-weight: bold;">🟢 Fácil</span>
-                                    </c:when>
-                                    <c:when test="${quehacer.dificultad == 'MEDIO'}">
-                                        <span style="color: orange; font-weight: bold;">🟡 Medio</span>
-                                    </c:when>
-                                    <c:when test="${quehacer.dificultad == 'DIFICIL'}">
-                                        <span style="color: red; font-weight: bold;">🔴 Difícil</span>
-                                    </c:when>
-                                    <c:otherwise>
-                                        <span style="color: gray;">❔ No definida</span>
-                                    </c:otherwise>
-                                </c:choose>
-                            </td>
-                            <td>${quehacer.miembroHogar.nombre}</td>
-                            <td>
-                                <div style="text-align: center;">
-                                    <strong style="color: #2e7d32; font-size: 1.1em;">${quehacer.puntosEnEseMomento} pts</strong><br>
-                                    <small style="color: #666;">
-                                        <c:choose>
-                                            <c:when test="${quehacer.estadoFinalizado}">
-                                                Total después de esta tarea
-                                            </c:when>
-                                            <c:otherwise>
-                                                Total actual
-                                            </c:otherwise>
-                                        </c:choose>
-                                    </small>
-                                </div>
-                            </td>
-                            <td>
-                                <strong>${quehacer.tiempoLimite}</strong>
-                                <c:if test="${quehacer.estadoFinalizado and quehacer.fechaFinalizacion != null}">
-                                    <br><small style="color: #666;">
-                                        <c:choose>
-                                            <c:when test="${quehacer.estadoCompletado}">
-                                                Completado: ${quehacer.fechaFinalizacion}
-                                            </c:when>
-                                            <c:otherwise>
-                                                Expiró: ${quehacer.fechaFinalizacion}
-                                            </c:otherwise>
-                                        </c:choose>
-                                    </small>
-                                </c:if>
-                            </td>
-                            <td>
-                                <c:choose>
-                                    <c:when test="${quehacer.estadoFinalizado}">
-                                        <c:choose>
-                                            <c:when test="${quehacer.estadoCompletado}">
-                                                <span style="color: #4caf50; font-weight: bold;">✅ Completado</span>
-                                            </c:when>
-                                            <c:otherwise>
-                                                <span style="color: #f44336; font-weight: bold;">❌ Atrasado</span>
-                                            </c:otherwise>
-                                        </c:choose>
-                                    </c:when>
-                                    <c:otherwise>
-                                        <span style="color: #ff9800; font-weight: bold;">⏳ Pendiente</span>
-                                    </c:otherwise>
-                                </c:choose>
-                            </td>
-                            <td>
-                                <c:choose>
-                                    <c:when test="${quehacer.estadoFinalizado}">
-                                        <c:choose>
-                                            <c:when test="${quehacer.estadoCompletado}">
-                                                <span style="color: #000; font-weight: normal;" class="recompensa-text" data-quehacer-id="${quehacer.id}">Cargando...</span>
-                                            </c:when>
-                                            <c:otherwise>
-                                                <span style="color: #000; font-weight: normal;" class="penalizacion-text" data-quehacer-id="${quehacer.id}">Cargando...</span>
-                                            </c:otherwise>
-                                        </c:choose>
-                                    </c:when>
-                                    <c:otherwise>
-                                        <span style="color: #666;">Pendiente de completar</span>
-                                    </c:otherwise>
-                                </c:choose>
-                            </td>
-                            <td>
-                                <a href="quehaceres?action=delete&id=${quehacer.id}" 
-                                   onclick="return confirm('¿Está seguro de eliminar este quehacer?')">Eliminar</a>
-                            </td>
-                        </tr>
-                    </c:forEach>
-                </tbody>
-            </table>
-        </c:when>
-        <c:otherwise>
-            <p>No hay quehaceres registrados.</p>
-        </c:otherwise>
-    </c:choose>
-</div>
-
+<!-- Page script: rewards/penalties helpers -->
 <script>
 // Listas de recompensas y penalizaciones divertidas
 const recompensas = [
@@ -287,23 +158,17 @@ const penalizaciones = [
     "Cocinar la cena durante una semana"
 ];
 
-// Función para obtener un elemento aleatorio de una lista basado en un ID (para consistencia)
 function getConsistentRandomItem(array, id) {
-    // Usar el ID como semilla para obtener siempre el mismo resultado para el mismo quehacer
     const index = Math.abs(id) % array.length;
     return array[index];
 }
 
-// Asignar recompensas y penalizaciones cuando se carga la página
 document.addEventListener('DOMContentLoaded', function() {
-    // Asignar recompensas
     document.querySelectorAll('.recompensa-text').forEach(function(element) {
         const quehacerId = element.getAttribute('data-quehacer-id');
         const recompensa = getConsistentRandomItem(recompensas, parseInt(quehacerId));
         element.innerHTML = recompensa;
     });
-    
-    // Asignar penalizaciones
     document.querySelectorAll('.penalizacion-text').forEach(function(element) {
         const quehacerId = element.getAttribute('data-quehacer-id');
         const penalizacion = getConsistentRandomItem(penalizaciones, parseInt(quehacerId));
@@ -312,5 +177,5 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-</body>
-</html>
+<jsp:include page="../common/footer.jsp" />
+<jsp:include page="../common/layout-foot.jsp" />

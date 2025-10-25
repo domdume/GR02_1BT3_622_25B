@@ -40,7 +40,7 @@
                                 <option value="${quehacer.id}" 
                                         data-miembro="${quehacer.miembroHogar.nombre}"
                                         data-dificultad="${quehacer.dificultad}"
-                                        data-limite="<fmt:formatDate value='${quehacer.tiempoLimite}' pattern='dd/MM/yyyy HH:mm' />"
+                                        data-limite="${empty quehacer.tiempoLimiteFmt ? quehacer.tiempoLimite : quehacer.tiempoLimiteFmt}"
                                         data-recompensa="${quehacer.recompensa}"
                                         ${param.quehacerId == quehacer.id ? 'selected' : ''}>
                                     ${quehacer.nombre} - Asignado a: ${quehacer.miembroHogar.nombre}
@@ -167,18 +167,6 @@
                 </div>
             </aside>
         </c:if>
-
-        <!-- Información del sistema Observer -->
-        <aside class="info-panel">
-            <h3>🔔 Sistema de Notificaciones</h3>
-            <p>Al completar la tarea:</p>
-            <ul>
-                <li>✅ Se enviará una notificación automática a todos los miembros</li>
-                <li>✅ Se calculará y otorgará la recompensa correspondiente</li>
-                <li>✅ Se actualizarán los puntos del miembro automáticamente</li>
-                <li>✅ El sistema Observer registrará el cambio de estado</li>
-            </ul>
-        </aside>
     </div>
 </main>
 

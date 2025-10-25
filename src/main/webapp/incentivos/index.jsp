@@ -307,30 +307,6 @@
                 </div>
             </section>
         </c:if>
-
-        <!-- Información del sistema Observer -->
-        <aside class="info-panel">
-            <h3>🔔 Sistema de Notificaciones Activo</h3>
-            <div class="observer-status">
-                <div class="status-item">
-                    <span class="status-icon">✅</span>
-                    <span>Incentivos automáticos por tareas completadas</span>
-                </div>
-                <div class="status-item">
-                    <span class="status-icon">⚠️</span>
-                    <span>Penalizaciones por tareas vencidas</span>
-                </div>
-                <div class="status-item">
-                    <span class="status-icon">🔄</span>
-                    <span>Actualización automática de puntos</span>
-                </div>
-                <div class="status-item">
-                    <span class="status-icon">📊</span>
-                    <span>Registro de historial automático</span>
-                </div>
-            </div>
-            <p><small>El sistema Observer gestiona automáticamente la asignación de incentivos y notificaciones.</small></p>
-        </aside>
     </div>
 </main>
 

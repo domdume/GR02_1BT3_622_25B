@@ -141,17 +141,6 @@
         </aside>
 
         <!-- Información del sistema Observer -->
-        <aside class="info-panel">
-            <h3>🔔 Sistema de Notificaciones</h3>
-            <p>Al crear/modificar el incentivo:</p>
-            <ul>
-                <li>✅ Se registrará en el historial automáticamente</li>
-                <li>✅ El sistema Observer aplicará las reglas definidas</li>
-                <li>✅ Los miembros recibirán notificaciones de cambios</li>
-                <li>✅ Se actualizarán las estadísticas generales</li>
-            </ul>
-            <p><strong>Gestión automática:</strong> Los incentivos por completar/no completar tareas se crean automáticamente por el sistema.</p>
-        </aside>
     </div>
 </main>
 

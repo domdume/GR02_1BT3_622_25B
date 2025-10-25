@@ -29,6 +29,12 @@ public class Quehacer {
     @Transient
     private int puntosEnEseMomento; // Campo calculado para mostrar puntos progresivos
 
+    @Transient
+    private String tiempoLimiteFmt; // Solo para la vista
+
+    @Transient
+    private String fechaFinalizacionFmt; // Solo para la vista
+
     // Constructor vacío para JPA
     public Quehacer() {
     }
@@ -156,7 +162,7 @@ public class Quehacer {
 //    }
 
     public boolean estaVencido() {
-        return !estadoCompletado && LocalDateTime.now().isAfter(tiempoLimite);
+        return !estadoCompletado && tiempoLimite != null && LocalDateTime.now().isAfter(tiempoLimite);
     }
 
 
@@ -166,6 +172,22 @@ public class Quehacer {
 
     public void setPuntosEnEseMomento(int puntosEnEseMomento) {
         this.puntosEnEseMomento = puntosEnEseMomento;
+    }
+
+    public String getTiempoLimiteFmt() {
+        return tiempoLimiteFmt;
+    }
+
+    public void setTiempoLimiteFmt(String tiempoLimiteFmt) {
+        this.tiempoLimiteFmt = tiempoLimiteFmt;
+    }
+
+    public String getFechaFinalizacionFmt() {
+        return fechaFinalizacionFmt;
+    }
+
+    public void setFechaFinalizacionFmt(String fechaFinalizacionFmt) {
+        this.fechaFinalizacionFmt = fechaFinalizacionFmt;
     }
 
     @Override

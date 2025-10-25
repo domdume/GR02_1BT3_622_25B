@@ -3,6 +3,7 @@ package dao;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityTransaction;
 import model.Quehacer;
+import model.MiembroHogar;
 import util.JPAUtil;
 
 import java.util.List;
@@ -14,6 +15,11 @@ public class QuehacerDAO {
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
+            // Ensure the miembroHogar reference is attached to this EM
+            if (quehacer.getMiembroHogar() != null && quehacer.getMiembroHogar().getId() != null) {
+                MiembroHogar ref = em.getReference(MiembroHogar.class, quehacer.getMiembroHogar().getId());
+                quehacer.setMiembroHogar(ref);
+            }
             em.persist(quehacer);
             tx.commit();
         } catch (Exception e) {
