@@ -92,6 +92,9 @@ public class Incentivo {
 //        return descripcion;
 //    }
 
+    public String getDescripcion() {
+        return descripcion;
+    }
     public void setDescripcion(String descripcion) {
         this.descripcion = descripcion;
     }
@@ -113,4 +116,5 @@ public class Incentivo {
         IncentivoService incentivoService = new IncentivoService();
         incentivoService.aplicarIncentivo(miembro, quehacer);
     }
+
 }

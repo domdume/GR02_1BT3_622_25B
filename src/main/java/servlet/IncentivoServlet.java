@@ -163,14 +163,31 @@ public class IncentivoServlet extends HttpServlet {
                 return;
             }
 
+            TipoIncentivo tipoIncentivo;
+            try {
+                tipoIncentivo = TipoIncentivo.valueOf(tipoIncentivoStr);
+            } catch (Exception ex) {
+                request.getSession().setAttribute("errorMessage", "El tipo de incentivo es inválido.");
+                response.sendRedirect(RouteController.buildNewURL(request.getContextPath(), RouteController.MODULE_INCENTIVOS));
+                return;
+            }
+
+            int puntos = 0;
+            if (puntosStr != null && !puntosStr.trim().isEmpty()) {
+                try {
+                    puntos = Integer.parseInt(puntosStr);
+                } catch (Exception ex) {
+                    request.getSession().setAttribute("errorMessage", "Los puntos deben ser un número válido.");
+                    response.sendRedirect(RouteController.buildNewURL(request.getContextPath(), RouteController.MODULE_INCENTIVOS));
+                    return;
+                }
+            }
+
             // Crear incentivo básico
             Incentivo incentivo = new Incentivo();
             incentivo.setDescripcion(descripcion.trim());
-            incentivo.setTipoIncentivo(TipoIncentivo.valueOf(tipoIncentivoStr));
-            
-            if (puntosStr != null && !puntosStr.trim().isEmpty()) {
-                incentivo.setPuntos(Integer.parseInt(puntosStr));
-            }
+            incentivo.setTipoIncentivo(tipoIncentivo);
+            incentivo.setPuntos(puntos);
 
             incentivoDAO.create(incentivo);
             request.getSession().setAttribute("successMessage", "Incentivo creado exitosamente.");

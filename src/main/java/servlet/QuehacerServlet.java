@@ -184,21 +184,48 @@ public class QuehacerServlet extends HttpServlet {
         try {
             // Validaciones básicas
             if (nombre == null || nombre.trim().isEmpty()) {
-                throw new IllegalArgumentException("El nombre del quehacer es requerido");
+                request.getSession().setAttribute("errorMessage", "El nombre del quehacer es requerido.");
+                response.sendRedirect(request.getContextPath() + "/quehaceres?action=new");
+                return;
             }
             if (tiempoLimiteStr == null || tiempoLimiteStr.trim().isEmpty()) {
-                throw new IllegalArgumentException("La fecha/hora límite es requerida");
+                request.getSession().setAttribute("errorMessage", "La fecha/hora límite es requerida.");
+                response.sendRedirect(request.getContextPath() + "/quehaceres?action=new");
+                return;
+            }
+            LocalDateTime tiempoLimite;
+            try {
+                tiempoLimite = LocalDateTime.parse(tiempoLimiteStr);
+            } catch (Exception ex) {
+                request.getSession().setAttribute("errorMessage", "El formato de fecha/hora límite es inválido. Usa yyyy-MM-ddTHH:mm:ss");
+                response.sendRedirect(request.getContextPath() + "/quehaceres?action=new");
+                return;
             }
 
-            LocalDateTime tiempoLimite = LocalDateTime.parse(tiempoLimiteStr);
+            // Validar miembro
+            if (miembroIdStr == null || miembroIdStr.trim().isEmpty()) {
+                request.getSession().setAttribute("errorMessage", "Debes seleccionar un miembro para asignar el quehacer.");
+                response.sendRedirect(request.getContextPath() + "/quehaceres?action=new");
+                return;
+            }
+            Long miembroId;
+            try {
+                miembroId = Long.parseLong(miembroIdStr);
+            } catch (Exception ex) {
+                request.getSession().setAttribute("errorMessage", "El ID del miembro es inválido.");
+                response.sendRedirect(request.getContextPath() + "/quehaceres?action=new");
+                return;
+            }
 
-            // Determinar dificultad (por defecto MEDIO)
+            // Validar dificultad
             model.Dificultad dificultad = model.Dificultad.MEDIO;
             if (dificultadStr != null && !dificultadStr.isEmpty()) {
                 try {
                     dificultad = model.Dificultad.valueOf(dificultadStr.toUpperCase());
                 } catch (IllegalArgumentException e) {
-                    System.out.println("[DEBUG] Dificultad inválida, usando MEDIO por defecto");
+                    request.getSession().setAttribute("errorMessage", "La dificultad seleccionada es inválida.");
+                    response.sendRedirect(request.getContextPath() + "/quehaceres?action=new");
+                    return;
                 }
             }
 
@@ -214,13 +241,13 @@ public class QuehacerServlet extends HttpServlet {
             request.getSession().setAttribute("errorMessage", "Error al agregar el quehacer: " + e.getMessage());
         }
 
-        response.sendRedirect(request.getContextPath() + "/quehaceres?action=listGestion");
+            response.sendRedirect(request.getContextPath() + "/quehaceres?action=list");
     }
 
     private void deleteQuehacer(HttpServletRequest request, HttpServletResponse response) throws IOException {
         Long id = Long.parseLong(request.getParameter("id"));
         quehacerDAO.delete(id);
-        response.sendRedirect(request.getContextPath() + "/quehaceres?action=listGestion");
+        response.sendRedirect(request.getContextPath() + "/quehaceres?action=list");
     }
 
     private void listQuehaceres(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -500,11 +527,11 @@ public class QuehacerServlet extends HttpServlet {
     private void markComplete(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String quehacerIdStr = request.getParameter("quehacerId");
         String fechaFinalizacionStr = request.getParameter("fechaFinalizacion");
-        
+
         System.out.println("[DEBUG] Marcando quehacer como completado:");
         System.out.println("[DEBUG] - Quehacer ID: " + quehacerIdStr);
         System.out.println("[DEBUG] - Fecha finalización: " + fechaFinalizacionStr);
-        
+
         try {
             Long id = Long.parseLong(quehacerIdStr);
             Quehacer quehacer = quehacerDAO.findById(id);
@@ -521,13 +548,13 @@ public class QuehacerServlet extends HttpServlet {
                 response.sendRedirect(request.getContextPath() + "/quehaceres?action=complete");
                 return;
             }
-            
+
             if (quehacer.isEstadoFinalizado()) {
                 request.getSession().setAttribute("errorMessage", "Esta tarea ya está finalizada (vencida)");
                 response.sendRedirect(request.getContextPath() + "/quehaceres?action=complete");
                 return;
             }
-            
+
             LocalDateTime ahora = LocalDateTime.now();
             if (ahora.isAfter(quehacer.getTiempoLimite())) {
                 request.getSession().setAttribute("errorMessage", "Esta tarea ya venció. No se puede marcar como completada.");
@@ -538,23 +565,29 @@ public class QuehacerServlet extends HttpServlet {
             LocalDateTime fechaFinalizacion = LocalDateTime.parse(fechaFinalizacionStr);
             quehacer.setFechaFinalizacion(fechaFinalizacion);
 
+            // Recuperar el miembro con fetch join para evitar lazy loading
+            MiembroHogar miembro = null;
+            if (quehacer.getMiembroHogar() != null && quehacer.getMiembroHogar().getId() != null) {
+                miembro = new dao.MiembroHogarDAO().findById(quehacer.getMiembroHogar().getId());
+            }
+
             // Marcar como completado y aplicar incentivo usando la lógica unificada
             quehacer.marcarCompletado();
-            Incentivo.aplicarIncentivo(quehacer.getMiembroHogar(), quehacer);
-
-            MiembroHogar miembro = quehacer.getMiembroHogar();
-
-
+            if (miembro != null) {
+                Incentivo.aplicarIncentivo(miembro, quehacer);
+            } else {
+                Incentivo.aplicarIncentivo(quehacer.getMiembroHogar(), quehacer);
+            }
 
             System.out.println("[DEBUG] Quehacer completado A TIEMPO - recompensa asignada");
 
             quehacerDAO.update(quehacer);
-            String nombreMiembro = miembro != null ? miembro.getNombre() : "desconocido";
-            int puntosActuales = miembro != null ? miembro.getPuntos() : 0;
+            String nombreMiembro = miembro != null ? miembro.getNombre() : (quehacer.getMiembroHogar() != null ? quehacer.getMiembroHogar().getNombre() : "desconocido");
+            int puntosActuales = miembro != null ? miembro.getPuntos() : (quehacer.getMiembroHogar() != null ? quehacer.getMiembroHogar().getPuntos() : 0);
             request.getSession().setAttribute("successMessage", 
                 "¡Quehacer completado! " + nombreMiembro + " ganó +20 puntos. Total actual: " + puntosActuales + " puntos.");
             System.out.println("[DEBUG] Quehacer actualizado exitosamente");
-            
+
         } catch (Exception e) {
             System.out.println("[DEBUG] Error al marcar quehacer como completado: " + e.getMessage());
             e.printStackTrace();

@@ -16,6 +16,13 @@ import service.IncentivoService;
 @DiscriminatorColumn(name = "DTYPE", discriminatorType = DiscriminatorType.STRING)
 @DiscriminatorValue("MiembroHogar")
 public class MiembroHogar implements Observador {
+    // ...existing code...
+    /**
+     * Indica si el miembro es jefe del hogar (para JSP).
+     */
+    public boolean getEsJefe() {
+        return false;
+    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,31 +31,31 @@ public class MiembroHogar implements Observador {
     private String nombre;
     private int edad;
     private int puntos;
+    @Enumerated(EnumType.STRING)
     private Liga liga; // Added for rewards
 
     @OneToMany(mappedBy = "miembroHogar", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Quehacer> quehaceres;
+    private java.util.Set<Quehacer> quehaceres;
 
     @OneToMany(mappedBy = "miembroHogar", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Incentivo> incentivos;
+    private java.util.Set<Incentivo> incentivos;
 
-    @Transient // Temporalmente como @Transient para evitar problemas de BD
     private int factorDeCarga; // Campo requerido según diagrama UML
 
     // Constructor vacío requerido por JPA
     public MiembroHogar() {
-        this.quehaceres = new ArrayList<>();
-        this.incentivos = new ArrayList<>();
+    this.quehaceres = new java.util.HashSet<>();
+    this.incentivos = new java.util.HashSet<>();
     }
 
     public MiembroHogar(String nombre, int edad) {
-        this.nombre = nombre;
-        this.edad = edad;
-        this.quehaceres = new ArrayList<>();
-        this.incentivos = new ArrayList<>();
-        this.puntos = 0; // Initialize points
-        this.factorDeCarga = 0;
-        this.liga = Liga.BRONCE;
+    this.nombre = nombre;
+    this.edad = edad;
+    this.quehaceres = new java.util.HashSet<>();
+    this.incentivos = new java.util.HashSet<>();
+    this.puntos = 0; // Initialize points
+    this.factorDeCarga = 0;
+    this.liga = Liga.BRONCE;
     }
 
     // Getters y Setters para JPA y JSP
@@ -74,19 +81,19 @@ public class MiembroHogar implements Observador {
     }
 
     public List<Quehacer> getQuehaceres() {
-        return quehaceres;
+        return new java.util.ArrayList<>(quehaceres);
     }
 
     public void setQuehaceres(List<Quehacer> quehaceres) {
-        this.quehaceres = quehaceres;
+        this.quehaceres = new java.util.HashSet<>(quehaceres);
     }
 
     public List<Incentivo> getIncentivos() {
-        return incentivos;
+    return new java.util.ArrayList<>(incentivos);
     }
 
     public void setIncentivos(List<Incentivo> incentivos) {
-        this.incentivos = incentivos;
+    this.incentivos = new java.util.HashSet<>(incentivos);
     }
 
     public void anadirIncentivo(Incentivo incentivo) {

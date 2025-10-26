@@ -7,6 +7,10 @@ import java.time.LocalDateTime;
 @Entity
 @DiscriminatorValue("JefeDelHogar")
 public class JefeDelHogar extends MiembroHogar {
+    @Override
+    public boolean getEsJefe() {
+        return true;
+    }
 
     // Constructor vacío requerido por JPA
     public JefeDelHogar() {
@@ -17,7 +21,10 @@ public class JefeDelHogar extends MiembroHogar {
         super(nombre, edad);
     }
     public void organizarMiembro(String nombre, int edad){
-        Hogar.getInstance().registrarMiembro(new MiembroHogar(nombre, edad));
+        // Solo persistir el nuevo miembro, nunca el propio jefe
+        MiembroHogar nuevoMiembro = new MiembroHogar(nombre, edad);
+        new dao.MiembroHogarDAO().create(nuevoMiembro);
+        Hogar.getInstance().registrarMiembro(nuevoMiembro);
     }
 //    public void organizarMiembro(MiembroHogar miembro){
 //        System.out.println("\n" + getNombre() + " está registrando a un nuevo miembro...");

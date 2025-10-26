@@ -16,6 +16,7 @@ public class Quehacer {
     private boolean estadoCompletado;
     private LocalDateTime tiempoLimite;
     private LocalDateTime fechaFinalizacion;
+    @Enumerated(EnumType.STRING)
     private Dificultad dificultad; // Campo agregado según diagrama UML
 
     @ManyToOne
