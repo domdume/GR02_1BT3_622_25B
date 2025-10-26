@@ -87,21 +87,28 @@ public class MiembroHogarDAO {
         try {
             tx.begin();
             if (miembro != null) {
+                System.out.println("[MiembroHogarDAO.update] Intentando persistir Miembro id=" + miembro.getId() + ", puntos actuales (objeto)=" + miembro.getPuntos());
                 // Evitar merge completo que puede afectar colecciones (quehaceres) por cascade/orphanRemoval.
                 // En su lugar, obtener la instancia gestionada y actualizar solo campos escalares (puntos, liga, edad, nombre, factorDeCarga).
                 MiembroHogar managed = em.find(MiembroHogar.class, miembro.getId());
                 if (managed == null) {
+                    System.out.println("[MiembroHogarDAO.update] No existe instancia gestionada en EM para id=" + miembro.getId() + ", haciendo merge como fallback");
                     // Si no existe en DB, hacer merge como fallback
                     em.merge(miembro);
+                    // Después del merge no tenemos la instancia gestionada aquí (merge devuelve la gestionada si la capturamos)
+                    System.out.println("[MiembroHogarDAO.update] Merge ejecutado para id=" + miembro.getId());
                 } else {
+                    System.out.println("[MiembroHogarDAO.update] Instancia gestionada encontrada en EM para id=" + managed.getId() + ", puntos antes=" + managed.getPuntos());
                     managed.setPuntos(miembro.getPuntos());
                     managed.setLiga(miembro.getLiga());
                     managed.setEdad(miembro.getEdad());
                     managed.setNombre(miembro.getNombre());
+                    System.out.println("[MiembroHogarDAO.update] Valores aplicados en managed: puntos ahora=" + managed.getPuntos());
                     // No modificamos colecciones aquí para evitar sobrescribir quehaceres existentes
                 }
             }
             tx.commit();
+            System.out.println("[MiembroHogarDAO.update] Commit finalizado para miembro id=" + (miembro != null ? miembro.getId() : "null") );
         } catch (Exception e) {
             if (tx.isActive()) {
                 tx.rollback();

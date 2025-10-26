@@ -340,6 +340,10 @@ public class QuehacerServlet extends HttpServlet {
             }
             // Establecer bandera vencido para la vista (evita llamadas a métodos EL)
             q.setVencido(q.estaVencido());
+            // Asegurar que se muestre el puntaje actual del miembro tras penalizaciones
+            if (q.getMiembroHogar() != null) {
+                q.setPuntosEnEseMomento(q.getMiembroHogar().getPuntos());
+            }
         }
 
         // Log detallado de los quehaceres cargados
@@ -456,6 +460,9 @@ public class QuehacerServlet extends HttpServlet {
             }
             // Establecer bandera vencido para la vista (evita llamadas a métodos EL)
             q.setVencido(q.estaVencido());
+            if (q.getMiembroHogar() != null) {
+                q.setPuntosEnEseMomento(q.getMiembroHogar().getPuntos());
+            }
         }
 
         // Pasar datos y estadísticas calculadas a la vista (no calcular en JSP)
@@ -707,37 +714,8 @@ public class QuehacerServlet extends HttpServlet {
 
 
     private void finalizarTareasVencidas() {
-        try {
-            List<Quehacer> todosLosQuehaceres = quehacerDAO.findAll();
-            LocalDateTime ahora = LocalDateTime.now();
-            
-            for (Quehacer quehacer : todosLosQuehaceres) {
-                // Loguear estado actual y comprobación de vencido para depuración
-                System.out.println("[DEBUG] comprobar vencido - Quehacer id=" + quehacer.getId() + 
-                    ", nombre='" + quehacer.getNombre() + "', estado=" + quehacer.getEstado() + 
-                    ", tiempoLimite=" + quehacer.getTiempoLimite() + 
-                    ", ahora=" + ahora + ", estaVencido()=" + quehacer.estaVencido());
-
-                // Si el quehacer no está completado, no está finalizado, y ya se venció
-                if (!quehacer.isCompletado() && !quehacer.isEstadoFinalizado() && quehacer.estaVencido()) {
-                    System.out.println("[DEBUG] Finalizando tarea vencida: id=" + quehacer.getId() + " nombre='" + quehacer.getNombre() + "'");
-
-                        // Marcamos directamente en BD usando JPQL para evitar problemas de merging
-                        quehacerDAO.markAsVencido(quehacer.getId(), ahora);
-                        System.out.println("[DEBUG] Tarea marcada como VENCIDO (JPQL) en BD: id=" + quehacer.getId());
-
-                        // Volver a leer la entidad desde la BD para aplicar la penalización usando la entidad gestionada
-                        Quehacer persisted = quehacerDAO.findById(quehacer.getId());
-                        MiembroHogar miembro = persisted != null ? persisted.getMiembroHogar() : null;
-                        if (miembro != null) {
-                            Incentivo.aplicarIncentivo(miembro, persisted);
-                            miembroHogarDAO.update(miembro);
-                        }
-                }
-            }
-        } catch (Exception e) {
-            logger.severe("Error: " + e.getMessage());
-        }
+        // Delegar la operación al DAO para evitar duplicación de lógica y permitir reuso
+        quehacerDAO.finalizeOverdueAndApplyPenalties();
     }
 
     public void testFindAllMiembros() {

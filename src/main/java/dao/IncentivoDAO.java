@@ -52,6 +52,32 @@ public class IncentivoDAO {
         }
     }
 
+    /**
+     * Crea un Incentivo y lo asocia por referencia al miembro y al quehacer usando getReference
+     * para evitar problemas con entidades detached en el caller.
+     */
+    public void createWithReferences(Long miembroId, Long quehacerId, Incentivo incentivo) {
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            em.getTransaction().begin();
+            if (miembroId != null) {
+                model.MiembroHogar ref = em.getReference(model.MiembroHogar.class, miembroId);
+                incentivo.setMiembroHogar(ref);
+            }
+            if (quehacerId != null) {
+                model.Quehacer refQ = em.getReference(model.Quehacer.class, quehacerId);
+                incentivo.setQuehacer(refQ);
+            }
+            em.persist(incentivo);
+            em.getTransaction().commit();
+        } catch (RuntimeException ex) {
+            if (em.getTransaction().isActive()) em.getTransaction().rollback();
+            throw ex;
+        } finally {
+            em.close();
+        }
+    }
+
     public Incentivo update(Incentivo i) {
         EntityManager em = JPAUtil.getEntityManager();
         try {

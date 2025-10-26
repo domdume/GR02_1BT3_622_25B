@@ -32,9 +32,12 @@ public class HomeServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         System.out.println("[DEBUG HomeServlet] Iniciando carga de dashboard");
 
-        // Cargar datos para el tablero principal
-        List<Quehacer> listaQuehaceres = quehacerDAO.findAllWithMiembroHogar();
-        List<MiembroHogar> listaMiembros = miembroHogarDAO.findAll(); // Ya usa LEFT JOIN FETCH
+    // Asegurar que las tareas vencidas se finalicen y se apliquen penalizaciones
+    quehacerDAO.finalizeOverdueAndApplyPenalties();
+
+    // Cargar datos para el tablero principal
+    List<Quehacer> listaQuehaceres = quehacerDAO.findAllWithMiembroHogar();
+    List<MiembroHogar> listaMiembros = miembroHogarDAO.findAll(); // Ya usa LEFT JOIN FETCH
 
         System.out.println("[DEBUG HomeServlet] Quehaceres cargados: " + listaQuehaceres.size());
         System.out.println("[DEBUG HomeServlet] Miembros cargados: " + listaMiembros.size());

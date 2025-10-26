@@ -38,7 +38,14 @@ public class QuehacerDAO {
     public Quehacer findById(Long id) {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.find(Quehacer.class, id);
+            // Usar fetch join para garantizar que miembroHogar esté inicializado
+            try {
+                return em.createQuery("SELECT q FROM Quehacer q LEFT JOIN FETCH q.miembroHogar WHERE q.id = :id", Quehacer.class)
+                        .setParameter("id", id)
+                        .getSingleResult();
+            } catch (jakarta.persistence.NoResultException nre) {
+                return em.find(Quehacer.class, id);
+            }
         } finally {
             em.close();
         }
@@ -115,6 +122,36 @@ public class QuehacerDAO {
                 if (tx.isActive()) tx.rollback();
                 logger.severe("Error en markAsVencido: " + e.getMessage());
             }
+        }
+    }
+
+    /**
+     * Finaliza todas las tareas vencidas que aún no estén completadas ni finalizadas,
+     * marca como VENCIDO usando JPQL y aplica la penalización correspondiente al miembro.
+     * Este método se ofrece como operación atómica de conveniencia para servlets.
+     */
+    public void finalizeOverdueAndApplyPenalties() {
+        try {
+            List<Quehacer> todos = findAll();
+            java.time.LocalDateTime ahora = java.time.LocalDateTime.now();
+            int contadorMarcados = 0;
+            for (Quehacer q : todos) {
+                if (!q.isCompletado() && !q.isEstadoFinalizado() && q.estaVencido()) {
+                    // marcar en BD
+                    markAsVencido(q.getId(), ahora);
+                    contadorMarcados++;
+                    // volver a leer la entidad y aplicar penalización
+                    Quehacer persisted = findById(q.getId());
+                    model.MiembroHogar miembro = persisted != null ? persisted.getMiembroHogar() : null;
+                    if (miembro != null) {
+                        // Usar la versión por ids para evitar problemas de lazy initialization
+                        new service.IncentivoService().aplicarIncentivoByIds(miembro.getId(), persisted.getId());
+                    }
+                }
+            }
+            if (contadorMarcados > 0) logger.info("finalizeOverdueAndApplyPenalties - tareas marcadas y penalizadas: " + contadorMarcados);
+        } catch (Exception e) {
+            logger.severe("Error en finalizeOverdueAndApplyPenalties: " + e.getMessage());
         }
     }
 
