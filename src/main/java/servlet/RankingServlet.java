@@ -1,6 +1,8 @@
 package servlet;
 
-import dao.MiembroHogarDAO;
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.context.support.WebApplicationContextUtils;
+import service.MiembroHogarService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -18,21 +20,20 @@ import java.util.stream.Collectors;
 
 @WebServlet(name = "RankingServlet", value = "/ranking")
 public class RankingServlet extends HttpServlet {
-    private MiembroHogarDAO miembroDAO;
+    private MiembroHogarService miembroHogarService;
 
     @Override
     public void init() {
-        miembroDAO = new MiembroHogarDAO();
+        WebApplicationContext ctx = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
+        this.miembroHogarService = ctx.getBean(MiembroHogarService.class);
     }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        List<MiembroHogar> miembros = miembroDAO.findAll();
-        // Orden general por puntos desc
+        List<MiembroHogar> miembros = miembroHogarService.obtenerTodos();
         List<MiembroHogar> topGlobal = new ArrayList<>(miembros);
         topGlobal.sort(Comparator.comparingInt(MiembroHogar::getPuntos).reversed());
 
-        // Agrupar por liga y ordenar por puntos desc
         Map<Liga, List<MiembroHogar>> porLiga = miembros.stream()
                 .filter(m -> m.getLiga() != null)
                 .collect(Collectors.groupingBy(MiembroHogar::getLiga));

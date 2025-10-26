@@ -1,6 +1,8 @@
 package servlet;
 
-import dao.MiembroHogarDAO;
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.context.support.WebApplicationContextUtils;
+import service.MiembroHogarService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -13,24 +15,18 @@ import java.io.IOException;
 import java.util.List;
 
 @WebServlet(name = "MiembroServlet", value = "/miembros")
+
 public class MiembroServlet extends HttpServlet {
-    private MiembroHogarDAO miembroHogarDAO;
+    private MiembroHogarService miembroHogarService;
     private HogarService hogarService;
 
+    @Override
     public void init() {
         System.out.println("[MiembroServlet] Inicializando servlet...");
-        try {
-            miembroHogarDAO = new MiembroHogarDAO();
-            System.out.println("[MiembroServlet] MiembroHogarDAO creado exitosamente");
-            
-            hogarService = new HogarService();
-            System.out.println("[MiembroServlet] HogarService creado exitosamente");
-            
-        } catch (Exception e) {
-            System.err.println("[MiembroServlet] Error durante inicialización: " + e.getMessage());
-            e.printStackTrace();
-            throw new RuntimeException("Error al inicializar MiembroServlet", e);
-        }
+        WebApplicationContext ctx = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
+        this.miembroHogarService = ctx.getBean(MiembroHogarService.class);
+        this.hogarService = ctx.getBean(HogarService.class);
+        System.out.println("[MiembroServlet] Servicios obtenidos exitosamente");
     }
 
     @Override
@@ -68,51 +64,38 @@ public class MiembroServlet extends HttpServlet {
     }
 
     private void listMiembros(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        List<MiembroHogar> listaMiembros = miembroHogarDAO.findAll(); // Recupera los datos de la BD
-        
+        List<MiembroHogar> listaMiembros = miembroHogarService.obtenerTodos();
         if (listaMiembros == null || listaMiembros.isEmpty()) {
             request.getSession().setAttribute("errorMessage", "No hay miembros registrados.");
-            // Estadísticas vacías
             request.setAttribute("totalMiembros", 0);
             request.setAttribute("jefeCount", 0);
             request.setAttribute("totalPuntos", 0);
             request.setAttribute("totalTareas", 0);
         } else {
-            // Calcular estadísticas en el controlador (no en la vista)
             int totalMiembros = listaMiembros.size();
             int jefeCount = 0;
             int totalPuntos = 0;
             int totalTareas = 0;
-            
             for (MiembroHogar miembro : listaMiembros) {
-                // Contar jefes del hogar
                 if (miembro.getClass().getSimpleName().equals("JefeDelHogar")) {
                     jefeCount++;
                 }
-                
-                // Sumar puntos totales
                 totalPuntos += miembro.getPuntos();
-                
-                // Contar tareas asignadas
                 if (miembro.getQuehaceres() != null) {
                     totalTareas += miembro.getQuehaceres().size();
                 }
             }
-            
-            // Pasar estadísticas calculadas a la vista
             request.setAttribute("totalMiembros", totalMiembros);
             request.setAttribute("jefeCount", jefeCount);
             request.setAttribute("totalPuntos", totalPuntos);
             request.setAttribute("totalTareas", totalTareas);
         }
-        
-        request.setAttribute("listaMiembros", listaMiembros); // Pasa los datos al JSP
-        request.getRequestDispatcher("/miembros/index.jsp").forward(request, response); // Redirige al JSP
+        request.setAttribute("listaMiembros", listaMiembros);
+        request.getRequestDispatcher("/miembros/index.jsp").forward(request, response);
     }
 
     private void showNewForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        // Cargar lista de miembros existentes para mostrar en el formulario
-        List<MiembroHogar> listaMiembros = miembroHogarDAO.findAll();
+        List<MiembroHogar> listaMiembros = miembroHogarService.obtenerTodos();
         request.setAttribute("listaMiembros", listaMiembros);
         request.getRequestDispatcher("/miembros/form.jsp").forward(request, response);
     }
@@ -176,7 +159,7 @@ public class MiembroServlet extends HttpServlet {
 
     private void deleteMiembro(HttpServletRequest request, HttpServletResponse response) throws IOException {
         Long id = Long.parseLong(request.getParameter("id"));
-        miembroHogarDAO.delete(id);
+        miembroHogarService.eliminar(id);
         response.sendRedirect(request.getContextPath() + "/miembros");
     }
 
@@ -189,7 +172,7 @@ public class MiembroServlet extends HttpServlet {
             return;
         }
         Long id = Long.parseLong(idStr);
-        MiembroHogar miembro = miembroHogarDAO.findById(id);
+        MiembroHogar miembro = miembroHogarService.obtenerPorId(id);
         if (miembro == null) {
             request.getSession().setAttribute("errorMessage", "Miembro no encontrado.");
             response.sendRedirect(request.getContextPath() + "/miembros");

@@ -2,7 +2,6 @@ package model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import service.IncentivoService;
 
 @Entity
 public class Incentivo {
@@ -45,8 +44,6 @@ public class Incentivo {
     public static final int PUNTOS_DIFICIL = 30;
     public static final int PENALIZACION = 5;
 
-    // La lógica de aplicar incentivos se ha movido a IncentivoService
-
     // Getters y Setters
     public Long getId() {
         return id;
@@ -88,9 +85,9 @@ public class Incentivo {
         this.puntos = puntos;
     }
 
-//    public String getDescripcion() {
-//        return descripcion;
-//    }
+    public String getDescripcion() {
+        return descripcion;
+    }
 
     public void setDescripcion(String descripcion) {
         this.descripcion = descripcion;
@@ -102,15 +99,5 @@ public class Incentivo {
 
     public void setFechaCreacion(LocalDateTime fechaCreacion) {
         this.fechaCreacion = fechaCreacion;
-    }
-
-
-    /**
-     * Método estático de fábrica para crear y aplicar un incentivo.
-     * Reemplaza los métodos anteriores y delega al IncentivoService.
-     */
-    public static void aplicarIncentivo(MiembroHogar miembro, Quehacer quehacer) {
-        IncentivoService incentivoService = new IncentivoService();
-        incentivoService.aplicarIncentivo(miembro, quehacer);
     }
 }

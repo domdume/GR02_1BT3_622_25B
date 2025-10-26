@@ -1,7 +1,8 @@
 package servlet;
 
-import dao.MiembroHogarDAO;
-import dao.QuehacerDAO;
+import service.MiembroHogarService;
+import service.QuehacerService;
+import service.IncentivoService;
 import service.HogarService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -9,9 +10,10 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import model.Dificultad;
-import model.Incentivo;
 import model.MiembroHogar;
 import model.Quehacer;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -19,19 +21,26 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.logging.Logger;
 
+@Component
 @WebServlet(name = "QuehacerServlet", value = "/quehaceres")
 public class QuehacerServlet extends HttpServlet {
-    private QuehacerDAO quehacerDAO;
-    private MiembroHogarDAO miembroHogarDAO;
+    
+    @Autowired
+    private QuehacerService quehacerService;
+    
+    @Autowired
+    private MiembroHogarService miembroHogarService;
+    
+    @Autowired
+    private IncentivoService incentivoService;
+    
+    @Autowired
     private HogarService hogarService;
 
     private static final Logger logger = Logger.getLogger(QuehacerServlet.class.getName());
 
     @Override
     public void init() {
-        quehacerDAO = new QuehacerDAO();
-        miembroHogarDAO = new MiembroHogarDAO();
-        hogarService = new HogarService();
         testFindAllMiembros();
     }
 
@@ -88,12 +97,10 @@ public class QuehacerServlet extends HttpServlet {
 
     private void showNewForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         try {
-            List<MiembroHogar> listaMiembros = miembroHogarDAO.findAll(); // Cargar miembros desde la BD
+            List<MiembroHogar> listaMiembros = miembroHogarService.obtenerTodos();
             System.out.println("[DEBUG] Lista de miembros recuperada: " + listaMiembros);
-            logger.info("Lista de miembros recuperada: " + listaMiembros);
-
-            // Cargar también la lista de quehaceres existentes para mostrar en la tabla
-            List<Quehacer> todosLosQuehaceres = quehacerDAO.findAllWithMiembroHogar();
+            
+            List<Quehacer> todosLosQuehaceres = quehacerService.obtenerTodos();
             System.out.println("[DEBUG] Lista de quehaceres recuperada: " + todosLosQuehaceres.size() + " elementos");
             
             // Aplicar lógica de puntos progresivos
@@ -156,10 +163,9 @@ public class QuehacerServlet extends HttpServlet {
                 request.getSession().removeAttribute("errorMessage"); // Eliminar mensaje de error si hay miembros
             }
 
-            request.setAttribute("listaMiembros", listaMiembros); // Pasar miembros al JSP
-            request.setAttribute("listaQuehaceres", listaQuehaceres); // Pasar quehaceres al JSP
-            System.out.println("[DEBUG] Atributos listaMiembros y listaQuehaceres establecidos en request");
-            request.getRequestDispatcher("/quehaceres/form.jsp").forward(request, response); // Redirigir al JSP
+            request.setAttribute("listaMiembros", listaMiembros);
+            request.setAttribute("listaQuehaceres", listaQuehaceres);
+            request.getRequestDispatcher("/quehaceres/form.jsp").forward(request, response);
             
         } catch (Exception e) {
             System.out.println("[ERROR] Error en showNewForm: " + e.getMessage());
@@ -182,7 +188,6 @@ public class QuehacerServlet extends HttpServlet {
         System.out.println("[DEBUG] - Dificultad: " + dificultadStr);
 
         try {
-            // Validaciones básicas
             if (nombre == null || nombre.trim().isEmpty()) {
                 throw new IllegalArgumentException("El nombre del quehacer es requerido");
             }
@@ -192,17 +197,15 @@ public class QuehacerServlet extends HttpServlet {
 
             LocalDateTime tiempoLimite = LocalDateTime.parse(tiempoLimiteStr);
 
-            // Determinar dificultad (por defecto MEDIO)
-            model.Dificultad dificultad = model.Dificultad.MEDIO;
+            Dificultad dificultad = Dificultad.MEDIO;
             if (dificultadStr != null && !dificultadStr.isEmpty()) {
                 try {
-                    dificultad = model.Dificultad.valueOf(dificultadStr.toUpperCase());
+                    dificultad = Dificultad.valueOf(dificultadStr.toUpperCase());
                 } catch (IllegalArgumentException e) {
                     System.out.println("[DEBUG] Dificultad inválida, usando MEDIO por defecto");
                 }
             }
 
-            // Delegar la creación y persistencia al servicio (evitar duplicados)
             System.out.println("[QuehacerServlet] Llamando a hogarService.organizarQuehacer()");
             hogarService.organizarQuehacer(nombre.trim(), tiempoLimite, dificultad, miembroIdStr);
             System.out.println("[DEBUG] Quehacer creado exitosamente a través de HogarService");
@@ -219,18 +222,16 @@ public class QuehacerServlet extends HttpServlet {
 
     private void deleteQuehacer(HttpServletRequest request, HttpServletResponse response) throws IOException {
         Long id = Long.parseLong(request.getParameter("id"));
-        quehacerDAO.delete(id);
+        quehacerService.eliminar(id);
         response.sendRedirect(request.getContextPath() + "/quehaceres?action=listGestion");
     }
 
     private void listQuehaceres(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         System.out.println("=== CARGANDO TABLERO PRINCIPAL ===");
         
-        // Finalizar automáticamente las tareas vencidas
         finalizarTareasVencidas();
         
-        // Cargar lista de quehaceres con miembros
-        List<Quehacer> todosLosQuehaceres = quehacerDAO.findAllWithMiembroHogar();
+        List<Quehacer> todosLosQuehaceres = quehacerService.obtenerTodos();
         System.out.println("[DEBUG] Cargando " + todosLosQuehaceres.size() + " quehaceres para el tablero principal");
         
         // Calcular puntos progresivos: ordenar por fecha de finalización y calcular puntos acumulados
@@ -304,19 +305,21 @@ public class QuehacerServlet extends HttpServlet {
         }
         
         request.setAttribute("listaQuehaceres", listaQuehaceres);
-        System.out.println("[DEBUG] Redirigiendo a tablero.jsp");
         request.getRequestDispatcher("/tablero.jsp").forward(request, response);
     }
 
     private void listGestionQuehaceres(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         System.out.println("=== CARGANDO GESTIÓN DE QUEHACERES ===");
         
-        // Finalizar automáticamente las tareas vencidas
         finalizarTareasVencidas();
         
-        // Cargar lista de quehaceres con miembros
-        List<Quehacer> todosLosQuehaceres = quehacerDAO.findAllWithMiembroHogar();
-        System.out.println("[DEBUG] Cargando " + todosLosQuehaceres.size() + " quehaceres para gestión");
+        List<Quehacer> todosLosQuehaceres = quehacerService.obtenerTodos();
+        
+        // Variables para estadísticas (movidas desde JSP)
+        int totalTareas = todosLosQuehaceres.size();
+        int tareasCompletadas = 0;
+        int tareasPendientes = 0;
+        int tareasVencidas = 0;
         
         // Calcular puntos progresivos: ordenar por fecha de finalización y calcular puntos acumulados
         Map<String, Integer> puntosProgresivos = new HashMap<>();
@@ -324,12 +327,6 @@ public class QuehacerServlet extends HttpServlet {
         // Separar completados y pendientes
         List<Quehacer> quehaceresCompletados = new ArrayList<>();
         List<Quehacer> quehaceresPendientes = new ArrayList<>();
-        
-        // Variables para estadísticas (movidas desde JSP)
-        int totalTareas = todosLosQuehaceres.size();
-        int tareasCompletadas = 0;
-        int tareasPendientes = 0;
-        int tareasVencidas = 0;
         
         for (Quehacer q : todosLosQuehaceres) {
             if (q.isEstadoFinalizado()) {
@@ -410,25 +407,23 @@ public class QuehacerServlet extends HttpServlet {
 
     private void showPendingForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         try {
-            // Finalizar automáticamente las tareas vencidas
             finalizarTareasVencidas();
             
-            // Cargar lista de miembros
-            List<MiembroHogar> listaMiembros = miembroHogarDAO.findAll();
+            List<MiembroHogar> listaMiembros = miembroHogarService.obtenerTodos();
             System.out.println("[DEBUG] Lista de miembros para pendientes: " + listaMiembros);
             
             // Verificar si se seleccionó un miembro específico
             String miembroIdStr = request.getParameter("miembroId");
-            List<Quehacer> tareasPendientes = new java.util.ArrayList<>();
+            List<Quehacer> tareasPendientes = new ArrayList<>();
             
             if (miembroIdStr != null && !miembroIdStr.isEmpty()) {
                 try {
                     Long miembroId = Long.parseLong(miembroIdStr);
-                    MiembroHogar miembroSeleccionado = miembroHogarDAO.findById(miembroId);
+                    MiembroHogar miembroSeleccionado = miembroHogarService.obtenerPorId(miembroId);
                     
                     if (miembroSeleccionado != null) {
                         // Obtener todas las tareas y filtrar las del miembro que están realmente pendientes
-                        List<Quehacer> todasLasTareas = quehacerDAO.findAll();
+                        List<Quehacer> todasLasTareas = quehacerService.obtenerTodos();
                         LocalDateTime ahora = LocalDateTime.now();
                         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
@@ -464,17 +459,12 @@ public class QuehacerServlet extends HttpServlet {
 
     private void showCompleteForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         try {
-            // Finalizar automáticamente las tareas vencidas
             finalizarTareasVencidas();
             
-            // Cargar lista de miembros
-            List<MiembroHogar> listaMiembros = miembroHogarDAO.findAll();
-            System.out.println("[DEBUG] Lista de miembros para completar: " + listaMiembros);
-            
-            // Cargar lista de quehaceres pendientes (no completados, no finalizados, y no vencidos)
-            List<Quehacer> todosLosQuehaceres = quehacerDAO.findAll();
-            List<Quehacer> listaQuehaceres = new java.util.ArrayList<>();
-            java.time.LocalDateTime ahora = java.time.LocalDateTime.now();
+            List<MiembroHogar> listaMiembros = miembroHogarService.obtenerTodos();
+            List<Quehacer> todosLosQuehaceres = quehacerService.obtenerTodos();
+            List<Quehacer> listaQuehaceres = new ArrayList<>();
+            LocalDateTime ahora = LocalDateTime.now();
             DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
             for (Quehacer q : todosLosQuehaceres) {
@@ -501,13 +491,9 @@ public class QuehacerServlet extends HttpServlet {
         String quehacerIdStr = request.getParameter("quehacerId");
         String fechaFinalizacionStr = request.getParameter("fechaFinalizacion");
         
-        System.out.println("[DEBUG] Marcando quehacer como completado:");
-        System.out.println("[DEBUG] - Quehacer ID: " + quehacerIdStr);
-        System.out.println("[DEBUG] - Fecha finalización: " + fechaFinalizacionStr);
-        
         try {
             Long id = Long.parseLong(quehacerIdStr);
-            Quehacer quehacer = quehacerDAO.findById(id);
+            Quehacer quehacer = quehacerService.obtenerPorId(id);
 
             if (quehacer == null) {
                 request.getSession().setAttribute("errorMessage", "Quehacer no encontrado");
@@ -537,23 +523,17 @@ public class QuehacerServlet extends HttpServlet {
 
             LocalDateTime fechaFinalizacion = LocalDateTime.parse(fechaFinalizacionStr);
             quehacer.setFechaFinalizacion(fechaFinalizacion);
-
-            // Marcar como completado y aplicar incentivo usando la lógica unificada
             quehacer.marcarCompletado();
-            Incentivo.aplicarIncentivo(quehacer.getMiembroHogar(), quehacer);
-
+            
+            // Aplicar incentivo usando el servicio
             MiembroHogar miembro = quehacer.getMiembroHogar();
+            incentivoService.aplicarIncentivo(miembro, quehacer);
 
-
-
-            System.out.println("[DEBUG] Quehacer completado A TIEMPO - recompensa asignada");
-
-            quehacerDAO.update(quehacer);
-            String nombreMiembro = miembro != null ? miembro.getNombre() : "desconocido";
+            quehacerService.actualizar(quehacer);
+            
             int puntosActuales = miembro != null ? miembro.getPuntos() : 0;
             request.getSession().setAttribute("successMessage", 
-                "¡Quehacer completado! " + nombreMiembro + " ganó +20 puntos. Total actual: " + puntosActuales + " puntos.");
-            System.out.println("[DEBUG] Quehacer actualizado exitosamente");
+                "¡Quehacer completado! " + (miembro != null ? miembro.getNombre() : "Usuario") + " ahora tiene " + puntosActuales + " puntos.");
             
         } catch (Exception e) {
             System.out.println("[DEBUG] Error al marcar quehacer como completado: " + e.getMessage());
@@ -564,11 +544,9 @@ public class QuehacerServlet extends HttpServlet {
         response.sendRedirect(request.getContextPath() + "/quehaceres?action=complete");
     }
 
-
-
     private void finalizarTareasVencidas() {
         try {
-            List<Quehacer> todosLosQuehaceres = quehacerDAO.findAll();
+            List<Quehacer> todosLosQuehaceres = quehacerService.obtenerTodos();
             LocalDateTime ahora = LocalDateTime.now();
             
             for (Quehacer quehacer : todosLosQuehaceres) {
@@ -585,11 +563,10 @@ public class QuehacerServlet extends HttpServlet {
                     // Aplicar incentivo (será penalización por estar vencida)
                     MiembroHogar miembro = quehacer.getMiembroHogar();
                     if (miembro != null) {
-                        Incentivo.aplicarIncentivo(miembro, quehacer);
-                        miembroHogarDAO.update(miembro);
+                        incentivoService.aplicarIncentivo(miembro, quehacer);
                     }
 
-                    quehacerDAO.update(quehacer);
+                    quehacerService.actualizar(quehacer);
                 }
             }
         } catch (Exception e) {
@@ -599,7 +576,7 @@ public class QuehacerServlet extends HttpServlet {
     }
 
     public void testFindAllMiembros() {
-        List<MiembroHogar> listaMiembros = miembroHogarDAO.findAll();
+        List<MiembroHogar> listaMiembros = miembroHogarService.obtenerTodos();
         logger.info("Resultados de findAll: " + listaMiembros);
     }
 

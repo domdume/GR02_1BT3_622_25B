@@ -1,7 +1,9 @@
 package servlet;
 
-import dao.MiembroHogarDAO;
-import dao.QuehacerDAO;
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.context.support.WebApplicationContextUtils;
+import service.MiembroHogarService;
+import service.QuehacerService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -18,19 +20,21 @@ import java.util.List;
 
 @WebServlet(name = "HomeServlet", value = {"", "/home"})
 public class HomeServlet extends HttpServlet {
-    private QuehacerDAO quehacerDAO;
-    private MiembroHogarDAO miembroHogarDAO;
+    private QuehacerService quehacerService;
+    private MiembroHogarService miembroHogarService;
 
+    @Override
     public void init() {
-        quehacerDAO = new QuehacerDAO();
-        miembroHogarDAO = new MiembroHogarDAO();
+        WebApplicationContext ctx = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
+        this.quehacerService = ctx.getBean(QuehacerService.class);
+        this.miembroHogarService = ctx.getBean(MiembroHogarService.class);
     }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         // Cargar datos para el tablero principal
-        List<Quehacer> listaQuehaceres = quehacerDAO.findAllWithMiembroHogar();
-        List<MiembroHogar> listaMiembros = miembroHogarDAO.findAll(); // Ya usa LEFT JOIN FETCH
+    List<Quehacer> listaQuehaceres = quehacerService.obtenerTodos();
+    List<MiembroHogar> listaMiembros = miembroHogarService.obtenerTodos();
 
         // Formateo de fechas para vista
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");

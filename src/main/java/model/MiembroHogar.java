@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import service.IncentivoService;
 
 /**
  * Entidad que representa un miembro del hogar.
@@ -24,7 +23,7 @@ public class MiembroHogar implements Observador {
     private String nombre;
     private int edad;
     private int puntos;
-    private Liga liga; // Added for rewards
+    private Liga liga;
 
     @OneToMany(mappedBy = "miembroHogar", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Quehacer> quehaceres;
@@ -32,8 +31,8 @@ public class MiembroHogar implements Observador {
     @OneToMany(mappedBy = "miembroHogar", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Incentivo> incentivos;
 
-    @Transient // Temporalmente como @Transient para evitar problemas de BD
-    private int factorDeCarga; // Campo requerido según diagrama UML
+    @Transient
+    private int factorDeCarga;
 
     // Constructor vacío requerido por JPA
     public MiembroHogar() {
@@ -108,15 +107,11 @@ public class MiembroHogar implements Observador {
             return;
         }
         
-        // 1. El miembro actualiza el estado de la tarea y su propia lista.
         quehacer.setFechaFinalizacion(LocalDateTime.now());
         quehacer.setEstadoCompletado(true);
         this.quehaceres.remove(quehacer);
         
-        // 2. Crear y aplicar el incentivo correspondiente
-        Incentivo incentivo = new Incentivo();
-        IncentivoService incentivoService = new IncentivoService();
-        incentivoService.aplicarIncentivo(this, quehacer);
+        // La lógica de incentivos debe manejarse desde el Service/Controller
     }
 //    public void reducirFactorDeCarga() { this.factorDeCarga--; }
 //    public void aumentarFactorDeCarga() { this.factorDeCarga++; }

@@ -1,8 +1,10 @@
+
 package service;
 
-import dao.MiembroHogarDAO;
-import dao.QuehacerDAO;
 import model.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -15,23 +17,19 @@ import java.util.Objects;
  *
  * Aplica refactorización "Extract Class" para centralizar lógica dispersa en servlets.
  */
-public class HogarService {
 
-    // Dependencias de la capa de persistencia
-    private MiembroHogarDAO miembroDAO;
-    private QuehacerDAO quehacerDAO;
+@Service
+@Transactional
+public class HogarService {
+    @Autowired
+    private MiembroHogarService miembroService;
+    @Autowired
+    private QuehacerService quehacerService;
 
     // Referencia al singleton del dominio
-    private Hogar hogar;
+    private Hogar hogar = Hogar.getInstance();
 
-    /**
-     * Cada servlet tendrá su instancia
-     */
     public HogarService() {
-        this.miembroDAO = new MiembroHogarDAO();
-        this.quehacerDAO = new QuehacerDAO();
-        this.hogar = Hogar.getInstance(); // Usa el singleton existente
-
         //SUBSTITUTE ALGORITHM: Usar nuevo algoritmo de sincronización
         ResultadoSincronizacion resultado = sincronizarConBD();
         System.out.println("[HogarService] Instancia creada - " + resultado);
@@ -55,36 +53,28 @@ public class HogarService {
                     ", usar dominio=" + debeUsarMetodoDelDominio);
 
             // 2. Determinar el tipo de miembro a crear usando variables explicativas
+
             if (esCreacionDeJefe) {
-                // Crear nuevo jefe del hogar
                 System.out.println("[HogarService] Creando nuevo jefe del hogar: " + nombre);
                 JefeDelHogar nuevoJefe = new JefeDelHogar(nombre, edad);
-                miembroDAO.create(nuevoJefe);
+                miembroService.crearMiembro(nuevoJefe);
                 hogar.registrarMiembro(nuevoJefe);
-
             } else if (esPrimerMiembroQueSeraJefe) {
-                // Si es el primer miembro, automáticamente será jefe
                 System.out.println("[HogarService] Primer miembro, creando como jefe: " + nombre);
                 JefeDelHogar primerJefe = new JefeDelHogar(nombre, edad);
-                miembroDAO.create(primerJefe);
+                miembroService.crearMiembro(primerJefe);
                 hogar.registrarMiembro(primerJefe);
-
             } else if (debeUsarMetodoDelDominio) {
-                // Ya existe jefe, usar su método organizarMiembro()
                 System.out.println("[HogarService] Usando método del dominio - JefeDelHogar.organizarMiembro()");
-                estadoActual.jefeActual.organizarMiembro(nombre, edad); // ✅ USAR estadoActual.jefeActual
-
-                // Buscar el miembro recién creado en memoria y persistirlo
+                estadoActual.jefeActual.organizarMiembro(nombre, edad);
                 MiembroHogar miembroCreado = hogar.buscarMiembroPorNombre(nombre);
                 if (miembroCreado != null) {
-                    miembroDAO.create(miembroCreado);
+                    miembroService.crearMiembro(miembroCreado);
                 }
-
             } else {
-                // Caso excepcional: crear miembro regular
                 System.out.println("[HogarService] Creando miembro regular: " + nombre);
                 MiembroHogar nuevoMiembro = new MiembroHogar(nombre, edad);
-                miembroDAO.create(nuevoMiembro);
+                miembroService.crearMiembro(nuevoMiembro);
                 hogar.registrarMiembro(nuevoMiembro);
             }
 
@@ -112,38 +102,28 @@ public class HogarService {
             Quehacer nuevoQuehacer = new Quehacer(nombre, tiempoLimite, dificultad);
 
             // Decidir el tipo de asignación
+
             if (miembroIdOpcional == null || miembroIdOpcional.trim().isEmpty()) {
-                // ✅ USAR LÓGICA DEL DOMINIO - Asignación automática
                 System.out.println("[HogarService] Usando asignación automática del dominio");
                 hogar.registrarQuehacer(nuevoQuehacer);
-
-                // El quehacer ya está asignado por Hogar.registrarQuehacer()
                 System.out.println("[HogarService] Quehacer asignado automáticamente a: " +
                         (nuevoQuehacer.getMiembroHogar() != null ? nuevoQuehacer.getMiembroHogar().getNombre() : "ninguno"));
-
             } else {
-                // Asignación manual específica
                 System.out.println("[HogarService] Usando asignación manual a miembro específico");
                 Long miembroId = Long.parseLong(miembroIdOpcional);
-                MiembroHogar miembroAsignado = miembroDAO.findById(miembroId);
-
+                MiembroHogar miembroAsignado = miembroService.obtenerPorId(miembroId);
                 if (miembroAsignado == null) {
                     throw new RuntimeException("No se encontró miembro con ID: " + miembroId);
                 }
-
-                // Usar el método del dominio para asignar
                 miembroAsignado.asignarQuehacer(nuevoQuehacer);
-
-                // Asegurar que el miembro esté sincronizado en memoria
                 if (!hogar.getRegistroMiembro().contains(miembroAsignado)) {
                     hogar.registrarMiembro(miembroAsignado);
                 }
-
                 System.out.println("[HogarService] Quehacer asignado manualmente a: " + miembroAsignado.getNombre());
             }
 
             // Persistir en base de datos
-            quehacerDAO.create(nuevoQuehacer);
+            quehacerService.crear(nuevoQuehacer);
 
             // Validar consistencia
             validarConsistencia();
@@ -157,8 +137,9 @@ public class HogarService {
         }
     }
 
+
     public JefeDelHogar obtenerJefeDelHogar() {
-        return miembroDAO.findAll().stream()
+        return miembroService.obtenerTodos().stream()
                 .filter(m -> m instanceof JefeDelHogar)
                 .map(m -> (JefeDelHogar) m)
                 .findFirst()
@@ -218,7 +199,7 @@ public class HogarService {
      * Detecta el tipo específico de inconsistencia entre BD y memoria
      */
     private TipoInconsistencia detectarTipoInconsistencia() {
-        List<MiembroHogar> miembrosBD = miembroDAO.findAll();
+    List<MiembroHogar> miembrosBD = miembroService.obtenerTodos();
         List<MiembroHogar> miembrosMemoria = hogar.getRegistroMiembro();
 
         // Verificar cantidad
@@ -261,7 +242,7 @@ public class HogarService {
      * Sincroniza miembros entre BD y memoria con resolución de conflictos
      */
     private int sincronizarMiembros() {
-        List<MiembroHogar> miembrosBD = miembroDAO.findAll();
+    List<MiembroHogar> miembrosBD = miembroService.obtenerTodos();
 
         // Limpiar memoria y recargar desde BD (BD es fuente de verdad)
         hogar.getRegistroMiembro().clear();
@@ -286,7 +267,7 @@ public class HogarService {
      */
     private int sincronizarQuehaceres() {
         try {
-            List<Quehacer> quehaceresBD = quehacerDAO.findAllWithMiembroHogar();
+            List<Quehacer> quehaceresBD = quehacerService.obtenerTodos();
 
             // Verificar y corregir referencias de miembros en quehaceres
             int sincronizados = 0;
@@ -365,13 +346,13 @@ public class HogarService {
     }
 
     //Obtiene todos los miembros (delegación al DAO)
+
     public List<MiembroHogar> obtenerTodosLosMiembros() {
-        return miembroDAO.findAll();
+        return miembroService.obtenerTodos();
     }
 
-    //Obtiene todos los quehaceres (delegación al DAO)
     public List<Quehacer> obtenerTodosLosQuehaceres() {
-        return quehacerDAO.findAllWithMiembroHogar();
+        return quehacerService.obtenerTodos();
     }
 
     /**
@@ -379,7 +360,7 @@ public class HogarService {
      */
     public void mostrarEstadoHogar() {
         System.out.println("\n=== ESTADO DEL HOGAR ===");
-        System.out.println("Miembros en BD: " + miembroDAO.findAll().size());
+    System.out.println("Miembros en BD: " + miembroService.obtenerTodos().size());
         System.out.println("Miembros en memoria: " + hogar.getRegistroMiembro().size());
         System.out.println("¿Existe jefe?: " + yaExisteJefe());
         if (yaExisteJefe()) {
@@ -395,12 +376,12 @@ public class HogarService {
     public EstadoHogar analizarEstadoHogar() {
         //REPLACE TEMP WITH QUERY: Usar métodos de consulta en lugar de variables temporales
         EstadisticasHogar estadisticas = obtenerEstadisticasHogar();
-        List<MiembroHogar> miembrosMemoria = hogar.getRegistroMiembro();
-        boolean estaVacioMemoria = miembrosMemoria.isEmpty();
-        boolean estaVacioBD = (estadisticas.totalMiembros == 0);
-        boolean esPrimerMiembro = estaVacioMemoria && estaVacioBD;
-        return new EstadoHogar(estadisticas.tieneJefe, esPrimerMiembro,
-                obtenerJefeDelHogar(), (int)estadisticas.totalMiembros);
+    List<MiembroHogar> miembrosMemoria = hogar.getRegistroMiembro();
+    boolean estaVacioMemoria = miembrosMemoria.isEmpty();
+    boolean estaVacioBD = (estadisticas.totalMiembros == 0);
+    boolean esPrimerMiembro = estaVacioMemoria && estaVacioBD;
+    return new EstadoHogar(estadisticas.tieneJefe, esPrimerMiembro,
+        obtenerJefeDelHogar(), (int)estadisticas.totalMiembros);
     }
 
     /**
@@ -468,9 +449,9 @@ public class HogarService {
      * Consulta que retorna todos los miembros regulares (no jefes)
      */
     public List<MiembroHogar> obtenerMiembrosRegulares() {
-        return miembroDAO.findAll().stream()
-                .filter(m -> !(m instanceof JefeDelHogar))
-                .collect(Collectors.toList());
+    return miembroService.obtenerTodos().stream()
+        .filter(m -> !(m instanceof JefeDelHogar))
+        .collect(Collectors.toList());
     }
 
     /**
@@ -485,13 +466,13 @@ public class HogarService {
      * Consulta que retorna estadísticas básicas del hogar
      */
     public EstadisticasHogar obtenerEstadisticasHogar() {
-        List<MiembroHogar> todos = miembroDAO.findAll();
-        long totalMiembros = todos.size();
-        long miembrosRegulares = todos.stream()
-                .filter(m -> !(m instanceof JefeDelHogar))
-                .count();
+    List<MiembroHogar> todos = miembroService.obtenerTodos();
+    long totalMiembros = todos.size();
+    long miembrosRegulares = todos.stream()
+        .filter(m -> !(m instanceof JefeDelHogar))
+        .count();
 
-        return new EstadisticasHogar(totalMiembros, miembrosRegulares, yaExisteJefe());
+    return new EstadisticasHogar(totalMiembros, miembrosRegulares, yaExisteJefe());
     }
 
     /**
