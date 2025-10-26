@@ -114,16 +114,12 @@ public class MiembroHogar implements Observador {
             System.out.println("AVISO: " + nombre + " no puede completar una tarea que no tiene asignada.");
             return;
         }
-        
-        // 1. El miembro actualiza el estado de la tarea y su propia lista.
+        // El miembro actualiza el estado de la tarea y su propia lista.
         quehacer.setFechaFinalizacion(LocalDateTime.now());
-        quehacer.setEstadoCompletado(true);
+        quehacer.setEstado(EstadoQuehacer.COMPLETADO);
         this.quehaceres.remove(quehacer);
-        
-        // 2. Crear y aplicar el incentivo correspondiente
-        Incentivo incentivo = new Incentivo();
-        IncentivoService incentivoService = new IncentivoService();
-        incentivoService.aplicarIncentivo(this, quehacer);
+        // Aplicar incentivo solo desde el service (que persiste en BD)
+        Incentivo.aplicarIncentivo(this, quehacer);
     }
 //    public void reducirFactorDeCarga() { this.factorDeCarga--; }
 //    public void aumentarFactorDeCarga() { this.factorDeCarga++; }

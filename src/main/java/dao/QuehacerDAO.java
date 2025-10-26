@@ -7,28 +7,31 @@ import model.MiembroHogar;
 import util.JPAUtil;
 
 import java.util.List;
+import java.util.logging.Logger;
 
 public class QuehacerDAO {
 
+    private static final Logger logger = Logger.getLogger(QuehacerDAO.class.getName());
+
     public void create(Quehacer quehacer) {
-        EntityManager em = JPAUtil.getEntityManager();
-        EntityTransaction tx = em.getTransaction();
-        try {
-            tx.begin();
-            // Ensure the miembroHogar reference is attached to this EM
-            if (quehacer.getMiembroHogar() != null && quehacer.getMiembroHogar().getId() != null) {
-                MiembroHogar ref = em.getReference(MiembroHogar.class, quehacer.getMiembroHogar().getId());
-                quehacer.setMiembroHogar(ref);
+        try (EntityManager em = JPAUtil.getEntityManager()) {
+            EntityTransaction tx = em.getTransaction();
+            try {
+                tx.begin();
+                // Ensure the miembroHogar reference is attached to this EM
+                if (quehacer.getMiembroHogar() != null && quehacer.getMiembroHogar().getId() != null) {
+                    MiembroHogar ref = em.getReference(MiembroHogar.class, quehacer.getMiembroHogar().getId());
+                    quehacer.setMiembroHogar(ref);
+                }
+                em.persist(quehacer);
+                tx.commit();
+                logger.info("Quehacer persistido correctamente: " + quehacer.getNombre());
+            } catch (Exception e) {
+                if (tx.isActive()) {
+                    tx.rollback();
+                }
+                logger.severe("Error al persistir quehacer: " + e.getMessage());
             }
-            em.persist(quehacer);
-            tx.commit();
-        } catch (Exception e) {
-            if (tx.isActive()) {
-                tx.rollback();
-            }
-            e.printStackTrace();
-        } finally {
-            em.close();
         }
     }
 
@@ -69,39 +72,68 @@ public class QuehacerDAO {
     }
 
     public void update(Quehacer quehacer) {
-        EntityManager em = JPAUtil.getEntityManager();
-        EntityTransaction tx = em.getTransaction();
-        try {
-            tx.begin();
-            em.merge(quehacer);
-            tx.commit();
-        } catch (Exception e) {
-            if (tx.isActive()) {
-                tx.rollback();
+        try (EntityManager em = JPAUtil.getEntityManager()) {
+            EntityTransaction tx = em.getTransaction();
+            try {
+                tx.begin();
+                // Siempre usar merge y obtener la instancia gestionada para evitar problemas
+                // con entidades detached. Merge devuelve la instancia gestionada.
+                Quehacer managed = em.merge(quehacer);
+                // Forzar sincronización inmediata para detectar errores ahora
+                em.flush();
+                if (managed != null) {
+                    logger.info("Quehacer actualizado en EM (id=" + managed.getId() + ", estado=" + managed.getEstado() + ")");
+                }
+                tx.commit();
+            } catch (Exception e) {
+                if (tx.isActive()) {
+                    tx.rollback();
+                }
+                logger.severe("Error al actualizar quehacer: " + e.getMessage());
             }
-            e.printStackTrace();
-        } finally {
-            em.close();
+        }
+    }
+
+    /**
+     * Marca un quehacer como VENCIDO directamente en la base de datos usando JPQL update.
+     * Esto evita problemas con entidades detached o colecciones que puedan sobrescribir cambios.
+     */
+    public void markAsVencido(Long quehacerId, java.time.LocalDateTime fechaFinalizacion) {
+        try (EntityManager em = JPAUtil.getEntityManager()) {
+            EntityTransaction tx = em.getTransaction();
+            try {
+                tx.begin();
+                int updated = em.createQuery("UPDATE Quehacer q SET q.estado = :estado, q.fechaFinalizacion = :fecha WHERE q.id = :id")
+                        .setParameter("estado", model.EstadoQuehacer.VENCIDO)
+                        .setParameter("fecha", fechaFinalizacion)
+                        .setParameter("id", quehacerId)
+                        .executeUpdate();
+                em.flush();
+                logger.info("markAsVencido - filas actualizadas: " + updated + " para quehacerId=" + quehacerId);
+                tx.commit();
+            } catch (Exception e) {
+                if (tx.isActive()) tx.rollback();
+                logger.severe("Error en markAsVencido: " + e.getMessage());
+            }
         }
     }
 
     public void delete(Long id) {
-        EntityManager em = JPAUtil.getEntityManager();
-        EntityTransaction tx = em.getTransaction();
-        try {
-            tx.begin();
-            Quehacer quehacer = em.find(Quehacer.class, id);
-            if (quehacer != null) {
-                em.remove(quehacer);
+        try (EntityManager em = JPAUtil.getEntityManager()) {
+            EntityTransaction tx = em.getTransaction();
+            try {
+                tx.begin();
+                Quehacer quehacer = em.find(Quehacer.class, id);
+                if (quehacer != null) {
+                    em.remove(quehacer);
+                }
+                tx.commit();
+            } catch (Exception e) {
+                if (tx.isActive()) {
+                    tx.rollback();
+                }
+                logger.severe("Error al eliminar quehacer: " + e.getMessage());
             }
-            tx.commit();
-        } catch (Exception e) {
-            if (tx.isActive()) {
-                tx.rollback();
-            }
-            e.printStackTrace();
-        } finally {
-            em.close();
         }
     }
 }

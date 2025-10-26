@@ -66,7 +66,7 @@
                             🔴 Difícil - Tareas complejas o que requieren tiempo
                         </option>
                     </select>
-                    <small class="form-help">La dificultad afecta los puntos de recompensa</small>
+                    <small class="form-help">La dificultad afecta el nivel de esfuerzo (informativo)</small>
                 </div>
 
                 <div class="form-group">
@@ -163,18 +163,7 @@ function getConsistentRandomItem(array, id) {
     return array[index];
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.recompensa-text').forEach(function(element) {
-        const quehacerId = element.getAttribute('data-quehacer-id');
-        const recompensa = getConsistentRandomItem(recompensas, parseInt(quehacerId));
-        element.innerHTML = recompensa;
-    });
-    document.querySelectorAll('.penalizacion-text').forEach(function(element) {
-        const quehacerId = element.getAttribute('data-quehacer-id');
-        const penalizacion = getConsistentRandomItem(penalizaciones, parseInt(quehacerId));
-        element.innerHTML = penalizacion;
-    });
-});
+// Incentives UI removed from form (kept in backend but not displayed)
 </script>
 
 <jsp:include page="../common/footer.jsp" />

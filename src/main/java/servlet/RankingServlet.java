@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import model.Liga;
 import model.MiembroHogar;
+import service.LigaService;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -19,15 +20,25 @@ import java.util.stream.Collectors;
 @WebServlet(name = "RankingServlet", value = "/ranking")
 public class RankingServlet extends HttpServlet {
     private MiembroHogarDAO miembroDAO;
+    private LigaService ligaService;
 
     @Override
     public void init() {
         miembroDAO = new MiembroHogarDAO();
+        ligaService = new LigaService();
     }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         List<MiembroHogar> miembros = miembroDAO.findAll();
+        
+        // Actualizar ligas basadas en puntos actuales antes de mostrar
+        for (MiembroHogar m : miembros) {
+            ligaService.actualizarLiga(m);
+            // Persistir la liga actualizada
+            miembroDAO.update(m);
+        }
+        
         // Orden general por puntos desc
         List<MiembroHogar> topGlobal = new ArrayList<>(miembros);
         topGlobal.sort(Comparator.comparingInt(MiembroHogar::getPuntos).reversed());

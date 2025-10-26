@@ -118,17 +118,17 @@
                 <c:otherwise>
                     <div class="tasks-grid">
                         <c:forEach var="quehacer" items="${listaQuehaceres}">
-                            <c:set var="isOverdue" value="${quehacer.estaVencido()}" />
+                            <c:set var="isOverdue" value="${quehacer.vencido}" />
 
-                            <div class="task-card ${quehacer.estadoCompletado ? 'completed' : 'pending'} ${isOverdue ? 'overdue' : ''}"
-                                 data-status="${quehacer.estadoCompletado ? 'completed' : 'pending'}"
+                            <div class="task-card ${quehacer.completado ? 'completed' : 'pending'} ${isOverdue ? 'overdue' : ''}"
+                                 data-status="${quehacer.completado ? 'completed' : 'pending'}"
                                  data-overdue="${isOverdue}">
                                 
                                 <div class="task-header">
                                     <h4 class="task-title">${quehacer.nombre}</h4>
                                     <span class="task-status">
                                         <c:choose>
-                                            <c:when test="${quehacer.estadoCompletado}">✅</c:when>
+                                            <c:when test="${quehacer.completado}">✅</c:when>
                                             <c:when test="${isOverdue}">⏰</c:when>
                                             <c:otherwise>📋</c:otherwise>
                                         </c:choose>
@@ -156,7 +156,7 @@
                                             <c:out value="${empty quehacer.tiempoLimiteFmt ? quehacer.tiempoLimite : quehacer.tiempoLimiteFmt}" />
                                         </div>
                                         
-                                        <c:if test="${quehacer.estadoCompletado and not empty quehacer.fechaFinalizacion}">
+                                        <c:if test="${quehacer.completado and not empty quehacer.fechaFinalizacion}">
                                             <div class="completion-time">
                                                 ✅ <strong>Completada:</strong> 
                                                 <c:out value="${empty quehacer.fechaFinalizacionFmt ? quehacer.fechaFinalizacion : quehacer.fechaFinalizacionFmt}" />
@@ -173,7 +173,7 @@
 
                                 <div class="task-actions">
                                     <c:choose>
-                                        <c:when test="${quehacer.estadoCompletado}">
+                                        <c:when test="${quehacer.completado}">
                                             <span class="status-badge completed">✅ Completada</span>
                                         </c:when>
                                         <c:otherwise>

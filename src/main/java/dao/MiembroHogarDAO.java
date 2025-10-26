@@ -87,7 +87,19 @@ public class MiembroHogarDAO {
         try {
             tx.begin();
             if (miembro != null) {
-                em.merge(miembro);
+                // Evitar merge completo que puede afectar colecciones (quehaceres) por cascade/orphanRemoval.
+                // En su lugar, obtener la instancia gestionada y actualizar solo campos escalares (puntos, liga, edad, nombre, factorDeCarga).
+                MiembroHogar managed = em.find(MiembroHogar.class, miembro.getId());
+                if (managed == null) {
+                    // Si no existe en DB, hacer merge como fallback
+                    em.merge(miembro);
+                } else {
+                    managed.setPuntos(miembro.getPuntos());
+                    managed.setLiga(miembro.getLiga());
+                    managed.setEdad(miembro.getEdad());
+                    managed.setNombre(miembro.getNombre());
+                    // No modificamos colecciones aquí para evitar sobrescribir quehaceres existentes
+                }
             }
             tx.commit();
         } catch (Exception e) {

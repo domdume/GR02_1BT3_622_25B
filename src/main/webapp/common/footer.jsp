@@ -9,7 +9,6 @@
                 <c:if test="${not empty estadisticas}">
                     <span>👥 ${estadisticas.totalMiembros} miembros</span>
                     <span>📋 ${estadisticas.totalQuehaceres} tareas</span>
-                    <span>🏆 ${estadisticas.totalIncentivos} incentivos</span>
                 </c:if>
             </div>
         </div>

@@ -4,74 +4,90 @@ import model.Liga;
 import model.MiembroHogar;
 import repository.AchievementRepository;
 
+/**
+ * Servicio unificado para manejar puntos y ligas.
+ * Esta clase sustituye a la anterior `ServicioLiga` y a la versión que manejaba
+ * logros/bonificaciones; aquí solo se actualiza el puntaje y la liga del miembro.
+ *
+ * Se mantienen métodos compatibilidad con tests anteriores: `actualizarLiga` y
+ * `actualizarPuntosYLiga`, además de un constructor que acepta un
+ * `AchievementRepository` (no se usa en esta implementación).
+ */
 public class LigaService {
-    // Constantes extraídas
-    private static final int BONIFICACION_POR_ASCENSO = 50;
-    private static final String PREFIJO_LOGRO_ASCENSO = "AscensoA";
-    private static final int PUNTOS_PLATA = 500;
-    private static final int PUNTOS_ORO = 1500;
+
+    // Umbrales de liga (ajustados según requerimientos)
+    private static final int PLATA_UMBRAL = 60;
+    private static final int ORO_UMBRAL = 100;
+
+    // Repositorio opcional para compatibilidad con tests/mocks (no usado aquí)
     private final AchievementRepository achievementRepository;
 
-    // Constructor sin parámetros para Test unitario y Test con parámetros
     public LigaService() {
-        this(null);
+        this.achievementRepository = null;
     }
 
-    // Constructor con inyección de dependencia para Test con mock)
+    // Constructor para permitir inyección de mock en tests; no se utiliza en la lógica
     public LigaService(AchievementRepository achievementRepository) {
         this.achievementRepository = achievementRepository;
     }
 
+    /**
+     * Método de compatibilidad: recalcula la liga del miembro según sus puntos actuales.
+     */
     public void actualizarLiga(MiembroHogar miembro) {
-        miembro.setLiga(calcularLigaPorPuntos(miembro.getPuntos()));
-    }
-    private static Liga calcularLigaPorPuntos(int puntos) {
-        if (puntos >= PUNTOS_ORO) return Liga.ORO;
-        if (puntos >= PUNTOS_PLATA) return Liga.PLATA;
-        return Liga.BRONCE;
-    }
-    public void actualizarPuntosYLiga(MiembroHogar miembro, int puntosGanados) {
-        Liga ligaAnterior = miembro.getLiga();
-        
-        // Actualizar puntos
-        miembro.setPuntos(miembro.getPuntos() + puntosGanados);
-
-        // Actualizar liga según nuevos puntos
-        actualizarLiga(miembro);
-        Liga ligaNueva = miembro.getLiga();
-
-        //Si hubo ascenso, intentar dar bonificación
-        if (esAscenso(ligaAnterior, ligaNueva)) {
-            aplicarBonificacionPorAscenso(miembro, ligaNueva);
-        }
-    }
-    private static boolean esAscenso(Liga anterior, Liga nueva) {
-        // Substitute algorithm: rely on enum order
-        return nueva.ordinal() > anterior.ordinal();
-    }
-    //Aplica bonificación SOLO si NO tiene el logro
-    private void aplicarBonificacionPorAscenso(MiembroHogar miembro, Liga ligaNueva) {
-        // Si no hay repositorio, no hacer nada
-        if (achievementRepository == null) {
-            return;
-        }
-
-        String logroId = PREFIJO_LOGRO_ASCENSO + ligaNueva;
-
-        // Verificar si YA tiene el logro
-        boolean yaTieneLogro = achievementRepository.tieneLogro(miembro.getId(), logroId);
-
-        if (!yaTieneLogro) {
-            otorgarBonificacionYGuardarLogro(miembro, logroId);
-        }
+        if (miembro == null) return;
+        actualizarLigaSegunPuntos(miembro);
     }
 
     /**
-     * Extraído: aplica la bonificación y persiste el logro.
+     * Añade o remueve puntos y actualiza la liga. Firma esperada por tests.
+     * Puntos negativo significa remoción.
      */
-    private void otorgarBonificacionYGuardarLogro(MiembroHogar miembro, String logroId) {
-        miembro.setPuntos(miembro.getPuntos() + BONIFICACION_POR_ASCENSO);
-        achievementRepository.guardarLogro(miembro.getId(), logroId);
+    public void actualizarPuntosYLiga(MiembroHogar miembro, int puntos) {
+        // Reutilizar la lógica que ya maneja negativos
+        actualizarPuntos(miembro, puntos);
+    }
+
+    /**
+     * Añade puntos al miembro y actualiza su liga según los umbrales.
+     * No realiza ninguna acción relacionada con incentivos o logros.
+     */
+    public void actualizarPuntos(MiembroHogar miembro, int puntos) {
+        if (miembro == null) return;
+        if (puntos < 0) {
+            // Si se pasa valor negativo, delegar a removerPuntos para comportamiento consistente
+            removerPuntos(miembro, -puntos);
+            return;
+        }
+        int nuevos = miembro.getPuntos() + puntos;
+        miembro.setPuntos(nuevos);
+        actualizarLigaSegunPuntos(miembro);
+    }
+
+    /**
+     * Remueve puntos del miembro (sin llegar a negativos) y actualiza su liga.
+     */
+    public void removerPuntos(MiembroHogar miembro, int puntosARemover) {
+        if (miembro == null) return;
+        if (puntosARemover <= 0) return;
+        int nuevos = miembro.getPuntos() - puntosARemover;
+        if (nuevos < 0) nuevos = 0;
+        miembro.setPuntos(nuevos);
+        actualizarLigaSegunPuntos(miembro);
+    }
+
+    /**
+     * Actualiza la liga del miembro utilizando los umbrales definidos.
+     */
+    private void actualizarLigaSegunPuntos(MiembroHogar miembro) {
+        int pts = miembro.getPuntos();
+        if (pts >= ORO_UMBRAL) {
+            miembro.setLiga(Liga.ORO);
+        } else if (pts >= PLATA_UMBRAL) {
+            miembro.setLiga(Liga.PLATA);
+        } else {
+            miembro.setLiga(Liga.BRONCE);
+        }
     }
 
 }

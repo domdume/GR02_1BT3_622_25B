@@ -20,7 +20,6 @@
                         <a href="${pageContext.request.contextPath}/miembros?action=new" class="btn btn-primary">👥 Registrar Miembro</a>
                         <a href="${pageContext.request.contextPath}/quehaceres?action=new" class="btn btn-primary">📋 Crear Quehacer</a>
                     </c:if>
-                    <a href="${pageContext.request.contextPath}/incentivos" class="btn btn-secondary">🏆 Ver Historial</a>
                     <a href="${pageContext.request.contextPath}/quehaceres?action=complete" class="btn btn-secondary">✅ Completar</a>
                     <a href="${pageContext.request.contextPath}/quehaceres?action=pending" class="btn btn-secondary">⏳ Pendientes</a>
                 </div>
@@ -70,10 +69,10 @@
                             </thead>
                             <tbody>
                                 <c:forEach var="q" items="${listaQuehaceres}">
-                                    <tr class="${q.estadoFinalizado ? (q.estadoCompletado ? 'completed' : 'overdue') : ''}">
+                                    <tr class="${q.estadoFinalizado ? (q.completado ? 'completed' : 'overdue') : ''}">
                                         <td>
                                             <span style="display:flex; align-items:center; gap:8px; font-weight:700;">
-                                                ${q.estadoCompletado ? '✅' : (q.estadoFinalizado ? '❌' : '🧹')}
+                                                ${q.completado ? '✅' : (q.estadoFinalizado ? '❌' : '🧹')}
                                                 <c:out value="${q.nombre}" />
                                             </span>
                                         </td>
@@ -89,12 +88,12 @@
                                         </td>
                                         <td>
                                             <div style="display:flex; flex-direction:column; align-items:flex-start; gap:4px;">
-                                                <span class="points-badge">${q.puntosEnEseMomento} pts</span>
+                                                <span class="points-badge">${q.miembroHogar.puntos} pts</span>
                                                 <small style="color: var(--muted);">
                                                     <c:choose>
-                                                        <c:when test="${q.estadoFinalizado}">Total después de esta tarea</c:when>
-                                                        <c:otherwise>Total actual</c:otherwise>
-                                                    </c:choose>
+                                                            <c:when test="${q.estadoFinalizado}">Total después de esta tarea</c:when>
+                                                            <c:otherwise>Total actual</c:otherwise>
+                                                        </c:choose>
                                                 </small>
                                             </div>
                                         </td>
@@ -104,7 +103,7 @@
                                                 <br>
                                                 <small style="color: var(--muted);">
                                                     <c:choose>
-                                                        <c:when test="${q.estadoCompletado}">Completado: ${q.fechaFinalizacion}</c:when>
+                                                        <c:when test="${q.completado}">Completado: ${q.fechaFinalizacion}</c:when>
                                                         <c:otherwise>Expiró: ${q.fechaFinalizacion}</c:otherwise>
                                                     </c:choose>
                                                 </small>
@@ -113,8 +112,8 @@
                                         <td>
                                             <c:choose>
                                                 <c:when test="${q.estadoFinalizado}">
-                                                    <span class="status-badge ${q.estadoCompletado ? 'completed' : 'overdue'}">
-                                                        ${q.estadoCompletado ? '✅ Completado' : '❌ Atrasado'}
+                                                    <span class="status-badge ${q.completado ? 'completed' : 'overdue'}">
+                                                        ${q.completado ? '✅ Completado' : '❌ Atrasado'}
                                                     </span>
                                                 </c:when>
                                                 <c:otherwise>
@@ -126,16 +125,16 @@
                                             <c:choose>
                                                 <c:when test="${q.estadoFinalizado}">
                                                     <c:choose>
-                                                        <c:when test="${q.estadoCompletado}">
-                                                            <span class="reward-badge recompensa-text" data-quehacer-id="${q.id}">Cargando...</span>
+                                                        <c:when test="${q.completado}">
+                                                            <span class="incentive-text" data-quehacer-id="${q.id}" data-type="reward">Cargando...</span>
                                                         </c:when>
                                                         <c:otherwise>
-                                                            <span class="penalty-badge penalizacion-text" data-quehacer-id="${q.id}">Cargando...</span>
+                                                            <span class="incentive-text" data-quehacer-id="${q.id}" data-type="penalty">Cargando...</span>
                                                         </c:otherwise>
                                                     </c:choose>
                                                 </c:when>
                                                 <c:otherwise>
-                                                    <span style="color: var(--muted);">Pendiente de completar</span>
+                                                    <span style="color: var(--muted);">—</span>
                                                 </c:otherwise>
                                             </c:choose>
                                         </td>
@@ -177,7 +176,7 @@
 <jsp:include page="common/layout-foot.jsp" />
 
 <script>
-// Listas de recompensas y penalizaciones divertidas
+// Minimal incentives UI: show one deterministic reward/penalty text per finalised task
 const recompensas = [
     "No debes lavar los platos durante una semana",
     "Libre de hacer tu cama por 3 días",
@@ -204,25 +203,21 @@ const penalizaciones = [
     "Cocinar la cena durante una semana"
 ];
 
-// Función para obtener un elemento aleatorio de una lista basado en un ID (para consistencia)
 function getConsistentRandomItem(array, id) {
-    // Usar el ID como semilla para obtener siempre el mismo resultado para el mismo quehacer
-    const index = Math.abs(id) % array.length;
+    const index = Math.abs(Number(id)) % array.length;
     return array[index];
 }
 
-// Asignar recompensas y penalizaciones cuando se carga la página
 document.addEventListener('DOMContentLoaded', function() {
-    // Asignar recompensas
-    document.querySelectorAll('.recompensa-text').forEach(function(element) {
-        const quehacerId = element.getAttribute('data-quehacer-id');
-        element.innerHTML = '🏅 ' + getConsistentRandomItem(recompensas, parseInt(quehacerId));
-    });
-    
-    // Asignar penalizaciones
-    document.querySelectorAll('.penalizacion-text').forEach(function(element) {
-        const quehacerId = element.getAttribute('data-quehacer-id');
-        element.innerHTML = '⚠️ ' + getConsistentRandomItem(penalizaciones, parseInt(quehacerId));
+    document.querySelectorAll('.incentive-text').forEach(function(el) {
+        const id = el.getAttribute('data-quehacer-id');
+        const type = el.getAttribute('data-type');
+        if (!id || !type) return;
+        if (type === 'reward') {
+            el.textContent = '🏅 ' + getConsistentRandomItem(recompensas, id);
+        } else {
+            el.textContent = '⚠️ ' + getConsistentRandomItem(penalizaciones, id);
+        }
     });
 });
 </script>

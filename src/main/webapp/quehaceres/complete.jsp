@@ -36,12 +36,13 @@
                     <select id="quehacerId" name="quehacerId" class="form-select" required onchange="updateTaskDetails()">
                         <option value="">-- Seleccione una tarea --</option>
                         <c:forEach var="quehacer" items="${listaQuehaceres}">
-                            <c:if test="${not quehacer.estadoCompletado}">
-                                <option value="${quehacer.id}" 
+                            <c:if test="${not quehacer.completado}">
+                                <option value="${quehacer.id}"
+                                        data-quehacer-id="${quehacer.id}"
                                         data-miembro="${quehacer.miembroHogar.nombre}"
                                         data-dificultad="${quehacer.dificultad}"
                                         data-limite="${empty quehacer.tiempoLimiteFmt ? quehacer.tiempoLimite : quehacer.tiempoLimiteFmt}"
-                                        data-recompensa="${quehacer.recompensa}"
+                                        data-limite-iso="${quehacer.tiempoLimite}"
                                         ${param.quehacerId == quehacer.id ? 'selected' : ''}>
                                     ${quehacer.nombre} - Asignado a: ${quehacer.miembroHogar.nombre}
                                     <c:choose>
@@ -83,8 +84,8 @@
                             <span id="taskDeadline"></span>
                         </div>
                         <div class="detail-item">
-                            <strong>🏆 Recompensa:</strong>
-                            <span id="taskReward"></span>
+                            <strong>🎁 Recompensa / Penalización:</strong>
+                            <span id="taskReward" class="incentive-text"></span>
                         </div>
                     </div>
                 </div>
@@ -140,7 +141,7 @@
                 <div class="tasks-quick-list">
                     <c:set var="pendingCount" value="0" />
                     <c:forEach var="quehacer" items="${listaQuehaceres}">
-                        <c:if test="${not quehacer.estadoCompletado}">
+                        <c:if test="${not quehacer.completado}">
                             <c:set var="pendingCount" value="${pendingCount + 1}" />
                             <div class="task-quick-item">
                                 <span class="task-name">${quehacer.nombre}</span>
@@ -178,6 +179,7 @@ function updateTaskDetails() {
     const taskDetails = document.getElementById('taskDetails');
     const memberField = document.getElementById('miembroAsignado');
     const submitBtn = document.getElementById('submitBtn');
+    const fechaInput = document.getElementById('fechaFinalizacion');
     
     if (selectedOption.value) {
         // Mostrar detalles de la tarea
@@ -185,17 +187,61 @@ function updateTaskDetails() {
         document.getElementById('taskMember').textContent = selectedOption.dataset.miembro;
         document.getElementById('taskDifficulty').textContent = selectedOption.dataset.dificultad;
         document.getElementById('taskDeadline').textContent = selectedOption.dataset.limite;
-        document.getElementById('taskReward').textContent = selectedOption.dataset.recompensa || 'Por calcular';
+    // Mostrar recompensa/penalización calculada según fecha de finalización
+    const taskRewardEl = document.getElementById('taskReward');
+        try {
+            const limiteIso = selectedOption.dataset.limiteIso;
+            let rewardText = '';
+            if (fechaInput && fechaInput.value) {
+                const finished = new Date(fechaInput.value);
+                let isOnTime = true;
+                if (limiteIso) {
+                    let deadline = new Date(limiteIso);
+                    if (isNaN(deadline.getTime())) {
+                        // fallback: try parsing as integer millis
+                        const asInt = parseInt(limiteIso, 10);
+                        if (!isNaN(asInt)) {
+                            deadline = new Date(asInt);
+                        } else {
+                            deadline = null;
+                        }
+                    }
+                    if (deadline) {
+                        // compare times
+                        isOnTime = finished.getTime() <= deadline.getTime();
+                    } else {
+                        // unknown deadline -> treat as on time
+                        isOnTime = true;
+                    }
+                } else {
+                    // no deadline -> on time
+                    isOnTime = true;
+                }
+
+                if (isOnTime) {
+                    rewardText = window._getConsistentRandomItem(window._recompensas, selectedOption.dataset.quehacerId);
+                } else {
+                    rewardText = window._getConsistentRandomItem(window._penalizaciones, selectedOption.dataset.quehacerId);
+                }
+            } else {
+                rewardText = 'Seleccione fecha de finalización para ver la recompensa/penalización';
+            }
+            taskRewardEl.textContent = rewardText;
+        } catch (e) {
+            // if anything fails, keep the reward element empty
+            console.error('Error calculating reward:', e);
+            if (taskRewardEl) taskRewardEl.textContent = '';
+        }
+    // Incentives hidden: do not show taskReward in the UI
         
-        // Actualizar campo de miembro
-        memberField.value = selectedOption.dataset.miembro;
+    // Actualizar campo de miembro
+    memberField.value = selectedOption.dataset.miembro;
         
         // Habilitar botón de envío
         submitBtn.disabled = false;
         
         // Establecer fecha actual si no hay una seleccionada
-        const fechaInput = document.getElementById('fechaFinalizacion');
-        if (!fechaInput.value) {
+        if (fechaInput && !fechaInput.value) {
             const now = new Date();
             const offset = now.getTimezoneOffset() * 60000;
             const localTime = new Date(now.getTime() - offset);
@@ -206,12 +252,57 @@ function updateTaskDetails() {
         taskDetails.style.display = 'none';
         memberField.value = '';
         submitBtn.disabled = true;
+        const taskRewardEl = document.getElementById('taskReward');
+        if (taskRewardEl) taskRewardEl.textContent = '';
     }
 }
 
 // Inicializar al cargar la página
 document.addEventListener('DOMContentLoaded', function() {
+    // Arrays para rewards/penalties determinísticos
+    const recompensas = [
+        "No debes lavar los platos durante una semana",
+        "Libre de hacer tu cama por 3 días",
+        "Puedes elegir la película de la noche",
+        "No tienes que sacar la basura esta semana",
+        "Día libre de cocinar",
+        "Puedes quedarte despierto 1 hora extra",
+        "Libre de aspirar por una semana",
+        "Eliges el menú del domingo",
+        "No haces limpieza del baño por 5 días",
+        "Tienes el control remoto por un día completo"
+    ];
+
+    const penalizaciones = [
+        "Debes barrer durante una semana",
+        "Lavar los platos todos los días por 3 días",
+        "Sacar la basura durante una semana completa",
+        "Limpiar el baño por 5 días seguidos",
+        "Aspirar toda la casa durante una semana",
+        "Hacer todas las camas por 3 días",
+        "Limpiar las ventanas de toda la casa",
+        "Ordenar tu cuarto todos los días por una semana",
+        "Lavar y doblar ropa por 5 días",
+        "Cocinar la cena durante una semana"
+    ];
+
+    function getConsistentRandomItem(array, id) {
+        const index = Math.abs(Number(id)) % array.length;
+        return array[index];
+    }
+
+    // Exponer las funciones/arrays al scope de la función updateTaskDetails (cerradura)
+    window._recompensas = recompensas;
+    window._penalizaciones = penalizaciones;
+    window._getConsistentRandomItem = getConsistentRandomItem;
+
     updateTaskDetails();
+
+    // Recalcular reward/penalty cuando el usuario cambia la fecha de finalización manualmente
+    const fechaInput = document.getElementById('fechaFinalizacion');
+    if (fechaInput) {
+        fechaInput.addEventListener('input', updateTaskDetails);
+    }
 });
 </script>
 

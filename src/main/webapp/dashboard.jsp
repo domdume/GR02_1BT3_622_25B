@@ -48,7 +48,6 @@
                 <div class="action-buttons">
                     <a href="${pageContext.request.contextPath}/miembros?action=new" class="btn btn-primary">👥 Registrar Miembro</a>
                     <a href="${pageContext.request.contextPath}/quehaceres?action=new" class="btn btn-primary">📋 Crear Quehacer</a>
-                    <a href="${pageContext.request.contextPath}/incentivos?action=new" class="btn btn-primary">🏆 Gestionar Incentivos</a>
                 </div>
             </section>
         </c:if>
@@ -59,7 +58,6 @@
             <div class="action-buttons">
                 <a href="${pageContext.request.contextPath}/quehaceres?action=pending" class="btn btn-secondary">⏳ Ver Pendientes</a>
                 <a href="${pageContext.request.contextPath}/quehaceres?action=complete" class="btn btn-secondary">✅ Completar Tarea</a>
-                <a href="${pageContext.request.contextPath}/incentivos" class="btn btn-secondary">📊 Ver Historial</a>
             </div>
         </section>
 
@@ -83,10 +81,11 @@
                             </thead>
                             <tbody>
                                 <c:forEach var="quehacer" items="${listaQuehaceres}">
-                                    <tr class="${quehacer.estadoCompletado ? 'completed' : 'pending'}">
+                                    <c:set var="isOverdue" value="${quehacer.vencido}" />
+                                    <tr class="${quehacer.completado ? 'completed' : (isOverdue ? 'overdue' : 'pending')}">
                                         <td>
                                             <span style="display:flex; align-items:center; gap:8px; font-weight:700;">
-                                                ${quehacer.estadoCompletado ? '✅' : '🧹'}
+                                                ${quehacer.completado ? '✅' : (isOverdue ? '❌' : '🧹')}
                                                 <c:out value="${quehacer.nombre}" />
                                             </span>
                                         </td>
@@ -106,8 +105,8 @@
                                             </span>
                                         </td>
                                         <td>
-                                            <span class="status-badge ${quehacer.estadoCompletado ? 'completed' : 'pending'}">
-                                                ${quehacer.estadoCompletado ? '✅ Completado' : '⏳ Pendiente'}
+                                            <span class="status-badge ${quehacer.completado ? 'completed' : (isOverdue ? 'overdue' : 'pending')}">
+                                                ${quehacer.completado ? '✅ Completado' : (isOverdue ? '❌ Vencido' : '⏳ Pendiente')}
                                             </span>
                                         </td>
                                         <td>

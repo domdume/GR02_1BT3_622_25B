@@ -2,8 +2,8 @@ package model;
 
 public enum Liga {
     BRONCE(1, 0),
-    PLATA(2, 500),
-    ORO(3, 1500);
+    PLATA(2, 60),
+    ORO(3, 100);
 
     private final int nivel;
     private final int puntosRequeridos;

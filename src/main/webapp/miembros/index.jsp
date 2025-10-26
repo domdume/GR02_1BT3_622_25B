@@ -116,7 +116,7 @@
                                                     <small class="task-details">
                                                         <c:set var="completadas" value="0" />
                                                         <c:forEach var="quehacer" items="${miembro.quehaceres}">
-                                                            <c:if test="${quehacer.estadoCompletado}">
+                                                            <c:if test="${quehacer.completado}">
                                                                 <c:set var="completadas" value="${completadas + 1}" />
                                                             </c:if>
                                                         </c:forEach>
@@ -140,11 +140,7 @@
                                                    title="Ver tareas pendientes">
                                                     📋 Tareas
                                                 </a>
-                                                <a href="${pageContext.request.contextPath}/incentivos?miembroId=${miembro.id}" 
-                                                   class="btn btn-sm btn-outline" 
-                                                   title="Ver historial de incentivos">
-                                                    🏆 Historial
-                                                </a>
+                                                <!-- Incentives/history hidden from GUI -->
                                                 <c:if test="${sessionScope.viewRole == 'JEFE'}">
                                                     <a href="${pageContext.request.contextPath}/miembros?action=delete&id=${miembro.id}"
                                                        class="btn btn-sm btn-outline" style="color:#fca5a5; border-color: rgba(239,68,68,0.35);"

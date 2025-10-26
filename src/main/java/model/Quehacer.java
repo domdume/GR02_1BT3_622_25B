@@ -2,8 +2,7 @@ package model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Random;
+import java.time.format.DateTimeFormatter;
 
 @Entity
 public class Quehacer {
@@ -13,37 +12,36 @@ public class Quehacer {
     private Long id;
 
     private String nombre;
-    private boolean estadoCompletado;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado", nullable = false)
+    private EstadoQuehacer estado; // Ajuste para que coincida con la base de datos
     private LocalDateTime tiempoLimite;
     private LocalDateTime fechaFinalizacion;
     @Enumerated(EnumType.STRING)
     private Dificultad dificultad; // Campo agregado según diagrama UML
 
     @ManyToOne
-    @JoinColumn(name = "miembro_hogar_id")
-    private MiembroHogar miembroHogar;
+    @JoinColumn(name = "miembro_id", nullable = false)
+    private MiembroHogar miembroHogar; // Ajuste para que coincida con la base de datos
 
-    private String recompensa; // Ejemplo: "5 puntos"
-    private String penalizacion; // Ejemplo: "No completado a tiempo"
-    private boolean estadoFinalizado; // Indica si el quehacer está finalizado
-    
     @Transient
     private int puntosEnEseMomento; // Campo calculado para mostrar puntos progresivos
 
     @Transient
-    private String tiempoLimiteFmt; // Solo para la vista
+    private boolean vencido; // bandera calculada en servidor para evitar llamadas a métodos EL
 
-    @Transient
-    private String fechaFinalizacionFmt; // Solo para la vista
+    private String recompensa;
 
     // Constructor vacío para JPA
     public Quehacer() {
+        this.estado = EstadoQuehacer.PENDIENTE;
     }
 
     public Quehacer(String nombre, LocalDateTime tiempoLimite, Dificultad dificultad) {
         this.nombre = nombre;
         this.tiempoLimite = tiempoLimite;
         this.dificultad = dificultad;
+        this.estado = EstadoQuehacer.PENDIENTE;
     }
 
     // Getters y Setters
@@ -63,12 +61,12 @@ public class Quehacer {
         this.nombre = nombre;
     }
 
-    public boolean isEstadoCompletado() {
-        return estadoCompletado;
+    public EstadoQuehacer getEstado() {
+        return estado;
     }
 
-    public void setEstadoCompletado(boolean estadoCompletado) {
-        this.estadoCompletado = estadoCompletado;
+    public void setEstado(EstadoQuehacer estado) {
+        this.estado = estado;
     }
 
     public Dificultad getDificultad() {
@@ -83,9 +81,9 @@ public class Quehacer {
         return tiempoLimite;
     }
 
- public void setTiempoLimite(LocalDateTime tiempoLimite) {
-    this.tiempoLimite = tiempoLimite;
-}
+    public void setTiempoLimite(LocalDateTime tiempoLimite) {
+        this.tiempoLimite = tiempoLimite;
+    }
 
     public LocalDateTime getFechaFinalizacion() {
         return fechaFinalizacion;
@@ -111,59 +109,35 @@ public class Quehacer {
         this.recompensa = recompensa;
     }
 
-//    public String getPenalizacion() {
-//        return penalizacion;
-//    }
-
-    public void setPenalizacion(String penalizacion) {
-        this.penalizacion = penalizacion;
-    }
-
-    public boolean isEstadoFinalizado() {
-        return estadoFinalizado;
-    }
-
-    public void setEstadoFinalizado(boolean estadoFinalizado) {
-        this.estadoFinalizado = estadoFinalizado;
-    }
-
     // Lógica de negocio
     
     // Métodos según diagrama UML
-    public boolean estaCompletado() {
-        return this.estadoCompletado;
+    public boolean isCompletado() {
+        return this.estado == EstadoQuehacer.COMPLETADO;
     }
 
     public void marcarCompletado() {
-        this.estadoCompletado = true;
-        this.estadoFinalizado = true;
-        this.fechaFinalizacion = LocalDateTime.now();
-    }
-
-    // Método para marcado completo manual (usado por el sistema web)
-    public void marcarComoCompletado() {
-        this.estadoCompletado = true;
-        this.fechaFinalizacion = LocalDateTime.now();
+        this.estado = EstadoQuehacer.COMPLETADO;
+        // Solo establecer fecha de finalización si no fue proporcionada anteriormente
+        if (this.fechaFinalizacion == null) {
+            this.fechaFinalizacion = LocalDateTime.now();
+        }
     }
 
     public boolean fueCompletadoATiempo() {
-        if (!estadoCompletado || fechaFinalizacion == null) {
+        if (estado != EstadoQuehacer.COMPLETADO || fechaFinalizacion == null) {
             return false;
         }
         return fechaFinalizacion.isBefore(tiempoLimite) || fechaFinalizacion.isEqual(tiempoLimite);
     }
 
-//    @Transient
-//    public int getRewardPoints() {
-//        if (!estadoCompletado || !fueCompletadoATiempo()) {
-//            return 0;
-//        }
-//        return 20; // Puntos fijos para todos los quehaceres
-//
-//    }
-
     public boolean estaVencido() {
-        return !estadoCompletado && tiempoLimite != null && LocalDateTime.now().isAfter(tiempoLimite);
+        return estado == EstadoQuehacer.VENCIDO || (estado == EstadoQuehacer.PENDIENTE && tiempoLimite != null && LocalDateTime.now().isAfter(tiempoLimite));
+    }
+
+    // Método de compatibilidad para verificar si está finalizado (no pendiente)
+    public boolean isEstadoFinalizado() {
+        return estado != EstadoQuehacer.PENDIENTE;
     }
 
 
@@ -175,20 +149,28 @@ public class Quehacer {
         this.puntosEnEseMomento = puntosEnEseMomento;
     }
 
-    public String getTiempoLimiteFmt() {
-        return tiempoLimiteFmt;
+    public boolean isVencido() {
+        return vencido;
     }
 
-    public void setTiempoLimiteFmt(String tiempoLimiteFmt) {
-        this.tiempoLimiteFmt = tiempoLimiteFmt;
+    public void setVencido(boolean vencido) {
+        this.vencido = vencido;
+    }
+
+    public String getTiempoLimiteFmt() {
+        if (tiempoLimite == null) {
+            return null;
+        }
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        return tiempoLimite.format(formatter);
     }
 
     public String getFechaFinalizacionFmt() {
-        return fechaFinalizacionFmt;
-    }
-
-    public void setFechaFinalizacionFmt(String fechaFinalizacionFmt) {
-        this.fechaFinalizacionFmt = fechaFinalizacionFmt;
+        if (fechaFinalizacion == null) {
+            return null;
+        }
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        return fechaFinalizacion.format(formatter);
     }
 
     @Override
@@ -196,7 +178,7 @@ public class Quehacer {
         return "Quehacer{" +
                 "id=" + id +
                 ", nombre='" + nombre + '\'' +
-                ", estadoCompletado=" + estadoCompletado +
+                ", estado=" + estado +
                 '}';
     }
 }

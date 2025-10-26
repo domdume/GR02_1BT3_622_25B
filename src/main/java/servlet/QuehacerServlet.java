@@ -8,14 +8,15 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import model.Dificultad;
 import model.Incentivo;
 import model.MiembroHogar;
 import model.Quehacer;
+import model.EstadoQuehacer;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -102,8 +103,12 @@ public class QuehacerServlet extends HttpServlet {
             List<Quehacer> quehaceresPendientes = new ArrayList<>();
             
             for (Quehacer q : todosLosQuehaceres) {
-                if (q.isEstadoFinalizado()) {
+                // Clasificar por estado explícito para separar COMPLETADO / VENCIDO / PENDIENTE
+                if (q.getEstado() == EstadoQuehacer.COMPLETADO) {
                     quehaceresCompletados.add(q);
+                } else if (q.getEstado() == EstadoQuehacer.VENCIDO) {
+                    // Para esta vista los vencidos seguiremos marcándolos en la UI con la bandera 'vencido'
+                    quehaceresPendientes.add(q);
                 } else {
                     quehaceresPendientes.add(q);
                 }
@@ -119,16 +124,19 @@ public class QuehacerServlet extends HttpServlet {
             
             // Calcular puntos progresivos
             for (Quehacer q : quehaceresCompletados) {
-                if (q.getMiembroHogar() != null) {
+                    if (q.getMiembroHogar() != null) {
                     String nombreMiembro = q.getMiembroHogar().getNombre();
                     int puntosActuales = puntosProgresivos.getOrDefault(nombreMiembro, 0);
-                    
-                    if (q.estaCompletado()) {
-                        puntosActuales += 20;
+                    int puntosDificultad = switch (q.getDificultad()) {
+                        case FACIL -> 10;
+                        case MEDIO -> 20;
+                        case DIFICIL -> 30;
+                    };
+                    if (q.fueCompletadoATiempo()) {
+                        puntosActuales += puntosDificultad;
                     } else {
-                        puntosActuales = Math.max(0, puntosActuales - 10);
+                        puntosActuales = Math.max(0, puntosActuales - puntosDificultad);
                     }
-                    
                     puntosProgresivos.put(nombreMiembro, puntosActuales);
                     q.setPuntosEnEseMomento(puntosActuales);
                 }
@@ -162,8 +170,7 @@ public class QuehacerServlet extends HttpServlet {
             request.getRequestDispatcher("/quehaceres/form.jsp").forward(request, response); // Redirigir al JSP
             
         } catch (Exception e) {
-            System.out.println("[ERROR] Error en showNewForm: " + e.getMessage());
-            e.printStackTrace();
+            logger.severe("Error: " + e.getMessage());
             request.setAttribute("errorMessage", "Error interno del servidor: " + e.getMessage());
             request.getRequestDispatcher("/quehaceres/form.jsp").forward(request, response);
         }
@@ -202,17 +209,9 @@ public class QuehacerServlet extends HttpServlet {
                 return;
             }
 
-            // Validar miembro
-            if (miembroIdStr == null || miembroIdStr.trim().isEmpty()) {
-                request.getSession().setAttribute("errorMessage", "Debes seleccionar un miembro para asignar el quehacer.");
-                response.sendRedirect(request.getContextPath() + "/quehaceres?action=new");
-                return;
-            }
-            Long miembroId;
-            try {
-                miembroId = Long.parseLong(miembroIdStr);
-            } catch (Exception ex) {
-                request.getSession().setAttribute("errorMessage", "El ID del miembro es inválido.");
+            // Validar formato de tiempo límite
+            if (tiempoLimite.isBefore(LocalDateTime.now())) {
+                request.getSession().setAttribute("errorMessage", "El tiempo límite debe ser una fecha futura.");
                 response.sendRedirect(request.getContextPath() + "/quehaceres?action=new");
                 return;
             }
@@ -229,6 +228,13 @@ public class QuehacerServlet extends HttpServlet {
                 }
             }
 
+            // Validar miembro
+            if (miembroIdStr == null || miembroIdStr.trim().isEmpty()) {
+                request.getSession().setAttribute("errorMessage", "Debes seleccionar un miembro para asignar el quehacer.");
+                response.sendRedirect(request.getContextPath() + "/quehaceres?action=new");
+                return;
+            }
+
             // Delegar la creación y persistencia al servicio (evitar duplicados)
             System.out.println("[QuehacerServlet] Llamando a hogarService.organizarQuehacer()");
             hogarService.organizarQuehacer(nombre.trim(), tiempoLimite, dificultad, miembroIdStr);
@@ -236,8 +242,7 @@ public class QuehacerServlet extends HttpServlet {
 
             request.getSession().setAttribute("successMessage", "Quehacer agregado correctamente.");
         } catch (Exception e) {
-            System.out.println("[DEBUG] Error al crear quehacer: " + e.getMessage());
-            e.printStackTrace();
+            logger.severe("Error: " + e.getMessage());
             request.getSession().setAttribute("errorMessage", "Error al agregar el quehacer: " + e.getMessage());
         }
 
@@ -263,13 +268,16 @@ public class QuehacerServlet extends HttpServlet {
         // Calcular puntos progresivos: ordenar por fecha de finalización y calcular puntos acumulados
         Map<String, Integer> puntosProgresivos = new HashMap<>();
         
-        // Separar completados y pendientes
+        // Separar completados, vencidos y pendientes
         List<Quehacer> quehaceresCompletados = new ArrayList<>();
+        List<Quehacer> quehaceresVencidos = new ArrayList<>();
         List<Quehacer> quehaceresPendientes = new ArrayList<>();
-        
+
         for (Quehacer q : todosLosQuehaceres) {
-            if (q.isEstadoFinalizado()) {
+            if (q.getEstado() == EstadoQuehacer.COMPLETADO) {
                 quehaceresCompletados.add(q);
+            } else if (q.getEstado() == EstadoQuehacer.VENCIDO) {
+                quehaceresVencidos.add(q);
             } else {
                 quehaceresPendientes.add(q);
             }
@@ -289,10 +297,15 @@ public class QuehacerServlet extends HttpServlet {
                 String nombreMiembro = q.getMiembroHogar().getNombre();
                 int puntosActuales = puntosProgresivos.getOrDefault(nombreMiembro, 0);
                 
-                if (q.estaCompletado()) {
-                    puntosActuales += 20; // Sumar 20 por completado a tiempo
+                int puntosDificultad = switch (q.getDificultad()) {
+                    case FACIL -> 10;
+                    case MEDIO -> 20;
+                    case DIFICIL -> 30;
+                };
+                if (q.isCompletado() && q.fueCompletadoATiempo()) {
+                    puntosActuales += puntosDificultad; // Sumar según dificultad
                 } else {
-                    puntosActuales = Math.max(0, puntosActuales - 10); // Restar 10 por atrasado
+                    puntosActuales = Math.max(0, puntosActuales - puntosDificultad); // Restar según dificultad
                 }
                 
                 puntosProgresivos.put(nombreMiembro, puntosActuales);
@@ -310,23 +323,30 @@ public class QuehacerServlet extends HttpServlet {
             }
         }
         
-        // Recombinar las listas: primero completados (ordenados por fecha), luego pendientes
-        List<Quehacer> listaQuehaceres = new ArrayList<>();
-        listaQuehaceres.addAll(quehaceresCompletados);
-        listaQuehaceres.addAll(quehaceresPendientes);
+    // Recombinar las listas: primero completados, luego vencidos, luego pendientes
+    List<Quehacer> listaQuehaceres = new ArrayList<>();
+    listaQuehaceres.addAll(quehaceresCompletados);
+    listaQuehaceres.addAll(quehaceresVencidos);
+    listaQuehaceres.addAll(quehaceresPendientes);
         
         // Formateo de fechas para vista
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
         for (Quehacer q : listaQuehaceres) {
-            if (q.getTiempoLimite() != null) q.setTiempoLimiteFmt(q.getTiempoLimite().format(fmt));
-            if (q.getFechaFinalizacion() != null) q.setFechaFinalizacionFmt(q.getFechaFinalizacion().format(fmt));
+            if (q.getTiempoLimite() != null) {
+                // Formateo directo sin usar métodos eliminados
+                q.setTiempoLimite(q.getTiempoLimite());
+            }
+            if (q.getFechaFinalizacion() != null) {
+                q.setFechaFinalizacion(q.getFechaFinalizacion());
+            }
+            // Establecer bandera vencido para la vista (evita llamadas a métodos EL)
+            q.setVencido(q.estaVencido());
         }
 
         // Log detallado de los quehaceres cargados
         for (Quehacer q : listaQuehaceres) {
             System.out.println("[DEBUG] - Quehacer: " + q.getNombre() + " | Asignado a: " + 
                 (q.getMiembroHogar() != null ? q.getMiembroHogar().getNombre() : "SIN ASIGNAR") + 
-                " | Estado: " + (q.estaCompletado() ? "Completado" : "Pendiente") + 
+                " | Estado: " + q.getEstado() + 
                 " | Puntos en ese momento: " + q.getPuntosEnEseMomento());
         }
         
@@ -348,27 +368,34 @@ public class QuehacerServlet extends HttpServlet {
         // Calcular puntos progresivos: ordenar por fecha de finalización y calcular puntos acumulados
         Map<String, Integer> puntosProgresivos = new HashMap<>();
         
-        // Separar completados y pendientes
+        // Separar completados, vencidos y pendientes
         List<Quehacer> quehaceresCompletados = new ArrayList<>();
+        List<Quehacer> quehaceresVencidos = new ArrayList<>();
         List<Quehacer> quehaceresPendientes = new ArrayList<>();
-        
+
         // Variables para estadísticas (movidas desde JSP)
         int totalTareas = todosLosQuehaceres.size();
         int tareasCompletadas = 0;
         int tareasPendientes = 0;
         int tareasVencidas = 0;
-        
+
+        java.time.LocalDateTime ahora = java.time.LocalDateTime.now();
         for (Quehacer q : todosLosQuehaceres) {
-            if (q.isEstadoFinalizado()) {
+            if (q.getEstado() == EstadoQuehacer.VENCIDO) {
+                quehaceresVencidos.add(q);
+                tareasVencidas++;
+            } else if (q.getEstado() == EstadoQuehacer.COMPLETADO) {
                 quehaceresCompletados.add(q);
                 tareasCompletadas++;
             } else {
-                quehaceresPendientes.add(q);
-                tareasPendientes++;
-                
-                // Verificar si está vencida
-                if (q.getTiempoLimite() != null && q.getTiempoLimite().isBefore(java.time.LocalDateTime.now())) {
+                // Estado pendiente
+                // Si por algún motivo el tiempo límite ya pasó y la tarea no fue marcada, la contamos como vencida
+                if (q.getTiempoLimite() != null && q.getTiempoLimite().isBefore(ahora)) {
+                    quehaceresVencidos.add(q);
                     tareasVencidas++;
+                } else {
+                    quehaceresPendientes.add(q);
+                    tareasPendientes++;
                 }
             }
         }
@@ -389,16 +416,15 @@ public class QuehacerServlet extends HttpServlet {
                 int puntosActuales = puntosProgresivos.getOrDefault(nombreMiembro, 0);
                 
                 // Usar la misma lógica de puntos que en Incentivo
+                int puntosDificultad = switch (q.getDificultad()) {
+                    case FACIL -> 10;
+                    case MEDIO -> 20;
+                    case DIFICIL -> 30;
+                };
                 if (q.fueCompletadoATiempo()) {
-                    // Puntos según dificultad
-                    int puntosDificultad = switch (q.getDificultad()) {
-                        case FACIL -> 10;
-                        case MEDIO -> 20;
-                        case DIFICIL -> 30;
-                    };
                     puntosActuales += puntosDificultad;
                 } else {
-                    puntosActuales = Math.max(0, puntosActuales - 5); // PENALIZACION definida en Incentivo
+                    puntosActuales = Math.max(0, puntosActuales - puntosDificultad); // Restar según dificultad
                 }
                 
                 puntosProgresivos.put(nombreMiembro, puntosActuales);
@@ -413,16 +439,23 @@ public class QuehacerServlet extends HttpServlet {
             }
         }
         
-        // Recombinar las listas: primero completados (ordenados por fecha), luego pendientes
-        List<Quehacer> listaQuehaceres = new ArrayList<>();
-        listaQuehaceres.addAll(quehaceresCompletados);
-        listaQuehaceres.addAll(quehaceresPendientes);
+    // Recombinar las listas: primero completados (ordenados por fecha), luego vencidos, luego pendientes
+    List<Quehacer> listaQuehaceres = new ArrayList<>();
+    listaQuehaceres.addAll(quehaceresCompletados);
+    listaQuehaceres.addAll(quehaceresVencidos);
+    listaQuehaceres.addAll(quehaceresPendientes);
         
         // Formateo de fechas para vista
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
         for (Quehacer q : listaQuehaceres) {
-            if (q.getTiempoLimite() != null) q.setTiempoLimiteFmt(q.getTiempoLimite().format(fmt));
-            if (q.getFechaFinalizacion() != null) q.setFechaFinalizacionFmt(q.getFechaFinalizacion().format(fmt));
+            if (q.getTiempoLimite() != null) {
+                // Formateo directo sin usar métodos eliminados
+                q.setTiempoLimite(q.getTiempoLimite());
+            }
+            if (q.getFechaFinalizacion() != null) {
+                q.setFechaFinalizacion(q.getFechaFinalizacion());
+            }
+            // Establecer bandera vencido para la vista (evita llamadas a métodos EL)
+            q.setVencido(q.estaVencido());
         }
 
         // Pasar datos y estadísticas calculadas a la vista (no calcular en JSP)
@@ -457,15 +490,13 @@ public class QuehacerServlet extends HttpServlet {
                         // Obtener todas las tareas y filtrar las del miembro que están realmente pendientes
                         List<Quehacer> todasLasTareas = quehacerDAO.findAll();
                         LocalDateTime ahora = LocalDateTime.now();
-                        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-
                         for (Quehacer q : todasLasTareas) {
                             if (q.getMiembroHogar() != null && 
                                 q.getMiembroHogar().getId().equals(miembroId) && 
-                                !q.estaCompletado() && !q.isEstadoFinalizado() &&
-                                ahora.isBefore(q.getTiempoLimite())) { // Solo las que no han vencido
-                                if (q.getTiempoLimite() != null) q.setTiempoLimiteFmt(q.getTiempoLimite().format(fmt));
-                                if (q.getFechaFinalizacion() != null) q.setFechaFinalizacionFmt(q.getFechaFinalizacion().format(fmt));
+                                q.getEstado() == model.EstadoQuehacer.PENDIENTE &&
+                                q.getTiempoLimite() != null && ahora.isBefore(q.getTiempoLimite())) { // Solo las que no han vencido
+                                if (q.getTiempoLimite() != null) q.setTiempoLimite(q.getTiempoLimite());
+                                if (q.getFechaFinalizacion() != null) q.setFechaFinalizacion(q.getFechaFinalizacion());
                                 tareasPendientes.add(q);
                             }
                         }
@@ -482,8 +513,7 @@ public class QuehacerServlet extends HttpServlet {
             request.getRequestDispatcher("/quehaceres/pending.jsp").forward(request, response);
             
         } catch (Exception e) {
-            System.out.println("[ERROR] Error en showPendingForm: " + e.getMessage());
-            e.printStackTrace();
+            logger.severe("Error: " + e.getMessage());
             request.setAttribute("errorMessage", "Error interno del servidor: " + e.getMessage());
             request.getRequestDispatcher("/quehaceres/pending.jsp").forward(request, response);
         }
@@ -502,13 +532,12 @@ public class QuehacerServlet extends HttpServlet {
             List<Quehacer> todosLosQuehaceres = quehacerDAO.findAll();
             List<Quehacer> listaQuehaceres = new java.util.ArrayList<>();
             java.time.LocalDateTime ahora = java.time.LocalDateTime.now();
-            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
             for (Quehacer q : todosLosQuehaceres) {
-                // Solo mostrar quehaceres que están realmente pendientes (no vencidos, no completados, no finalizados)
-                if (!q.estaCompletado() && !q.isEstadoFinalizado() && ahora.isBefore(q.getTiempoLimite())) {
-                    if (q.getTiempoLimite() != null) q.setTiempoLimiteFmt(q.getTiempoLimite().format(fmt));
-                    if (q.getFechaFinalizacion() != null) q.setFechaFinalizacionFmt(q.getFechaFinalizacion().format(fmt));
+                // Solo mostrar quehaceres que están realmente pendientes (estado PENDIENTE y no vencidos)
+                if (q.getEstado() == model.EstadoQuehacer.PENDIENTE && q.getTiempoLimite() != null && ahora.isBefore(q.getTiempoLimite())) {
+                    if (q.getTiempoLimite() != null) q.setTiempoLimite(q.getTiempoLimite());
+                    if (q.getFechaFinalizacion() != null) q.setFechaFinalizacion(q.getFechaFinalizacion());
                     listaQuehaceres.add(q);
                 }
             }
@@ -517,8 +546,7 @@ public class QuehacerServlet extends HttpServlet {
             request.getRequestDispatcher("/quehaceres/complete.jsp").forward(request, response);
             
         } catch (Exception e) {
-            System.out.println("[ERROR] Error en showCompleteForm: " + e.getMessage());
-            e.printStackTrace();
+            logger.severe("Error: " + e.getMessage());
             request.setAttribute("errorMessage", "Error interno del servidor: " + e.getMessage());
             request.getRequestDispatcher("/quehaceres/complete.jsp").forward(request, response);
         }
@@ -543,7 +571,7 @@ public class QuehacerServlet extends HttpServlet {
             }
 
             // VALIDACIÓN: Solo se pueden completar tareas que están pendientes
-            if (quehacer.estaCompletado()) { // Usar método del diagrama UML
+            if (quehacer.isCompletado()) { // Usar método del diagrama UML
                 request.getSession().setAttribute("errorMessage", "Esta tarea ya está completada");
                 response.sendRedirect(request.getContextPath() + "/quehaceres?action=complete");
                 return;
@@ -562,7 +590,15 @@ public class QuehacerServlet extends HttpServlet {
                 return;
             }
 
-            LocalDateTime fechaFinalizacion = LocalDateTime.parse(fechaFinalizacionStr);
+            // Parse de fecha tolerante: intentaremos varios formatos comunes.
+            LocalDateTime fechaFinalizacion;
+            try {
+                fechaFinalizacion = parseDateTimeLenient(fechaFinalizacionStr);
+            } catch (DateTimeParseException dtpe) {
+                request.getSession().setAttribute("errorMessage", "Formato de fecha/hora inválido. Usa yyyy-MM-ddTHH:mm[:ss] o yyyy-MM-dd HH:mm[:ss]");
+                response.sendRedirect(request.getContextPath() + "/quehaceres?action=complete");
+                return;
+            }
             quehacer.setFechaFinalizacion(fechaFinalizacion);
 
             // Recuperar el miembro con fetch join para evitar lazy loading
@@ -571,30 +607,101 @@ public class QuehacerServlet extends HttpServlet {
                 miembro = new dao.MiembroHogarDAO().findById(quehacer.getMiembroHogar().getId());
             }
 
-            // Marcar como completado y aplicar incentivo usando la lógica unificada
-            quehacer.marcarCompletado();
+            // Marcar como completado explícitamente y conservar la fecha de finalización enviada
+            // Evitamos llamar a quehacer.marcarCompletado() porque este método sobrescribe
+            // la fecha de finalización con LocalDateTime.now(); ya asignamos la fecha
+            // desde el formulario (fechaFinalizacion) y queremos preservarla.
+            quehacer.setEstado(EstadoQuehacer.COMPLETADO);
             if (miembro != null) {
                 Incentivo.aplicarIncentivo(miembro, quehacer);
+                // Persistir el quehacer para que el estado y la fecha de finalización queden guardados
+                try {
+                    quehacerDAO.update(quehacer);
+                } catch (Exception e) {
+                    logger.severe("Error: " + e.getMessage());
+                }
+                // Releer desde BD para verificar que el estado y la fecha quedaron persistidos
+                try {
+                    Quehacer persisted = quehacerDAO.findById(quehacer.getId());
+                    logger.info("Después de update - Quehacer id=" + (persisted != null ? persisted.getId() : "null") +
+                        ", estado=" + (persisted != null ? persisted.getEstado() : "null") +
+                        ", fechaFinalizacion=" + (persisted != null ? persisted.getFechaFinalizacion() : "null"));
+                } catch (Exception ex) {
+                    logger.severe("No se pudo releer quehacer tras update: " + ex.getMessage());
+                }
+                // Asegurarnos de que el miembro también quede persistido (IncentivoService ya lo intenta, pero reafirmamos)
+                try {
+                    miembroHogarDAO.update(miembro);
+                } catch (Exception e) {
+                    logger.severe("Error: " + e.getMessage());
+                }
             } else {
                 Incentivo.aplicarIncentivo(quehacer.getMiembroHogar(), quehacer);
+                try {
+                    quehacerDAO.update(quehacer);
+                } catch (Exception e) {
+                    logger.severe("Error: " + e.getMessage());
+                }
             }
 
             System.out.println("[DEBUG] Quehacer completado A TIEMPO - recompensa asignada");
 
-            quehacerDAO.update(quehacer);
             String nombreMiembro = miembro != null ? miembro.getNombre() : (quehacer.getMiembroHogar() != null ? quehacer.getMiembroHogar().getNombre() : "desconocido");
-            int puntosActuales = miembro != null ? miembro.getPuntos() : (quehacer.getMiembroHogar() != null ? quehacer.getMiembroHogar().getPuntos() : 0);
-            request.getSession().setAttribute("successMessage", 
-                "¡Quehacer completado! " + nombreMiembro + " ganó +20 puntos. Total actual: " + puntosActuales + " puntos.");
+            int puntosActuales = miembro != null ? miembro.getPuntos() : quehacer.getMiembroHogar().getPuntos();
+            int puntosDificultad = switch (quehacer.getDificultad()) {
+                case FACIL -> 10;
+                case MEDIO -> 20;
+                case DIFICIL -> 30;
+            };
+            int puntosMostrados = quehacer.fueCompletadoATiempo() ? puntosDificultad : -puntosDificultad;
+            request.getSession().setAttribute("successMessage",
+                "¡Quehacer completado! " + nombreMiembro + " ganó " + (puntosMostrados >= 0 ? "+" + puntosMostrados : puntosMostrados) + " puntos. Total actual: " + puntosActuales + " puntos.");
             System.out.println("[DEBUG] Quehacer actualizado exitosamente");
 
         } catch (Exception e) {
-            System.out.println("[DEBUG] Error al marcar quehacer como completado: " + e.getMessage());
-            e.printStackTrace();
+            logger.severe("Error: " + e.getMessage());
             request.getSession().setAttribute("errorMessage", "Error al marcar el quehacer como completado: " + e.getMessage());
         }
 
         response.sendRedirect(request.getContextPath() + "/quehaceres?action=complete");
+    }
+
+    /**
+     * Intenta parsear una cadena a LocalDateTime usando varios formatos tolerantes.
+     * Lanzará DateTimeParseException si ninguno aplica.
+     */
+    private LocalDateTime parseDateTimeLenient(String input) {
+        if (input == null) throw new DateTimeParseException("Null input", "", 0);
+        String s = input.trim();
+        // Intentar ISO primero
+        List<DateTimeFormatter> fmts = Arrays.asList(
+            DateTimeFormatter.ISO_LOCAL_DATE_TIME,
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"),
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"),
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+        );
+
+        // Si viene con espacio y sin segundos, intentar añadir seconds? we'll try patterns above
+        for (DateTimeFormatter fmt : fmts) {
+            try {
+                return LocalDateTime.parse(s, fmt);
+            } catch (DateTimeParseException ignored) {
+                // seguir intentando
+            }
+        }
+
+        // Como último recurso, si contiene espacio en medio, reemplazamos por 'T' e intentamos ISO
+        if (s.contains(" ")) {
+            String t = s.replace(' ', 'T');
+            try {
+                return LocalDateTime.parse(t, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+            } catch (DateTimeParseException ignored) {
+            }
+        }
+
+        // Ningún formato aplicó -> lanzar excepción
+        throw new DateTimeParseException("No matching format for date time", input, 0);
     }
 
 
@@ -605,29 +712,31 @@ public class QuehacerServlet extends HttpServlet {
             LocalDateTime ahora = LocalDateTime.now();
             
             for (Quehacer quehacer : todosLosQuehaceres) {
-                // Si el quehacer no está completado, no está finalizado, y ya se venció
-                if (!quehacer.estaCompletado() && !quehacer.isEstadoFinalizado() && 
-                    quehacer.estaVencido()) {
-                    
-                    System.out.println("[DEBUG] Finalizando tarea vencida: " + quehacer.getNombre());
-                    
-                    // Marcar como finalizado
-                    quehacer.setEstadoFinalizado(true);
-                    quehacer.setFechaFinalizacion(ahora);
-                    
-                    // Aplicar incentivo (será penalización por estar vencida)
-                    MiembroHogar miembro = quehacer.getMiembroHogar();
-                    if (miembro != null) {
-                        Incentivo.aplicarIncentivo(miembro, quehacer);
-                        miembroHogarDAO.update(miembro);
-                    }
+                // Loguear estado actual y comprobación de vencido para depuración
+                System.out.println("[DEBUG] comprobar vencido - Quehacer id=" + quehacer.getId() + 
+                    ", nombre='" + quehacer.getNombre() + "', estado=" + quehacer.getEstado() + 
+                    ", tiempoLimite=" + quehacer.getTiempoLimite() + 
+                    ", ahora=" + ahora + ", estaVencido()=" + quehacer.estaVencido());
 
-                    quehacerDAO.update(quehacer);
+                // Si el quehacer no está completado, no está finalizado, y ya se venció
+                if (!quehacer.isCompletado() && !quehacer.isEstadoFinalizado() && quehacer.estaVencido()) {
+                    System.out.println("[DEBUG] Finalizando tarea vencida: id=" + quehacer.getId() + " nombre='" + quehacer.getNombre() + "'");
+
+                        // Marcamos directamente en BD usando JPQL para evitar problemas de merging
+                        quehacerDAO.markAsVencido(quehacer.getId(), ahora);
+                        System.out.println("[DEBUG] Tarea marcada como VENCIDO (JPQL) en BD: id=" + quehacer.getId());
+
+                        // Volver a leer la entidad desde la BD para aplicar la penalización usando la entidad gestionada
+                        Quehacer persisted = quehacerDAO.findById(quehacer.getId());
+                        MiembroHogar miembro = persisted != null ? persisted.getMiembroHogar() : null;
+                        if (miembro != null) {
+                            Incentivo.aplicarIncentivo(miembro, persisted);
+                            miembroHogarDAO.update(miembro);
+                        }
                 }
             }
         } catch (Exception e) {
-            System.out.println("[ERROR] Error al finalizar tareas vencidas: " + e.getMessage());
-            e.printStackTrace();
+            logger.severe("Error: " + e.getMessage());
         }
     }
 
@@ -637,4 +746,3 @@ public class QuehacerServlet extends HttpServlet {
     }
 
 }
-

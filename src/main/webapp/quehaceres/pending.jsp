@@ -83,10 +83,10 @@
                                         ⏳ 
                                         <c:set var="pendientesCount" value="0" />
                                         <c:forEach var="tarea" items="${miembro.quehaceres}">
-                                            <c:if test="${not tarea.estadoCompletado}">
-                                                <c:set var="pendientesCount" value="${pendientesCount + 1}" />
-                                            </c:if>
-                                        </c:forEach>
+                                                            <c:if test="${not tarea.completado}">
+                                                                <c:set var="pendientesCount" value="${pendientesCount + 1}" />
+                                                            </c:if>
+                                                        </c:forEach>
                                         ${pendientesCount} pendientes
                                     </span>
                                 </div>
