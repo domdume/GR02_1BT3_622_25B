@@ -44,4 +44,13 @@
         <url-pattern>/incentivos</url-pattern>
     </servlet-mapping>
 
+    <servlet>
+        <servlet-name>RachaServlet</servlet-name>
+        <servlet-class>servlet.RachaServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>RachaServlet</servlet-name>
+        <url-pattern>/rachas</url-pattern>
+    </servlet-mapping>
+
 </web-app>

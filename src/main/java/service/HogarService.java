@@ -37,7 +37,6 @@ public class HogarService {
         System.out.println("[HogarService] Instancia creada - " + resultado);
     }
 
-    //Método que coordinará la creación de miembros
     public void organizarMiembro(String nombre, int edad, boolean esJefe) {
         try {
             // 1.USAR EXPLAINING VARIABLE ENCAPSULADA
@@ -70,7 +69,6 @@ public class HogarService {
                 hogar.registrarMiembro(primerJefe);
 
             } else if (debeUsarMetodoDelDominio) {
-                // Ya existe jefe, usar su método organizarMiembro()
                 System.out.println("[HogarService] Usando método del dominio - JefeDelHogar.organizarMiembro()");
                 estadoActual.jefeActual.organizarMiembro(nombre, edad); // ✅ USAR estadoActual.jefeActual
 
