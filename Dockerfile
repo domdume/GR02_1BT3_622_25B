@@ -23,7 +23,7 @@ WORKDIR /app
 COPY . .
 
 # Construir la aplicación con Maven
-RUN mvn clean package -DskipTests
+RUN mvn clean package
 
 # Eliminar el webapps por defecto de Tomcat y copiar nuestra aplicación
 RUN rm -rf /usr/local/tomcat/webapps/* && \
