@@ -1,3 +1,4 @@
+service\ServicioRacha$RachaData.class
 servlet\IncentivoServlet.class
 servlet\RankingServlet.class
 servlet\MiembroServlet.class
@@ -14,6 +15,7 @@ model\RegistroQuehacer.class
 service\HogarService$EstadoHogar.class
 service\HogarService$TipoInconsistencia.class
 model\Quehacer.class
+service\ServicioRacha.class
 util\RouteController$MiembrosActions.class
 util\RouteController$QuehaceresActions.class
 servlet\HomeServlet.class
@@ -23,6 +25,7 @@ util\RouteController$IncentivosActions.class
 servlet\RoleViewServlet.class
 model\Dificultad.class
 model\JefeDelHogar.class
+model\CalculadoraRacha.class
 servlet\QuehacerServlet.class
 model\Sujeto.class
 model\MiembroHogar.class
@@ -32,6 +35,7 @@ dao\IncentivoDAO.class
 model\Observador.class
 service\IncentivoService$1.class
 util\RouteController$Breadcrumbs.class
+servlet\RachaServlet.class
 util\JPAUtil.class
 dao\QuehacerDAO.class
 model\EstadoQuehacer.class
