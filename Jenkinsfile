@@ -32,15 +32,10 @@ pipeline {
                 // Ejecutar pruebas unitarias
                 sh 'mvn test'
             }
-            post {
-                always {
-                    // Publicar resultados de pruebas
-                   // junit '**/target/surefire-reports/*.xml'
-                }
-            }
+           
         }
 
-        
+
 
         stage('Build Docker Image') {
             steps {
