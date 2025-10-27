@@ -36,19 +36,18 @@ pipeline {
         }
 
 
-
-        stage('Build Docker Image') {
-        agent {
-                        docker {
-                            image 'maven:3.9.5-jdk17' // Ejecuta Maven en un contenedor limpio
-                        }
-                    }
+        stage('Build and Package') {
+            agent {
+                docker {
+                    image 'maven:3.9.5-jdk17'
+                    args '-v /var/run/docker.sock:/var/run/docker.sock' // da acceso al Docker host
+                }
+            }
             steps {
                 script {
-                    // Construir imagen Docker
-                   def builtImage = docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
-
-                                           echo "Image built: ${builtImage.id}"
+                    sh 'mvn clean package -DskipTests'
+                    def builtImage = docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
+                    echo "Image built: ${builtImage.id}"
                 }
             }
         }
