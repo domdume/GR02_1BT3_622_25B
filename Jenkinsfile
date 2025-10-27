@@ -8,7 +8,7 @@ pipeline {
 
     environment {
         // Variables de entorno para el proyecto
-        DOCKER_IMAGE = 'ChoresFun'
+        DOCKER_IMAGE = 'choresfun'
         DOCKER_TAG = "${env.BUILD_NUMBER}"
         // La variable DOCKER_BIN se elimina completamente
     }
