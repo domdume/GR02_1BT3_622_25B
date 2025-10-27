@@ -76,11 +76,7 @@ pipeline {
             }
 
             stage('Deploy to Production') {
-                when { branch 'main' }
-                script {
-                                    input message: '¿Desplegar a producción?'
-                                }
-
+                
                 // CAMBIO CLAVE: Reutilizamos el agente Docker
                 agent {
                     docker {
