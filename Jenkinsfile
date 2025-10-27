@@ -1,88 +1,105 @@
 pipeline {
-    agent any // Se ejecutará en cualquier agente Linux/Unix disponible
+    agent any
 
-    tools {
-        maven 'Maven 3.9.5'
-        jdk 'JDK 17'
-    }
-
-    environment {
-        // Variables de entorno para el proyecto
-        DOCKER_IMAGE = 'choresfun'
-        DOCKER_TAG = "${env.BUILD_NUMBER}"
-        // La variable DOCKER_BIN se elimina completamente
-    }
-
-    stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
+        tools {
+            maven 'Maven 3.9.5'
+            jdk 'JDK 17'
         }
 
-        stage('Build') {
-            steps {
-                sh 'mvn clean package -DskipTests'
-            }
+        environment {
+            // Asegúrate de que esto esté en minúsculas
+            DOCKER_IMAGE = 'choresfun'
+            DOCKER_TAG = "${env.BUILD_NUMBER}"
         }
 
-        stage('Test') {
-            steps {
-                sh 'mvn test'
+        stages {
+            stage('Checkout') {
+                steps {
+                    checkout scm
+                }
             }
-        }
 
-        // ----------------------------------------------------------------------
-        stage('Build Docker Image') {
-            agent any
+            stage('Build') {
+                steps {
+                    sh 'mvn clean package -DskipTests'
+                }
+            }
 
-            steps {
-                // Simplificamos eliminando el bloque 'script' innecesario para un solo comando 'sh'
-                sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
+            stage('Test') {
+                steps {
+                    sh 'mvn test'
+                }
             }
-        }
-        // ----------------------------------------------------------------------
 
-        stage('Deploy to Development') {
-            when {
-                branch 'develop' // Añadí el 'when' block que faltaba
-            }
-            steps {
-                // Eliminamos el bloque 'script' y el objeto 'dockerCommands' innecesarios
-                sh """
-                    docker stop ${DOCKER_IMAGE}-dev || true
-                    docker rm ${DOCKER_IMAGE}-dev || true
-                    docker run -d --name ${DOCKER_IMAGE}-dev \\
-                        -p 8081:8080 \\
-                        -e DB_URL=jdbc:h2:mem:devdb \\
-                        -e DB_USERNAME=sa \\
-                        -e DB_PASSWORD=password \\
-                        ${DOCKER_IMAGE}:${DOCKER_TAG}
-                """
-            }
-        }
+            // ----------------------------------------------------------------------
+            stage('Build Docker Image') {
+                // CAMBIO CLAVE: Usamos un agente temporal con la imagen de Docker.
+                // Jenkins automáticamente montará el workspace y el socket.
+                agent {
+                    docker {
+                        image 'docker:latest'
+                        args '-v /var/run/docker.sock:/var/run/docker.sock' // Monta el socket
+                    }
+                }
 
-        stage('Deploy to Production') {
-            when {
-                branch 'main'
+                steps {
+                    // Aquí usamos 'docker build'. No necesitamos 'sudo' porque
+                    // el agente 'docker:latest' ya está configurado para usar el socket montado.
+                    sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
+                }
             }
-            steps {
+            // ----------------------------------------------------------------------
+
+            stage('Deploy to Development') {
+                when { branch 'develop' }
+
+                // CAMBIO CLAVE: Reutilizamos el agente Docker con el socket montado.
+                agent {
+                    docker {
+                        image 'docker:latest'
+                        args '-v /var/run/docker.sock:/var/run/docker.sock'
+                    }
+                }
+                steps {
+                    // Los comandos Docker ahora funcionarán perfectamente
+                    sh """
+                        docker stop ${DOCKER_IMAGE}-dev || true
+                        docker rm ${DOCKER_IMAGE}-dev || true
+                        docker run -d --name ${DOCKER_IMAGE}-dev \\
+                            -p 8081:8080 \\
+                            -e DB_URL=jdbc:h2:mem:devdb \\
+                            -e DB_USERNAME=sa \\
+                            -e DB_PASSWORD=password \\
+                            ${DOCKER_IMAGE}:${DOCKER_TAG}
+                    """
+                }
+            }
+
+            stage('Deploy to Production') {
+                when { branch 'main' }
                 input message: '¿Desplegar a producción?'
 
-                // Simplificamos eliminando el bloque 'script' innecesario
-                sh """
-                    docker stop ${DOCKER_IMAGE}-prod || true
-                    docker rm ${DOCKER_IMAGE}-prod || true
-                    docker run -d --name ${DOCKER_IMAGE}-prod \\
-                        -p 8080:8080 \\
-                        -e DB_URL=jdbc:h2:tcp://proddb:9092/proddb \\
-                        -e DB_USERNAME=\${PROD_DB_USERNAME} \\
-                        -e DB_PASSWORD=\${PROD_DB_PASSWORD} \\
-                        ${DOCKER_IMAGE}:${DOCKER_TAG}
-                """
+                // CAMBIO CLAVE: Reutilizamos el agente Docker
+                agent {
+                    docker {
+                        image 'docker:latest'
+                        args '-v /var/run/docker.sock:/var/run/docker.sock'
+                    }
+                }
+                steps {
+                    sh """
+                        docker stop ${DOCKER_IMAGE}-prod || true
+                        docker rm ${DOCKER_IMAGE}-prod || true
+                        docker run -d --name ${DOCKER_IMAGE}-prod \\
+                            -p 8082:8080 \\ // Usamos 8082 para evitar colisión con Jenkins (8080)
+                            -e DB_URL=jdbc:h2:tcp://proddb:9092/proddb \\
+                            -e DB_USERNAME=\${PROD_DB_USERNAME} \\
+                            -e DB_PASSWORD=\${PROD_DB_PASSWORD} \\
+                            ${DOCKER_IMAGE}:${DOCKER_TAG}
+                    """
+                }
             }
         }
-    }
 
     post {
         success {
