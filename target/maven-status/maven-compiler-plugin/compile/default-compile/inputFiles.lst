@@ -9,9 +9,11 @@ C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodolog
 C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodologias agiles\ChoresFun\src\main\java\model\RegistroQuehacer.java
 C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodologias agiles\ChoresFun\src\main\java\model\Dificultad.java
 C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodologias agiles\ChoresFun\src\main\java\service\HogarService.java
+C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodologias agiles\ChoresFun\src\main\java\service\ServicioRacha.java
 C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodologias agiles\ChoresFun\src\main\java\model\JefeDelHogar.java
 C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodologias agiles\ChoresFun\src\main\java\util\RouteController.java
 C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodologias agiles\ChoresFun\src\main\java\servlet\QuehacerServlet.java
+C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodologias agiles\ChoresFun\src\main\java\servlet\RachaServlet.java
 C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodologias agiles\ChoresFun\src\main\java\model\Observador.java
 C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodologias agiles\ChoresFun\src\main\java\model\Quehacer.java
 C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodologias agiles\ChoresFun\src\main\java\model\EstadoQuehacer.java
@@ -25,4 +27,5 @@ C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodolog
 C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodologias agiles\ChoresFun\src\main\java\dao\QuehacerDAO.java
 C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodologias agiles\ChoresFun\src\main\java\model\Incentivo.java
 C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodologias agiles\ChoresFun\src\main\java\dao\IncentivoDAO.java
+C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodologias agiles\ChoresFun\src\main\java\model\CalculadoraRacha.java
 C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodologias agiles\ChoresFun\src\main\java\util\JPAUtil.java
