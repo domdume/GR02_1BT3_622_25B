@@ -1,10 +1,12 @@
-model\Incentivo$1.class
 servlet\IncentivoServlet.class
+servlet\RankingServlet.class
 servlet\MiembroServlet.class
 model\TipoIncentivo.class
+servlet\HomeServlet$1.class
 service\HogarService$EstadisticasHogar.class
 service\HogarService.class
 util\RouteController.class
+service\IncentivoService.class
 dao\MiembroHogarDAO.class
 model\Incentivo.class
 util\H2ConsoleListener.class
@@ -18,9 +20,9 @@ servlet\HomeServlet.class
 service\LigaService.class
 model\Liga.class
 util\RouteController$IncentivosActions.class
+servlet\RoleViewServlet.class
 model\Dificultad.class
 model\JefeDelHogar.class
-model\ServicioLiga.class
 servlet\QuehacerServlet.class
 model\Sujeto.class
 model\MiembroHogar.class
@@ -28,8 +30,11 @@ repository\AchievementRepository.class
 service\HogarService$ResultadoSincronizacion.class
 dao\IncentivoDAO.class
 model\Observador.class
+service\IncentivoService$1.class
 util\RouteController$Breadcrumbs.class
 util\JPAUtil.class
 dao\QuehacerDAO.class
+model\EstadoQuehacer.class
+servlet\QuehacerServlet$1.class
 util\RouteController$CommonRoutes.class
 model\Hogar.class

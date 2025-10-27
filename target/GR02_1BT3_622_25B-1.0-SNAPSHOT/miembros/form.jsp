@@ -98,16 +98,6 @@
         </section>
 
         <!-- Información del sistema Observer -->
-        <aside class="info-panel">
-            <h3>ℹ️ Información del Sistema</h3>
-            <p>Al registrar un miembro:</p>
-            <ul>
-                <li>Se suscribirá automáticamente al sistema de notificaciones</li>
-                <li>Recibirá alertas cuando se asignen nuevas tareas</li>
-                <li>Comenzará con 0 puntos de incentivos</li>
-                <li>Podrá completar quehaceres y ganar recompensas</li>
-            </ul>
-        </aside>
     </div>
 </main>
 

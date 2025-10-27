@@ -1,4 +1,8 @@
-<%-- 
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<%--
     Dashboard Principal - Vista unificada que reemplaza tablero.jsp
     Responsabilidad: Solo mostrar datos proporcionados por HomeServlet
     Sin lógica de negocio - Solo vista pura MVC
@@ -12,45 +16,55 @@
 <main class="main-content">
     <div class="container">
         <jsp:include page="common/messages.jsp" />
-        
+
+        <!-- Estadísticas rápidas -->
+        <section class="section-card">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">${tareasCompletadas}</div>
+                    <div class="stat-label">✅ Completadas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${tareasPendientes}</div>
+                    <div class="stat-label">⏳ Pendientes</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${tareasVencidas}</div>
+                    <div class="stat-label">❌ Vencidas</div>
+                </div>
+                <c:if test="${not empty mvpMiembro}">
+                    <div class="stat-card">
+                        <div class="stat-value">${mvpMiembro.puntos} pts</div>
+                        <div class="stat-label">👑 MVP: ${mvpMiembro.nombre}</div>
+                    </div>
+                </c:if>
+            </div>
+        </section>
+
         <!-- Panel de acciones rápidas del Jefe del Hogar -->
-        <c:if test="${tieneJefe}">
-            <section class="quick-actions">
+        <c:if test="${sessionScope.viewRole == 'JEFE'}">
+            <section class="section-card quick-actions">
                 <h2>Acciones del Jefe del Hogar</h2>
                 <div class="action-buttons">
-                    <a href="${pageContext.request.contextPath}/miembros?action=new" class="btn btn-primary">
-                        👥 Registrar Miembro
-                    </a>
-                    <a href="${pageContext.request.contextPath}/quehaceres?action=new" class="btn btn-primary">
-                        📋 Crear Quehacer
-                    </a>
-                    <a href="${pageContext.request.contextPath}/incentivos?action=new" class="btn btn-primary">
-                        🏆 Gestionar Incentivos
-                    </a>
+                    <a href="${pageContext.request.contextPath}/miembros?action=new" class="btn btn-primary">👥 Registrar Miembro</a>
+                    <a href="${pageContext.request.contextPath}/quehaceres?action=new" class="btn btn-primary">📋 Crear Quehacer</a>
                 </div>
             </section>
         </c:if>
 
         <!-- Panel de acciones para miembros -->
-        <section class="member-actions">
+        <section class="section-card member-actions">
             <h2>Acciones de Miembros</h2>
             <div class="action-buttons">
-                <a href="${pageContext.request.contextPath}/quehaceres?action=pending" class="btn btn-secondary">
-                    ⏳ Ver Pendientes
-                </a>
-                <a href="${pageContext.request.contextPath}/quehaceres?action=complete" class="btn btn-secondary">
-                    ✅ Completar Tarea
-                </a>
-                <a href="${pageContext.request.contextPath}/incentivos" class="btn btn-secondary">
-                    📊 Ver Historial
-                </a>
+                <a href="${pageContext.request.contextPath}/quehaceres?action=pending" class="btn btn-secondary">⏳ Ver Pendientes</a>
+                <a href="${pageContext.request.contextPath}/quehaceres?action=complete" class="btn btn-secondary">✅ Completar Tarea</a>
             </div>
         </section>
 
         <!-- Resumen de quehaceres del hogar -->
-        <section class="quehaceres-summary">
-            <h2>Quehaceres del Hogar</h2>
-            
+        <section class="section-card quehaceres-summary">
+            <h2>📋 Quehaceres del Hogar</h2>
+
             <c:choose>
                 <c:when test="${not empty listaQuehaceres}">
                     <div class="table-responsive">
@@ -67,14 +81,22 @@
                             </thead>
                             <tbody>
                                 <c:forEach var="quehacer" items="${listaQuehaceres}">
-                                    <tr class="${quehacer.estadoCompletado ? 'completed' : 'pending'}">
-                                        <td><c:out value="${quehacer.nombre}" /></td>
+                                    <c:set var="isOverdue" value="${quehacer.vencido}" />
+                                    <tr class="${quehacer.completado ? 'completed' : (isOverdue ? 'overdue' : 'pending')}">
+                                        <td>
+                                            <span style="display:flex; align-items:center; gap:8px; font-weight:700;">
+                                                ${quehacer.completado ? '✅' : (isOverdue ? '❌' : '🧹')}
+                                                <c:out value="${quehacer.nombre}" />
+                                            </span>
+                                        </td>
                                         <td>
                                             <c:choose>
                                                 <c:when test="${not empty quehacer.miembroHogar}">
                                                     <c:out value="${quehacer.miembroHogar.nombre}" />
                                                 </c:when>
-                                                <c:otherwise>Sin asignar</c:otherwise>
+                                                <c:otherwise>
+                                                    <span class="status-badge overdue">Sin asignar</span>
+                                                </c:otherwise>
                                             </c:choose>
                                         </td>
                                         <td>
@@ -83,13 +105,13 @@
                                             </span>
                                         </td>
                                         <td>
-                                            <span class="status-badge ${quehacer.estadoCompletado ? 'completed' : 'pending'}">
-                                                ${quehacer.estadoCompletado ? '✅ Completado' : '⏳ Pendiente'}
+                                            <span class="status-badge ${quehacer.completado ? 'completed' : (isOverdue ? 'overdue' : 'pending')}">
+                                                ${quehacer.completado ? '✅ Completado' : (isOverdue ? '❌ Vencido' : '⏳ Pendiente')}
                                             </span>
                                         </td>
                                         <td>
                                             <c:if test="${not empty quehacer.tiempoLimite}">
-                                                <fmt:formatDate value="${quehacer.tiempoLimite}" pattern="dd/MM/yyyy HH:mm" />
+                                                <c:out value="${empty quehacer.tiempoLimiteFmt ? quehacer.tiempoLimite : quehacer.tiempoLimiteFmt}" />
                                             </c:if>
                                         </td>
                                         <td>
@@ -109,9 +131,7 @@
                     <div class="empty-state">
                         <p>No hay quehaceres registrados en el hogar.</p>
                         <c:if test="${tieneJefe}">
-                            <a href="${pageContext.request.contextPath}/quehaceres?action=new" class="btn btn-primary">
-                                Crear primer quehacer
-                            </a>
+                            <a href="${pageContext.request.contextPath}/quehaceres?action=new" class="btn btn-primary">Crear primer quehacer</a>
                         </c:if>
                     </div>
                 </c:otherwise>
@@ -119,9 +139,9 @@
         </section>
 
         <!-- Resumen de miembros del hogar -->
-        <section class="members-summary">
-            <h2>Miembros del Hogar</h2>
-            
+        <section class="section-card members-summary">
+            <h2>👥 Miembros del Hogar</h2>
+
             <c:choose>
                 <c:when test="${not empty listaMiembros}">
                     <div class="members-grid">
@@ -129,17 +149,13 @@
                             <div class="member-card">
                                 <div class="member-info">
                                     <h3><c:out value="${miembro.nombre}" /></h3>
-                                    <p class="member-details">
-                                        ${miembro.edad} años | ${miembro.puntos} puntos
-                                    </p>
+                                    <p class="member-details">${miembro.edad} años | ${miembro.puntos} puntos</p>
                                     <c:if test="${miembro.getClass().simpleName == 'JefeDelHogar'}">
                                         <span class="role-badge jefe">👑 Jefe del Hogar</span>
                                     </c:if>
                                 </div>
                                 <div class="member-stats">
-                                    <span class="stat">
-                                        📋 ${fn:length(miembro.quehaceres)} tareas
-                                    </span>
+                                    <span class="stat">📋 ${fn:length(miembro.quehaceres)} tareas</span>
                                 </div>
                             </div>
                         </c:forEach>
@@ -148,9 +164,7 @@
                 <c:otherwise>
                     <div class="empty-state">
                         <p>No hay miembros registrados en el hogar.</p>
-                        <a href="${pageContext.request.contextPath}/miembros?action=new" class="btn btn-primary">
-                            Registrar primer miembro
-                        </a>
+                        <a href="${pageContext.request.contextPath}/miembros?action=new" class="btn btn-primary">Registrar primer miembro</a>
                     </div>
                 </c:otherwise>
             </c:choose>
@@ -158,7 +172,7 @@
 
         <!-- Estadísticas del sistema Observer -->
         <c:if test="${not empty observerStats}">
-            <section class="observer-stats">
+            <section class="section-card observer-stats">
                 <h2>Estado del Sistema Observer</h2>
                 <div class="stats-grid">
                     <div class="stat-card">
@@ -176,6 +190,28 @@
                 </div>
             </section>
         </c:if>
+
+        <!-- Top por liga -->
+        <section class="section-card league-tops">
+            <h2>🏆 Líderes por Liga</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value"><c:out value="${empty topBronce ? '-' : topBronce.nombre}" /></div>
+                    <div class="stat-label">🥉 Bronce <c:if test="${not empty topBronce}">— ${topBronce.puntos} pts</c:if></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value"><c:out value="${empty topPlata ? '-' : topPlata.nombre}" /></div>
+                    <div class="stat-label">🥈 Plata <c:if test="${not empty topPlata}">— ${topPlata.puntos} pts</c:if></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value"><c:out value="${empty topOro ? '-' : topOro.nombre}" /></div>
+                    <div class="stat-label">🥇 Oro <c:if test="${not empty topOro}">— ${topOro.puntos} pts</c:if></div>
+                </div>
+            </div>
+            <div style="margin-top:10px">
+                <a class="btn btn-secondary" href="${pageContext.request.contextPath}/ranking">Ver ranking completo</a>
+            </div>
+        </section>
     </div>
 </main>
 

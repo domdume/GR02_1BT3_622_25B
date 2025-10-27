@@ -1,6 +1,8 @@
 C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodologias agiles\ChoresFun\src\main\java\servlet\IncentivoServlet.java
-C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodologias agiles\ChoresFun\src\main\java\model\ServicioLiga.java
+C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodologias agiles\ChoresFun\src\main\java\servlet\RankingServlet.java
+C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodologias agiles\ChoresFun\src\main\java\servlet\RoleViewServlet.java
 C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodologias agiles\ChoresFun\src\main\java\model\Liga.java
+C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodologias agiles\ChoresFun\src\main\java\service\IncentivoService.java
 C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodologias agiles\ChoresFun\src\main\java\dao\MiembroHogarDAO.java
 C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodologias agiles\ChoresFun\src\main\java\repository\AchievementRepository.java
 C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodologias agiles\ChoresFun\src\main\java\model\Sujeto.java
@@ -12,6 +14,7 @@ C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodolog
 C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodologias agiles\ChoresFun\src\main\java\servlet\QuehacerServlet.java
 C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodologias agiles\ChoresFun\src\main\java\model\Observador.java
 C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodologias agiles\ChoresFun\src\main\java\model\Quehacer.java
+C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodologias agiles\ChoresFun\src\main\java\model\EstadoQuehacer.java
 C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodologias agiles\ChoresFun\src\main\java\model\Hogar.java
 C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodologias agiles\ChoresFun\src\main\java\model\MiembroHogar.java
 C:\Users\domin\OneDrive - Escuela Politécnica Nacional\SEXTO SEMESTRE\Metodologias agiles\ChoresFun\src\main\java\model\TipoIncentivo.java

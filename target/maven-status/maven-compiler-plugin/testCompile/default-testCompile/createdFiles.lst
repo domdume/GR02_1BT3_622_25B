@@ -1,6 +1,1 @@
-model\ServicioLigaParametersTest.class
-service\LigaServiceTest.class
-service\LigaServiceParametersTest.class
-model\ServicioLigaTest.class
-service\LigaServiceMockTest.class
-model\ServicioNotificacionesTest.class
+model\HogarTest.class

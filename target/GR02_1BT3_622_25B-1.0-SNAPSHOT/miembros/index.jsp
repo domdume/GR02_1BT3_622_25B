@@ -18,9 +18,11 @@
         <div class="page-header">
             <h2>Gestión de Miembros del Hogar</h2>
             <div class="header-actions">
-                <a href="${pageContext.request.contextPath}/miembros?action=new" class="btn btn-primary">
-                    👥 Nuevo Miembro
-                </a>
+                <c:if test="${sessionScope.viewRole == 'JEFE'}">
+                    <a href="${pageContext.request.contextPath}/miembros?action=new" class="btn btn-primary">
+                        👥 Nuevo Miembro
+                    </a>
+                </c:if>
                 <a href="${pageContext.request.contextPath}/home" class="btn btn-secondary">
                     🏠 Dashboard
                 </a>
@@ -114,7 +116,7 @@
                                                     <small class="task-details">
                                                         <c:set var="completadas" value="0" />
                                                         <c:forEach var="quehacer" items="${miembro.quehaceres}">
-                                                            <c:if test="${quehacer.estadoCompletado}">
+                                                            <c:if test="${quehacer.completado}">
                                                                 <c:set var="completadas" value="${completadas + 1}" />
                                                             </c:if>
                                                         </c:forEach>
@@ -138,11 +140,13 @@
                                                    title="Ver tareas pendientes">
                                                     📋 Tareas
                                                 </a>
-                                                <a href="${pageContext.request.contextPath}/incentivos?miembroId=${miembro.id}" 
-                                                   class="btn btn-sm btn-outline" 
-                                                   title="Ver historial de incentivos">
-                                                    🏆 Historial
-                                                </a>
+                                                <!-- Incentives/history hidden from GUI -->
+                                                <c:if test="${sessionScope.viewRole == 'JEFE'}">
+                                                    <a href="${pageContext.request.contextPath}/miembros?action=delete&id=${miembro.id}"
+                                                       class="btn btn-sm btn-outline" style="color:#fca5a5; border-color: rgba(239,68,68,0.35);"
+                                                       onclick="return confirm('¿Eliminar al miembro ${miembro.nombre}? Esta acción es irreversible.');"
+                                                       title="Eliminar miembro">🗑️ Eliminar</a>
+                                                </c:if>
                                             </div>
                                         </td>
                                     </tr>
@@ -163,20 +167,6 @@
                 </c:otherwise>
             </c:choose>
         </section>
-
-        <!-- Información del sistema Observer -->
-        <aside class="system-info">
-            <h3>🔔 Sistema de Notificaciones Observer</h3>
-            <div class="observer-info">
-                <p>Todos los miembros están automáticamente suscritos al sistema de notificaciones:</p>
-                <ul>
-                    <li>✅ Reciben alertas cuando se crean nuevos quehaceres</li>
-                    <li>✅ Son notificados sobre cambios de estado en tareas</li>
-                    <li>✅ Obtienen información sobre incentivos y recompensas</li>
-                    <li>✅ Sistema completamente automatizado tras las refactorizaciones</li>
-                </ul>
-            </div>
-        </aside>
     </div>
 </main>
 
