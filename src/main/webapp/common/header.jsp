@@ -18,6 +18,8 @@
                     <li><a href="${pageContext.request.contextPath}/quehaceres?action=listGestion"
                            class="${pageContext.request.requestURI.contains('/quehaceres') ? 'active' : ''}">
                         📋 Quehaceres</a></li>
+                        <li><a href="${pageContext.request.contextPath}/rachas"
+                           class="${pageContext.request.requestURI.contains('/rachas') ? 'active' : ''}">🔥 Rachas</a></li>
                     <li><a href="${pageContext.request.contextPath}/ranking"
                            class="${pageContext.request.requestURI.contains('/ranking') ? 'active' : ''}">🏆 Ranking</a></li>
                 </ul>
