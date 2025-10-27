@@ -40,14 +40,7 @@ pipeline {
             }
         }
 
-        stage('Code Analysis') {
-            steps {
-                // Análisis de código con SonarQube
-                //withSonarQubeEnv('SonarQube') {
-                  //  sh 'mvn sonar:sonar'
-                }
-            }
-        }
+        
 
         stage('Build Docker Image') {
             steps {
