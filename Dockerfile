@@ -1,33 +1,33 @@
-# Usar Tomcat 10 que soporta Jakarta EE 9
+# -------------------------------------------------------------
+# Dockerfile Optimizado: Solo copia el artefacto compilado
+# -------------------------------------------------------------
+
+# Usar Tomcat 10 que soporta Jakarta EE 9 como base
 FROM tomcat:10-jdk17
 
-# Argumentos para configuración de la base de datos
+# Variables de entorno para la aplicación.
+# Se usan los valores ARG/ENV para que puedan ser sobrescritos en 'docker run' (Jenkinsfile)
 ARG DB_URL=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
 ARG DB_USERNAME=sa
 ARG DB_PASSWORD=password
 
-# Variables de entorno para la aplicación
 ENV DB_URL=${DB_URL} \
     DB_USERNAME=${DB_USERNAME} \
     DB_PASSWORD=${DB_PASSWORD}
 
-# Instalar Maven
-RUN apt-get update && \
-    apt-get install -y maven && \
-    rm -rf /var/lib/apt/lists/*
+# --- OPTIMIZACIÓN: ELIMINACIÓN DE HERRAMIENTAS DE COMPILACIÓN ---
+# Se elimina la instalación de Maven y la compilación, ya que Jenkins lo hizo.
+# Esto reduce el tamaño de la imagen final y el tiempo de construcción.
+# -----------------------------------------------------------------
 
-# Establecer el directorio de trabajo
-WORKDIR /app
+# Establecer el directorio de trabajo (opcional, pero útil)
+WORKDIR /usr/local/tomcat/webapps
 
-# Copiar el proyecto
-COPY . .
-
-# Construir la aplicación con Maven
-RUN mvn clean package
-
-# Eliminar el webapps por defecto de Tomcat y copiar nuestra aplicación
-RUN rm -rf /usr/local/tomcat/webapps/* && \
-    cp target/*.war /usr/local/tomcat/webapps/ROOT.war
+# Copiar el artefacto compilado por Jenkins (el archivo .war) al directorio ROOT de Tomcat.
+# El archivo 'target/ChoresFun.war' (o el nombre que tenga tu WAR) ya debe existir en el workspace.
+# Por convención, Jenkins lo pondrá en 'target' después de 'mvn package'.
+# Copiamos el .war generado por Jenkins como ROOT.war para que sea la app por defecto.
+COPY target/*.war ROOT.war
 
 # Puerto por defecto de Tomcat
 EXPOSE 8080
