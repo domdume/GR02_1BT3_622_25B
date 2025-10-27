@@ -38,6 +38,11 @@ pipeline {
 
 
         stage('Build Docker Image') {
+        agent {
+                        docker {
+                            image 'maven:3.9.5-jdk17' // Ejecuta Maven en un contenedor limpio
+                        }
+                    }
             steps {
                 script {
                     // Construir imagen Docker
