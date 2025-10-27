@@ -1,146 +1,182 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<html>
-<head>
-    <title>Tablero del Hogar</title>
-    <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/css/style.css">
-</head>
-<body>
-<header>
-    <h1>Tablero del Hogar</h1>
-    <nav>
-        <!-- Funcionalidades del Jefe del Hogar (InterfazDelJefe) -->
-        <a href="${pageContext.request.contextPath}/miembros?action=new">Registrar Miembro</a>
-        <a href="${pageContext.request.contextPath}/quehaceres?action=new">Establecer Quehacer</a>
-        
-        <!-- Funcionalidades del Miembro Familia (InterfazDelMiembroFamilia) -->
-        <a href="${pageContext.request.contextPath}/quehaceres?action=complete">Completar Quehacer</a>
-        <a href="${pageContext.request.contextPath}/quehaceres?action=pending">Revisar Quehaceres Pendientes</a>
-        
-        <!-- Funcionalidades de Consulta -->
-        <a href="${pageContext.request.contextPath}/incentivos">Ver Historial de Incentivos</a>
-    </nav>
-</header>
-<div class="container">
-    <!-- Mostrar mensajes del sistema -->
-    <c:if test="${not empty successMessage}">
-        <div style="background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 10px; margin: 10px 0; border-radius: 5px;">
-            <strong>✅ Éxito:</strong> ${successMessage}
-        </div>
-    </c:if>
-    <c:if test="${not empty errorMessage}">
-        <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 10px; margin: 10px 0; border-radius: 5px;">
-            <strong>❌ Error:</strong> ${errorMessage}
-        </div>
-    </c:if>
-    <c:if test="${not empty mensaje}">
-        <div style="background-color: #e8f5e8; border: 1px solid #4caf50; padding: 10px; margin: 10px 0; border-radius: 5px;">
-            <strong>🏗️ Sistema UML:</strong> ${mensaje}
-        </div>
-    </c:if>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 
-    <h2>Quehaceres del Hogar</h2>
-    
-    <c:choose>
-        <c:when test="${not empty listaQuehaceres}">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Nombre del Quehacer</th>
-                        <th>Asignado a</th>
-                        <th>Puntos del Miembro</th>
-                        <th>Fecha Límite</th>
-                        <th>Estado</th>
-                        <th>Recompensa / Penalización</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <c:forEach var="q" items="${listaQuehaceres}">
-                        <tr class="${q.estadoFinalizado ? (q.estadoCompletado ? 'completed' : 'overdue') : ''}">
-                            <td>${q.nombre}</td>
-                            <td>${q.miembroHogar.nombre}</td>
-                            <td>
-                                <div style="text-align: center;">
-                                    <strong style="color: #2e7d32; font-size: 1.1em;">${q.puntosEnEseMomento} pts</strong><br>
-                                    <small style="color: #666;">
-                                        <c:choose>
-                                            <c:when test="${q.estadoFinalizado}">
-                                                Total después de esta tarea
-                                            </c:when>
-                                            <c:otherwise>
-                                                Total actual
-                                            </c:otherwise>
-                                        </c:choose>
-                                    </small>
-                                </div>
-                            </td>
-                            <td>
-                                <strong>${q.tiempoLimite}</strong>
-                                <c:if test="${q.estadoFinalizado and q.fechaFinalizacion != null}">
-                                    <br><small style="color: #666;">
-                                        <c:choose>
-                                            <c:when test="${q.estadoCompletado}">
-                                                Completado: ${q.fechaFinalizacion}
-                                            </c:when>
-                                            <c:otherwise>
-                                                Expiró: ${q.fechaFinalizacion}
-                                            </c:otherwise>
-                                        </c:choose>
-                                    </small>
-                                </c:if>
-                            </td>
-                            <td>
-                                <c:choose>
-                                    <c:when test="${q.estadoFinalizado}">
-                                        <c:choose>
-                                            <c:when test="${q.estadoCompletado}">
-                                                <span style="color: #4caf50; font-weight: bold;">✅ Completado</span>
-                                            </c:when>
-                                            <c:otherwise>
-                                                <span style="color: #f44336; font-weight: bold;">❌ Atrasado</span>
-                                            </c:otherwise>
-                                        </c:choose>
-                                    </c:when>
-                                    <c:otherwise>
-                                        <span style="color: #ff9800; font-weight: bold;">⏳ Pendiente</span>
-                                    </c:otherwise>
-                                </c:choose>
-                            </td>
-                            <td>
-                                <c:choose>
-                                    <c:when test="${q.estadoFinalizado}">
-                                        <c:choose>
-                                            <c:when test="${q.estadoCompletado}">
-                                                <span style="color: #000; font-weight: normal;" class="recompensa-text" data-quehacer-id="${q.id}">Cargando...</span>
-                                            </c:when>
-                                            <c:otherwise>
-                                                <span style="color: #000; font-weight: normal;" class="penalizacion-text" data-quehacer-id="${q.id}">Cargando...</span>
-                                            </c:otherwise>
-                                        </c:choose>
-                                    </c:when>
-                                    <c:otherwise>
-                                        <span style="color: #666;">Pendiente de completar</span>
-                                    </c:otherwise>
-                                </c:choose>
-                            </td>
-                        </tr>
-                    </c:forEach>
-                </tbody>
-            </table>
-        </c:when>
-        <c:otherwise>
-            <div style="text-align: center; padding: 40px; background-color: #f5f5f5; border-radius: 8px; margin: 20px 0;">
-                <h3 style="color: #666;">📋 No hay quehaceres registrados</h3>
-                <p style="color: #888;">Comienza registrando miembros de la familia y asignando quehaceres.</p>
-                <a href="${pageContext.request.contextPath}/miembros?action=new" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin: 10px;">Registrar Miembro</a>
-                <a href="${pageContext.request.contextPath}/quehaceres?action=new" style="background-color: #2196F3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin: 10px;">Crear Quehacer</a>
+<c:set var="pageTitle" value="Tablero del Hogar" scope="request" />
+<c:set var="bodyClass" value="dashboard-page" scope="request" />
+
+<jsp:include page="common/layout-head.jsp" />
+<jsp:include page="common/header.jsp" />
+
+<main class="main-content">
+    <div class="container">
+        <jsp:include page="common/messages.jsp" />
+
+        <section class="section-card">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap: wrap;">
+                <h2 style="margin:0; display:flex; align-items:center; gap:8px;">🏠 Tablero del Hogar</h2>
+                <div class="action-buttons">
+                    <c:if test="${sessionScope.viewRole == 'JEFE'}">
+                        <a href="${pageContext.request.contextPath}/miembros?action=new" class="btn btn-primary">👥 Registrar Miembro</a>
+                        <a href="${pageContext.request.contextPath}/quehaceres?action=new" class="btn btn-primary">📋 Crear Quehacer</a>
+                    </c:if>
+                    <a href="${pageContext.request.contextPath}/quehaceres?action=complete" class="btn btn-secondary">✅ Completar</a>
+                    <a href="${pageContext.request.contextPath}/quehaceres?action=pending" class="btn btn-secondary">⏳ Pendientes</a>
+                </div>
             </div>
-        </c:otherwise>
-    </c:choose>
-</div>
+        </section>
+
+        <!-- Estadísticas rápidas -->
+        <section class="section-card">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">${tareasCompletadas}</div>
+                    <div class="stat-label">✅ Completadas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${tareasPendientes}</div>
+                    <div class="stat-label">⏳ Pendientes</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${tareasVencidas}</div>
+                    <div class="stat-label">❌ Vencidas</div>
+                </div>
+                <c:if test="${not empty mvpMiembro}">
+                    <div class="stat-card">
+                        <div class="stat-value">${mvpMiembro.puntos} pts</div>
+                        <div class="stat-label">👑 MVP: ${mvpMiembro.nombre}</div>
+                    </div>
+                </c:if>
+            </div>
+        </section>
+
+        <!-- Tabla de quehaceres -->
+        <section class="section-card quehaceres-summary">
+            <h2>📋 Quehaceres del Hogar</h2>
+            <c:choose>
+                <c:when test="${not empty listaQuehaceres}">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Quehacer</th>
+                                    <th>Asignado a</th>
+                                    <th>Puntos del Miembro</th>
+                                    <th>Fecha Límite</th>
+                                    <th>Estado</th>
+                                    <th>Recompensa / Penalización</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <c:forEach var="q" items="${listaQuehaceres}">
+                                    <tr class="${q.estadoFinalizado ? (q.completado ? 'completed' : 'overdue') : ''}">
+                                        <td>
+                                            <span style="display:flex; align-items:center; gap:8px; font-weight:700;">
+                                                ${q.completado ? '✅' : (q.estadoFinalizado ? '❌' : '🧹')}
+                                                <c:out value="${q.nombre}" />
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <c:choose>
+                                                <c:when test="${not empty q.miembroHogar}">
+                                                    <c:out value="${q.miembroHogar.nombre}" />
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span class="status-badge overdue">Sin asignar</span>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </td>
+                                        <td>
+                                            <div style="display:flex; flex-direction:column; align-items:flex-start; gap:4px;">
+                                                <span class="points-badge">${q.miembroHogar.puntos} pts</span>
+                                                <small style="color: var(--muted);">
+                                                    <c:choose>
+                                                            <c:when test="${q.estadoFinalizado}">Total después de esta tarea</c:when>
+                                                            <c:otherwise>Total actual</c:otherwise>
+                                                        </c:choose>
+                                                </small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <strong><c:out value="${q.tiempoLimite}" /></strong>
+                                            <c:if test="${q.estadoFinalizado and q.fechaFinalizacion != null}">
+                                                <br>
+                                                <small style="color: var(--muted);">
+                                                    <c:choose>
+                                                        <c:when test="${q.completado}">Completado: ${q.fechaFinalizacion}</c:when>
+                                                        <c:otherwise>Expiró: ${q.fechaFinalizacion}</c:otherwise>
+                                                    </c:choose>
+                                                </small>
+                                            </c:if>
+                                        </td>
+                                        <td>
+                                            <c:choose>
+                                                <c:when test="${q.estadoFinalizado}">
+                                                    <span class="status-badge ${q.completado ? 'completed' : 'overdue'}">
+                                                        ${q.completado ? '✅ Completado' : '❌ Atrasado'}
+                                                    </span>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span class="status-badge pending">⏳ Pendiente</span>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </td>
+                                        <td>
+                                            <c:choose>
+                                                <c:when test="${q.estadoFinalizado}">
+                                                    <c:choose>
+                                                        <c:when test="${q.completado}">
+                                                            <span class="incentive-text" data-quehacer-id="${q.id}" data-type="reward">Cargando...</span>
+                                                        </c:when>
+                                                        <c:otherwise>
+                                                            <span class="incentive-text" data-quehacer-id="${q.id}" data-type="penalty">Cargando...</span>
+                                                        </c:otherwise>
+                                                    </c:choose>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span style="color: var(--muted);">—</span>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </td>
+                                    </tr>
+                                </c:forEach>
+                            </tbody>
+                        </table>
+                    </div>
+                </c:when>
+                <c:otherwise>
+                    <div class="empty-state">
+                        <h3>📋 No hay quehaceres registrados</h3>
+                        <p>
+                            <c:choose>
+                                <c:when test="${sessionScope.viewRole == 'JEFE'}">
+                                    Comienza registrando miembros de la familia y asignando quehaceres.
+                                </c:when>
+                                <c:otherwise>
+                                    Por ahora no hay tareas publicadas. Puedes revisar pendientes o marcar completadas.
+                                </c:otherwise>
+                            </c:choose>
+                        </p>
+                        <div class="action-buttons" style="justify-content:center;">
+                            <c:if test="${sessionScope.viewRole == 'JEFE'}">
+                                <a href="${pageContext.request.contextPath}/miembros?action=new" class="btn btn-primary">👥 Registrar Miembro</a>
+                                <a href="${pageContext.request.contextPath}/quehaceres?action=new" class="btn btn-primary">📋 Crear Quehacer</a>
+                            </c:if>
+                            <a href="${pageContext.request.contextPath}/quehaceres?action=complete" class="btn btn-secondary">✅ Completar</a>
+                            <a href="${pageContext.request.contextPath}/quehaceres?action=pending" class="btn btn-secondary">⏳ Pendientes</a>
+                        </div>
+                    </div>
+                </c:otherwise>
+            </c:choose>
+        </section>
+    </div>
+</main>
+
+<jsp:include page="common/footer.jsp" />
+<jsp:include page="common/layout-foot.jsp" />
 
 <script>
-// Listas de recompensas y penalizaciones divertidas
+// Minimal incentives UI: show one deterministic reward/penalty text per finalised task
 const recompensas = [
     "No debes lavar los platos durante una semana",
     "Libre de hacer tu cama por 3 días",
@@ -167,30 +203,21 @@ const penalizaciones = [
     "Cocinar la cena durante una semana"
 ];
 
-// Función para obtener un elemento aleatorio de una lista basado en un ID (para consistencia)
 function getConsistentRandomItem(array, id) {
-    // Usar el ID como semilla para obtener siempre el mismo resultado para el mismo quehacer
-    const index = Math.abs(id) % array.length;
+    const index = Math.abs(Number(id)) % array.length;
     return array[index];
 }
 
-// Asignar recompensas y penalizaciones cuando se carga la página
 document.addEventListener('DOMContentLoaded', function() {
-    // Asignar recompensas
-    document.querySelectorAll('.recompensa-text').forEach(function(element) {
-        const quehacerId = element.getAttribute('data-quehacer-id');
-        const recompensa = getConsistentRandomItem(recompensas, parseInt(quehacerId));
-        element.innerHTML = recompensa;
-    });
-    
-    // Asignar penalizaciones
-    document.querySelectorAll('.penalizacion-text').forEach(function(element) {
-        const quehacerId = element.getAttribute('data-quehacer-id');
-        const penalizacion = getConsistentRandomItem(penalizaciones, parseInt(quehacerId));
-        element.innerHTML = penalizacion;
+    document.querySelectorAll('.incentive-text').forEach(function(el) {
+        const id = el.getAttribute('data-quehacer-id');
+        const type = el.getAttribute('data-type');
+        if (!id || !type) return;
+        if (type === 'reward') {
+            el.textContent = '🏅 ' + getConsistentRandomItem(recompensas, id);
+        } else {
+            el.textContent = '⚠️ ' + getConsistentRandomItem(penalizaciones, id);
+        }
     });
 });
 </script>
-
-</body>
-</html>

@@ -76,13 +76,13 @@ public class Hogar {
         return miembros;
     }
 
-    public List<Quehacer> getRegistroQuehacer() {
-        return quehaceres;
-    }
-
-    public RegistroQuehacer getObservadorQuehacer() {
-        return registroQuehacer;
-    }
+//    public List<Quehacer> getRegistroQuehacer() {
+//        return quehaceres;
+//    }
+//
+//    public RegistroQuehacer getObservadorQuehacer() {
+//        return registroQuehacer;
+//    }
 
     /**
      * Busca un miembro por nombre
@@ -97,17 +97,17 @@ public class Hogar {
     /**
      * Calcula estadísticas del hogar
      */
-    public int getTotalMiembros() {
-        return miembros.size();
-    }
-
-    public int getTotalQuehaceres() {
-        return quehaceres.size();
-    }
-
-    public boolean tieneJefe() {
-        return getJefeDelHogar() != null;
-    }
+//    public int getTotalMiembros() {
+//        return miembros.size();
+//    }
+//
+//    public int getTotalQuehaceres() {
+//        return quehaceres.size();
+//    }
+//
+//    public boolean tieneJefe() {
+//        return getJefeDelHogar() != null;
+//    }
 
     /**
      * Inicializa el sistema Observer suscribiendo todos los miembros existentes

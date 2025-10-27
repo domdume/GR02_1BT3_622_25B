@@ -53,9 +53,9 @@ public class RegistroQuehacer implements Sujeto {
     /**
      * Getter para la lista de quehaceres.
      */
-    public List<Quehacer> getQuehaceresPorRealizar() {
-        return quehaceresPorRealizar;
-    }
+//    public List<Quehacer> getQuehaceresPorRealizar() {
+//        return quehaceresPorRealizar;
+//    }
 
     /**
      * Suscribe un miembro automáticamente con logging detallado

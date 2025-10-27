@@ -17,20 +17,21 @@ public class MiembroHogarDAO {
             System.out.println("[DAO] Iniciando creación de miembro: " + miembro.getNombre());
             tx = em.getTransaction();
             tx.begin();
-            
             // Verificar que el miembro tenga los datos necesarios
             if (miembro.getNombre() == null || miembro.getNombre().trim().isEmpty()) {
                 throw new IllegalArgumentException("El nombre del miembro no puede estar vacío");
             }
-            
             if (miembro.getEdad() <= 0) {
                 throw new IllegalArgumentException("La edad debe ser mayor a 0");
             }
-            
-            em.persist(miembro);
+            if (miembro.getId() == null) {
+                em.persist(miembro);
+                System.out.println("[DAO] Miembro persistido exitosamente con ID: " + miembro.getId());
+            } else {
+                em.merge(miembro);
+                System.out.println("[DAO] Miembro actualizado (merge) con ID: " + miembro.getId());
+            }
             tx.commit();
-            System.out.println("[DAO] Miembro persistido exitosamente con ID: " + miembro.getId());
-            
         } catch (Exception e) {
             System.out.println("[DAO ERROR] Error al crear miembro: " + e.getMessage());
             e.printStackTrace();
@@ -46,15 +47,23 @@ public class MiembroHogarDAO {
 
     public MiembroHogar findById(Long id) {
         EntityManager em = JPAUtil.getEntityManager();
+        MiembroHogar miembro = null;
         try {
-            return em.createQuery("SELECT m FROM MiembroHogar m LEFT JOIN FETCH m.quehaceres WHERE m.id = :id", MiembroHogar.class)
-                     .setParameter("id", id)
-                     .getSingleResult();
-        } catch (Exception e) {
-            return null;
+            // Siempre usar fetch join para inicializar incentivos y quehaceres
+            miembro = em.createQuery(
+                "SELECT m FROM MiembroHogar m " +
+                "LEFT JOIN FETCH m.incentivos " +
+                "LEFT JOIN FETCH m.quehaceres " +
+                "WHERE m.id = :id", MiembroHogar.class)
+                .setParameter("id", id)
+                .getSingleResult();
+        } catch (jakarta.persistence.NoResultException e) {
+            // fallback a em.find si no se encuentra, pero esto no inicializa las colecciones
+            miembro = em.find(MiembroHogar.class, id);
         } finally {
             em.close();
         }
+        return miembro;
     }
 
     public List<MiembroHogar> findAll() {
@@ -78,9 +87,28 @@ public class MiembroHogarDAO {
         try {
             tx.begin();
             if (miembro != null) {
-                em.merge(miembro);
+                System.out.println("[MiembroHogarDAO.update] Intentando persistir Miembro id=" + miembro.getId() + ", puntos actuales (objeto)=" + miembro.getPuntos());
+                // Evitar merge completo que puede afectar colecciones (quehaceres) por cascade/orphanRemoval.
+                // En su lugar, obtener la instancia gestionada y actualizar solo campos escalares (puntos, liga, edad, nombre, factorDeCarga).
+                MiembroHogar managed = em.find(MiembroHogar.class, miembro.getId());
+                if (managed == null) {
+                    System.out.println("[MiembroHogarDAO.update] No existe instancia gestionada en EM para id=" + miembro.getId() + ", haciendo merge como fallback");
+                    // Si no existe en DB, hacer merge como fallback
+                    em.merge(miembro);
+                    // Después del merge no tenemos la instancia gestionada aquí (merge devuelve la gestionada si la capturamos)
+                    System.out.println("[MiembroHogarDAO.update] Merge ejecutado para id=" + miembro.getId());
+                } else {
+                    System.out.println("[MiembroHogarDAO.update] Instancia gestionada encontrada en EM para id=" + managed.getId() + ", puntos antes=" + managed.getPuntos());
+                    managed.setPuntos(miembro.getPuntos());
+                    managed.setLiga(miembro.getLiga());
+                    managed.setEdad(miembro.getEdad());
+                    managed.setNombre(miembro.getNombre());
+                    System.out.println("[MiembroHogarDAO.update] Valores aplicados en managed: puntos ahora=" + managed.getPuntos());
+                    // No modificamos colecciones aquí para evitar sobrescribir quehaceres existentes
+                }
             }
             tx.commit();
+            System.out.println("[MiembroHogarDAO.update] Commit finalizado para miembro id=" + (miembro != null ? miembro.getId() : "null") );
         } catch (Exception e) {
             if (tx.isActive()) {
                 tx.rollback();

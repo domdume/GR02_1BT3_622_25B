@@ -6,11 +6,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><c:out value="${pageTitle != null ? pageTitle : 'Sistema de Gestión del Hogar'}" /></title>
-    <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/css/style.css">
+    <title><c:out value="${pageTitle != null ? pageTitle : 'ChoresFun Gestión del Hogar'}" /></title>
+    <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/css/style.css?v=20251024">
     <c:if test="${not empty extraCSS}">
         <c:forEach var="css" items="${extraCSS}">
-            <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/css/${css}">
+            <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/css/${css}?v=20251024">
         </c:forEach>
     </c:if>
 </head>

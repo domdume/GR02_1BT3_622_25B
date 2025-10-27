@@ -128,23 +128,32 @@ public class MiembroServlet extends HttpServlet {
         try {
             // Validación de parámetros
             if (nombre == null || nombre.trim().isEmpty()) {
-                throw new IllegalArgumentException("El nombre es requerido");
+                request.getSession().setAttribute("errorMessage", "El nombre es requerido.");
+                response.sendRedirect(request.getContextPath() + "/miembros?action=new");
+                return;
             }
-            
             if (edadStr == null || edadStr.trim().isEmpty()) {
-                throw new IllegalArgumentException("La edad es requerida");
+                request.getSession().setAttribute("errorMessage", "La edad es requerida.");
+                response.sendRedirect(request.getContextPath() + "/miembros?action=new");
+                return;
             }
-
-            int edad = Integer.parseInt(edadStr);
-            
+            int edad;
+            try {
+                edad = Integer.parseInt(edadStr);
+            } catch (Exception ex) {
+                request.getSession().setAttribute("errorMessage", "La edad debe ser un número válido.");
+                response.sendRedirect(request.getContextPath() + "/miembros?action=new");
+                return;
+            }
             if (edad <= 0) {
-                throw new IllegalArgumentException("La edad debe ser mayor a 0");
+                request.getSession().setAttribute("errorMessage", "La edad debe ser mayor a 0.");
+                response.sendRedirect(request.getContextPath() + "/miembros?action=new");
+                return;
             }
 
-            //INTRODUCIR EXPLAINING VARIABLE: Determinar tipo de miembro
+            // Determinar tipo de miembro
             String tipoMiembroParam = request.getParameter("tipoMiembro");
             boolean esSeleccionadoComoJefe = "jefe".equals(tipoMiembroParam);
-            //Usar método de consulta directo
             boolean noExisteJefeActualmente = !hogarService.obtenerEstadisticasHogar().tieneJefe;
             boolean debeSerJefe = esSeleccionadoComoJefe || noExisteJefeActualmente;
 

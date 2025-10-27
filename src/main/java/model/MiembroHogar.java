@@ -1,8 +1,10 @@
 package model;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import service.IncentivoService;
 
 /**
  * Entidad que representa un miembro del hogar.
@@ -14,6 +16,13 @@ import java.util.List;
 @DiscriminatorColumn(name = "DTYPE", discriminatorType = DiscriminatorType.STRING)
 @DiscriminatorValue("MiembroHogar")
 public class MiembroHogar implements Observador {
+    // ...existing code...
+    /**
+     * Indica si el miembro es jefe del hogar (para JSP).
+     */
+    public boolean getEsJefe() {
+        return false;
+    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,31 +31,31 @@ public class MiembroHogar implements Observador {
     private String nombre;
     private int edad;
     private int puntos;
+    @Enumerated(EnumType.STRING)
     private Liga liga; // Added for rewards
 
     @OneToMany(mappedBy = "miembroHogar", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Quehacer> quehaceres;
+    private java.util.Set<Quehacer> quehaceres;
 
     @OneToMany(mappedBy = "miembroHogar", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Incentivo> incentivos;
+    private java.util.Set<Incentivo> incentivos;
 
-    @Transient // Temporalmente como @Transient para evitar problemas de BD
     private int factorDeCarga; // Campo requerido según diagrama UML
 
     // Constructor vacío requerido por JPA
     public MiembroHogar() {
-        this.quehaceres = new ArrayList<>();
-        this.incentivos = new ArrayList<>();
+    this.quehaceres = new java.util.HashSet<>();
+    this.incentivos = new java.util.HashSet<>();
     }
 
     public MiembroHogar(String nombre, int edad) {
-        this.nombre = nombre;
-        this.edad = edad;
-        this.quehaceres = new ArrayList<>();
-        this.incentivos = new ArrayList<>();
-        this.puntos = 0; // Initialize points
-        this.factorDeCarga = 0;
-        this.liga = Liga.BRONCE;
+    this.nombre = nombre;
+    this.edad = edad;
+    this.quehaceres = new java.util.HashSet<>();
+    this.incentivos = new java.util.HashSet<>();
+    this.puntos = 0; // Initialize points
+    this.factorDeCarga = 0;
+    this.liga = Liga.BRONCE;
     }
 
     // Getters y Setters para JPA y JSP
@@ -72,19 +81,19 @@ public class MiembroHogar implements Observador {
     }
 
     public List<Quehacer> getQuehaceres() {
-        return quehaceres;
+        return new java.util.ArrayList<>(quehaceres);
     }
 
     public void setQuehaceres(List<Quehacer> quehaceres) {
-        this.quehaceres = quehaceres;
+        this.quehaceres = new java.util.HashSet<>(quehaceres);
     }
 
     public List<Incentivo> getIncentivos() {
-        return incentivos;
+    return new java.util.ArrayList<>(incentivos);
     }
 
     public void setIncentivos(List<Incentivo> incentivos) {
-        this.incentivos = incentivos;
+    this.incentivos = new java.util.HashSet<>(incentivos);
     }
 
     public void anadirIncentivo(Incentivo incentivo) {
@@ -98,16 +107,19 @@ public class MiembroHogar implements Observador {
     }
 
     public void registrarQuehacerCompleto(Quehacer quehacer) {
+        if (quehacer == null) {
+            throw new IllegalArgumentException("El quehacer no puede ser nulo");
+        }
         if (!this.quehaceres.contains(quehacer)) {
             System.out.println("AVISO: " + nombre + " no puede completar una tarea que no tiene asignada.");
             return;
         }
-        // 1. El miembro actualiza el estado de la tarea y su propia lista.
-        quehacer.marcarComoCompletado();
+        // El miembro actualiza el estado de la tarea y su propia lista.
+        quehacer.setFechaFinalizacion(LocalDateTime.now());
+        quehacer.setEstado(EstadoQuehacer.COMPLETADO);
         this.quehaceres.remove(quehacer);
-        // 2. Llama al experto para que aplique la lógica de incentivos/penalizaciones.
-        Incentivo incentivo = new Incentivo();
-        incentivo.aplicar(this, quehacer);
+        // Aplicar incentivo solo desde el service (que persiste en BD)
+        Incentivo.aplicarIncentivo(this, quehacer);
     }
 //    public void reducirFactorDeCarga() { this.factorDeCarga--; }
 //    public void aumentarFactorDeCarga() { this.factorDeCarga++; }
@@ -120,6 +132,9 @@ public class MiembroHogar implements Observador {
         return edad;
     }
     public void asignarQuehacer(Quehacer q) {
+        if (q == null) return;
+        // Set owning side so JPA persist the relationship
+        q.setMiembroHogar(this);
         if (!this.quehaceres.contains(q)) {
             this.quehaceres.add(q);
         }
@@ -147,4 +162,3 @@ public class MiembroHogar implements Observador {
 
 
 }
-
