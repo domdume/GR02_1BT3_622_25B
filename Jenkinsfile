@@ -8,7 +8,7 @@ pipeline {
 
     environment {
         // Variables de entorno para el proyecto
-        DOCKER_IMAGE = 'quehaceres-app'
+        DOCKER_IMAGE = 'ChoresFun'
         DOCKER_TAG = "${env.BUILD_NUMBER}"
         // Definición de la RUTA COMPLETA de Docker para Windows
         DOCKER_BIN = 'C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe'
