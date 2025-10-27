@@ -37,47 +37,55 @@ pipeline {
 
         // ---------------------------------------------------------------------------------
         stage('Build Docker Image') {
-            agent any // NO usamos el agente Docker aquí. Usamos el agente Windows directamente.
+            agent any
 
             steps {
                 script {
-                    // **NOTA IMPORTANTE:**
-                    // El comando 'docker.build()' es un paso de Pipeline DSL y NO es un comando de consola.
-                    // Este paso funciona siempre y cuando el BINARIO 'docker.exe' esté en el PATH
-                    // del usuario que ejecuta el servicio Jenkins, y el plugin de Docker esté instalado.
-                    // Si el error persiste aquí, DEBES usar la solución de permisos del servicio Jenkins.
-
-                   // Usamos bat y la ruta completa para construir la imagen.
-                               bat "\"${DOCKER_BIN}\" build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
-
-                               echo "Image build command executed via BAT."
-
-                    // Si 'docker.build' falla con 'docker: not found', usa 'bat' para una construcción directa:
-                    /*
-                    bat "\"${DOCKER_BIN}\" build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
-                    */
+                    if (isUnix()) {
+                        // Si es Linux/Unix, usa el comando 'sh' simple (asumiendo que 'docker' está en el PATH)
+                        sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
+                    } else {
+                        // Si es Windows, usa 'bat' y la ruta completa al ejecutable
+                        // Usamos 'bat' para construir la imagen.
+                        bat "\"${DOCKER_BIN}\" build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
+                    }
                 }
             }
         }
         // ---------------------------------------------------------------------------------
 
         stage('Deploy to Development') {
-            when {
-                branch 'develop'
-            }
+            // ... when block
             steps {
                 script {
-                    // Usamos 'bat' y la variable DOCKER_BIN para llamar al ejecutable de Docker
-                    bat """
-                        "${DOCKER_BIN}" stop ${DOCKER_IMAGE}-dev || exit 0
-                        "${DOCKER_BIN}" rm ${DOCKER_IMAGE}-dev || exit 0
-                        "${DOCKER_BIN}" run -d --name ${DOCKER_IMAGE}-dev ^
-                            -p 8081:8080 ^
-                            -e DB_URL=jdbc:h2:mem:devdb ^
-                            -e DB_USERNAME=sa ^
-                            -e DB_PASSWORD=password ^
+                    def dockerCommands = """
+                        docker stop ${DOCKER_IMAGE}-dev || true
+                        docker rm ${DOCKER_IMAGE}-dev || true
+                        docker run -d --name ${DOCKER_IMAGE}-dev \\
+                            -p 8081:8080 \\
+                            -e DB_URL=jdbc:h2:mem:devdb \\
+                            -e DB_USERNAME=sa \\
+                            -e DB_PASSWORD=password \\
                             ${DOCKER_IMAGE}:${DOCKER_TAG}
                     """
+
+                    if (isUnix()) {
+                        // Linux/Unix usa '\' para saltos de línea y 'sh'
+                        sh dockerCommands
+                    } else {
+                        // Windows usa '^' para saltos de línea y la variable DOCKER_BIN
+                        // *ATENCIÓN*: El paso de 'bat' DEBE usar la variable DOCKER_BIN si docker no está en el PATH
+                        bat """
+                            "${DOCKER_BIN}" stop ${DOCKER_IMAGE}-dev || exit 0
+                            "${DOCKER_BIN}" rm ${DOCKER_IMAGE}-dev || exit 0
+                            "${DOCKER_BIN}" run -d --name ${DOCKER_IMAGE}-dev ^
+                                -p 8081:8080 ^
+                                -e DB_URL=jdbc:h2:mem:devdb ^
+                                -e DB_USERNAME=sa ^
+                                -e DB_PASSWORD=password ^
+                                ${DOCKER_IMAGE}:${DOCKER_TAG}
+                        """
+                    }
                 }
             }
         }
