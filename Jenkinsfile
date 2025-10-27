@@ -91,7 +91,7 @@ pipeline {
                         docker stop ${DOCKER_IMAGE}-prod || true
                         docker rm ${DOCKER_IMAGE}-prod || true
                         docker run -d --name ${DOCKER_IMAGE}-prod \\
-                            -p 8082:8080 \\ // Usamos 8082 para evitar colisión con Jenkins (8080)
+                            -p 8081:8080 \\ // Usamos 8082 para evitar colisión con Jenkins (8080)
                             -e DB_URL=jdbc:h2:tcp://proddb:9092/proddb \\
                             -e DB_USERNAME=\${PROD_DB_USERNAME} \\
                             -e DB_PASSWORD=\${PROD_DB_PASSWORD} \\
