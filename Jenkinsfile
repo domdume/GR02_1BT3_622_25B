@@ -47,8 +47,10 @@ pipeline {
                     // del usuario que ejecuta el servicio Jenkins, y el plugin de Docker esté instalado.
                     // Si el error persiste aquí, DEBES usar la solución de permisos del servicio Jenkins.
 
-                    def builtImage = docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
-                    echo "Image built: ${builtImage.id}"
+                   // Usamos bat y la ruta completa para construir la imagen.
+                               bat "\"${DOCKER_BIN}\" build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
+
+                               echo "Image build command executed via BAT."
 
                     // Si 'docker.build' falla con 'docker: not found', usa 'bat' para una construcción directa:
                     /*
