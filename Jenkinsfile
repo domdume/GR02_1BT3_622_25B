@@ -32,7 +32,7 @@ pipeline {
                 // Ejecutar pruebas unitarias
                 sh 'mvn test'
             }
-           
+
         }
 
 
@@ -41,7 +41,9 @@ pipeline {
             steps {
                 script {
                     // Construir imagen Docker
-                    docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
+                   def builtImage = docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
+
+                                           echo "Image built: ${builtImage.id}"
                 }
             }
         }
