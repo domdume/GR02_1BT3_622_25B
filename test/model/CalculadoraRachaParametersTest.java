@@ -17,7 +17,6 @@ public class CalculadoraRachaParametersTest {
 
     private CalculadoraRacha calculadora;
 
-    // --- Definición de Fechas (Correcto) ---
     private static LocalDate today = LocalDate.now();
     private static LocalDate yesterday = today.minusDays(1);
     private static LocalDate twoDaysAgo = today.minusDays(2);

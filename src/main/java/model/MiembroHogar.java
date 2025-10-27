@@ -16,7 +16,6 @@ import service.IncentivoService;
 @DiscriminatorColumn(name = "DTYPE", discriminatorType = DiscriminatorType.STRING)
 @DiscriminatorValue("MiembroHogar")
 public class MiembroHogar implements Observador {
-    // ...existing code...
     /**
      * Indica si el miembro es jefe del hogar (para JSP).
      */
@@ -42,42 +41,60 @@ public class MiembroHogar implements Observador {
 
     private int factorDeCarga; // Campo requerido según diagrama UML
 
+    // NUEVO: flag para proteger la racha (congelamiento)
+    @Column(name = "racha_congelada", nullable = false)
+    private boolean rachaCongelada = false;
+
     // Constructor vacío requerido por JPA
     public MiembroHogar() {
-    this.quehaceres = new java.util.HashSet<>();
-    this.incentivos = new java.util.HashSet<>();
+        this.quehaceres = new java.util.HashSet<>();
+        this.incentivos = new java.util.HashSet<>();
+        // Inicializar a no congelado por defecto
+        this.rachaCongelada = false;
     }
 
     public MiembroHogar(String nombre, int edad) {
-    this.nombre = nombre;
-    this.edad = edad;
-    this.quehaceres = new java.util.HashSet<>();
-    this.incentivos = new java.util.HashSet<>();
-    this.puntos = 0; // Initialize points
-    this.factorDeCarga = 0;
-    this.liga = Liga.BRONCE;
+        this.nombre = nombre;
+        this.edad = edad;
+        this.quehaceres = new java.util.HashSet<>();
+        this.incentivos = new java.util.HashSet<>();
+        this.puntos = 0; // Initialize points
+        this.factorDeCarga = 0;
+        this.liga = Liga.BRONCE;
+        // Inicializar a no congelado por defecto
+        this.rachaCongelada = false;
     }
 
     // Getters y Setters para JPA y JSP
     public Long getId() {
         return id;
     }
+    public void setId(Long id) {
+        this.id = id;
+    }
+    public String getNombre() {
+        return nombre;
+    }
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
+    public int getEdad() {
+        return edad;
+    }
+    public void setEdad(int edad) {
+        this.edad = edad;
+    }
+
+    // NUEVO: acceso al estado de congelamiento para servicios/JSP
+    public boolean isRachaCongelada() { return rachaCongelada; }
+    public boolean getRachaCongelada() { return rachaCongelada; }
+    public void setRachaCongelada(boolean rachaCongelada) { this.rachaCongelada = rachaCongelada; }
+
     public Liga getLiga() {
         return liga;
     }
     public void setLiga(Liga liga) {
         this.liga = liga;
-    }
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public void setNombre(String nombre) {
-        this.nombre = nombre;
-    }
-
-    public void setEdad(int edad) {
-        this.edad = edad;
     }
 
     public List<Quehacer> getQuehaceres() {
@@ -125,21 +142,6 @@ public class MiembroHogar implements Observador {
 //    public void aumentarFactorDeCarga() { this.factorDeCarga++; }
 //    public void removerQuehacer(Quehacer q) { this.quehaceres.remove(q); }
 //    public int getFactorDeCarga() { return this.factorDeCarga; }
-    public String getNombre() {
-        return nombre;
-    }
-    public int getEdad() { // Cambiado a public para acceso desde JSP
-        return edad;
-    }
-    public void asignarQuehacer(Quehacer q) {
-        if (q == null) return;
-        // Set owning side so JPA persist the relationship
-        q.setMiembroHogar(this);
-        if (!this.quehaceres.contains(q)) {
-            this.quehaceres.add(q);
-        }
-    }
-
     public int getPuntos() {
         return puntos;
     }

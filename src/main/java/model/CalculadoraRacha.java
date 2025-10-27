@@ -7,6 +7,9 @@ import java.util.Set;
 
 public class CalculadoraRacha {
     public int calcularRacha(List<LocalDate> historialTareas) {
+        return calcularRacha(historialTareas, false);
+    }
+    public int calcularRacha(List<LocalDate> historialTareas, boolean isFrozen) {
         if (historialTareas == null || historialTareas.isEmpty()) {
             return 0;
         }
@@ -20,10 +23,22 @@ public class CalculadoraRacha {
             }
         }
         int racha = 0;
-        // Contar días consecutivos hacia atrás desde el día de inicio
-        while (dias.contains(inicio)) {
-            racha++;
-            inicio = inicio.minusDays(1);
+        boolean gapUsado = false;
+        LocalDate cursor = inicio;
+        while (true) {
+            if (dias.contains(cursor)) {
+                racha++;
+                cursor = cursor.minusDays(1);
+                continue;
+            }
+            // Día faltante
+            if (isFrozen && !gapUsado) {
+                gapUsado = true;       // consumir un gap de 1 día
+                cursor = cursor.minusDays(1); // saltar el día faltante
+                // no incrementa racha por el día faltante
+                continue;
+            }
+            break; // rotura definitiva
         }
         return racha;
     }
