@@ -21,6 +21,7 @@ public class HogarService {
     private MiembroHogarDAO miembroDAO;
     private QuehacerDAO quehacerDAO;
 
+
     // Referencia al singleton del dominio
     private Hogar hogar;
 
