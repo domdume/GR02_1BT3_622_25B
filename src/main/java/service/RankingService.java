@@ -11,64 +11,99 @@ import java.util.stream.Collectors;
 public class RankingService {
     private final TaskRepository taskRepository;
 
-    public RankingService() { this.taskRepository = null; }
-    public RankingService(TaskRepository taskRepository) { this.taskRepository = taskRepository; }
+    public RankingService() {
+        this.taskRepository = null;
+    }
+
+    public RankingService(TaskRepository taskRepository) {
+        this.taskRepository = taskRepository;
+    }
 
     public List<MiembroHogar> getStreakRanking(List<MiembroHogar> miembros, List<Quehacer> tareas) {
-        if (miembros == null || miembros.isEmpty()) return Collections.emptyList();
-        if (tareas == null) tareas = Collections.emptyList();
-
-        Map<Long, List<LocalDate>> fechasPorMiembro = new HashMap<>();
-        for (Quehacer q : tareas) {
-            if (q == null || q.getMiembroHogar() == null || q.getFechaFinalizacion() == null) continue;
-            Long id = q.getMiembroHogar().getId(); if (id == null) continue;
-            fechasPorMiembro.computeIfAbsent(id, k -> new ArrayList<>()).add(q.getFechaFinalizacion().toLocalDate());
+        if (miembros == null || miembros.isEmpty()) {
+            return Collections.emptyList();
         }
 
-        final Map<Long, Integer> rachas = new HashMap<>();
-        for (MiembroHogar m : miembros) {
-            int r = 0;
-            if (m != null && m.getId() != null) {
-                List<LocalDate> fechas = fechasPorMiembro.getOrDefault(m.getId(), Collections.emptyList());
-                r = calcularRachaFechasFrozen(fechas, m.getRachaCongelada());
-            }
-            rachas.put(m != null ? m.getId() : null, r);
-        }
+        Map<Long, List<LocalDate>> fechasPorMiembro = groupTaskDatesByMember(tareas);
+        Map<Long, Integer> rachas = calculateStreaks(miembros, fechasPorMiembro);
+
         return orderByRachaYNombre(miembros, rachas);
     }
 
     public List<MiembroHogar> getStreakRanking(List<MiembroHogar> miembros) {
-        if (miembros == null || miembros.isEmpty()) return Collections.emptyList();
-        if (taskRepository == null) throw new IllegalStateException("TaskRepository no configurado");
-
-        final Map<Long, Integer> rachas = new HashMap<>();
-        for (MiembroHogar m : miembros) {
-            int r = 0;
-            if (m != null && m.getId() != null) {
-                List<Quehacer> tareas = taskRepository.getCompletedTasksByUser(m.getId());
-                List<LocalDate> fechas = new ArrayList<>();
-                if (tareas != null) for (Quehacer q : tareas) if (q != null && q.getFechaFinalizacion() != null) fechas.add(q.getFechaFinalizacion().toLocalDate());
-                r = calcularRachaFechasFrozen(fechas, m.getRachaCongelada());
-            }
-            rachas.put(m != null ? m.getId() : null, r);
+        if (miembros == null || miembros.isEmpty()) {
+            return Collections.emptyList();
         }
+        if (taskRepository == null) {
+            throw new IllegalStateException("TaskRepository no configurado");
+        }
+
+        Map<Long, Integer> rachas = calculateStreaksFromRepository(miembros);
         return orderByRachaYNombre(miembros, rachas);
+    }
+
+    private Map<Long, List<LocalDate>> groupTaskDatesByMember(List<Quehacer> tareas) {
+        if (tareas == null) {
+            return Collections.emptyMap();
+        }
+
+        return tareas.stream()
+            .filter(q -> q != null && q.getMiembroHogar() != null && q.getFechaFinalizacion() != null)
+            .collect(Collectors.groupingBy(
+                q -> q.getMiembroHogar().getId(),
+                Collectors.mapping(q -> q.getFechaFinalizacion().toLocalDate(), Collectors.toList())
+            ));
+    }
+
+    private Map<Long, Integer> calculateStreaks(List<MiembroHogar> miembros, Map<Long, List<LocalDate>> fechasPorMiembro) {
+        return miembros.stream()
+            .filter(Objects::nonNull)
+            .collect(Collectors.toMap(
+                MiembroHogar::getId,
+                m -> calcularRachaFechasFrozen(fechasPorMiembro.getOrDefault(m.getId(), Collections.emptyList()), m.getRachaCongelada())
+            ));
+    }
+
+    private Map<Long, Integer> calculateStreaksFromRepository(List<MiembroHogar> miembros) {
+        return miembros.stream()
+            .filter(Objects::nonNull)
+            .collect(Collectors.toMap(
+                MiembroHogar::getId,
+                m -> {
+                    List<Quehacer> tareas = taskRepository.getCompletedTasksByUser(m.getId());
+                    List<LocalDate> fechas = tareas == null ? Collections.emptyList() : tareas.stream()
+                        .filter(q -> q != null && q.getFechaFinalizacion() != null)
+                        .map(q -> q.getFechaFinalizacion().toLocalDate())
+                        .collect(Collectors.toList());
+                    return calcularRachaFechasFrozen(fechas, m.getRachaCongelada());
+                }
+            ));
     }
 
     protected int calcularRachaFechas(List<LocalDate> fechas) {
         return new model.CalculadoraRacha().calcularRacha(fechas);
     }
+
     protected int calcularRachaFechasFrozen(List<LocalDate> fechas, boolean frozen) {
         return new model.CalculadoraRacha().calcularRacha(fechas, frozen);
     }
 
+    private Comparator<MiembroHogar> createComparator(Map<Long, Integer> rachas) {
+        return Comparator.comparing((MiembroHogar m) -> {
+            int racha = rachas.getOrDefault(m.getId(), 0);
+            return racha;
+        }).reversed()
+        .thenComparing(m -> {
+            String nombre = Optional.ofNullable(m.getNombre()).orElse("");
+            return nombre;
+        }, String.CASE_INSENSITIVE_ORDER);
+    }
+
     private List<MiembroHogar> orderByRachaYNombre(List<MiembroHogar> miembros, Map<Long, Integer> rachas) {
-        return miembros.stream().filter(Objects::nonNull).sorted((a,b)->{
-            int ra = rachas.getOrDefault(a.getId(),0); int rb = rachas.getOrDefault(b.getId(),0);
-            if (ra!=rb) return Integer.compare(rb,ra);
-            String na = Optional.ofNullable(a.getNombre()).orElse("");
-            String nb = Optional.ofNullable(b.getNombre()).orElse("");
-            return na.compareToIgnoreCase(nb);
-        }).collect(Collectors.toList());
+        Comparator<MiembroHogar> comparator = createComparator(rachas);
+        return miembros.stream()
+            .filter(Objects::nonNull)
+            .sorted(comparator)
+            .collect(Collectors.toList());
     }
 }

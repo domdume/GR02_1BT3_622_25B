@@ -103,7 +103,9 @@ public class MiembroHogarDAO {
                     managed.setLiga(miembro.getLiga());
                     managed.setEdad(miembro.getEdad());
                     managed.setNombre(miembro.getNombre());
-                    System.out.println("[MiembroHogarDAO.update] Valores aplicados en managed: puntos ahora=" + managed.getPuntos());
+                    // NUEVO: persistir el estado de congelamiento de racha
+                    managed.setRachaCongelada(miembro.getRachaCongelada());
+                    System.out.println("[MiembroHogarDAO.update] Valores aplicados en managed: puntos ahora=" + managed.getPuntos() + ", rachaCongelada=" + managed.getRachaCongelada());
                     // No modificamos colecciones aquí para evitar sobrescribir quehaceres existentes
                 }
             }
