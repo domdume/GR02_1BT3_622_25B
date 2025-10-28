@@ -21,9 +21,14 @@ public class ServicioRacha {
     private final CalculadoraRacha calculadoraRacha;
 
     public ServicioRacha() {
-        this.miembroDAO = new MiembroHogarDAO();
-        this.quehacerDAO = new QuehacerDAO();
-        this.calculadoraRacha = new CalculadoraRacha();
+        this(new MiembroHogarDAO(), new QuehacerDAO(), new CalculadoraRacha());
+    }
+
+    // Constructor para pruebas (inyección de dependencias)
+    public ServicioRacha(MiembroHogarDAO miembroDAO, QuehacerDAO quehacerDAO, CalculadoraRacha calculadoraRacha) {
+        this.miembroDAO = miembroDAO;
+        this.quehacerDAO = quehacerDAO;
+        this.calculadoraRacha = calculadoraRacha != null ? calculadoraRacha : new CalculadoraRacha();
     }
 
     public RachaData obtenerRachasActuales() {
@@ -34,20 +39,33 @@ public class ServicioRacha {
         for (Quehacer q : todasLasTareas) {
             if (q.getMiembroHogar() != null && q.isCompletado() && q.getFechaFinalizacion() != null) {
                 Long mid = q.getMiembroHogar().getId();
+                if (mid == null) continue; // Igualar comportamiento seguro si no hay ID
                 fechasPorMiembro.computeIfAbsent(mid, k -> new ArrayList<>())
                         .add(q.getFechaFinalizacion().toLocalDate());
             }
         }
 
         Map<Long, Integer> rachaPorMiembro = new HashMap<>();
+        CalculadoraRacha calc = new CalculadoraRacha();
         for (MiembroHogar m : miembros) {
-            List<LocalDate> fechas = fechasPorMiembro.getOrDefault(m.getId(), Collections.emptyList());
-            int racha = calculadoraRacha.calcularRacha(fechas);
+            int racha = 0;
+            if (m.getId() != null) {
+                List<LocalDate> fechas = fechasPorMiembro.getOrDefault(m.getId(), Collections.emptyList());
+                racha = calc.calcularRacha(fechas, m.getRachaCongelada());
+            }
             rachaPorMiembro.put(m.getId(), racha);
         }
 
+        // Orden: racha desc, nombre asc para empates; nulls al final
         List<MiembroHogar> miembrosOrdenados = miembros.stream()
-                .sorted(Comparator.comparingInt(m -> -rachaPorMiembro.getOrDefault(m.getId(), 0)))
+                .sorted((m1, m2) -> {
+                    int r1 = rachaPorMiembro.getOrDefault(m1.getId(), 0);
+                    int r2 = rachaPorMiembro.getOrDefault(m2.getId(), 0);
+                    if (r1 != r2) return Integer.compare(r2, r1); // desc
+                    String n1 = Optional.ofNullable(m1.getNombre()).orElse("");
+                    String n2 = Optional.ofNullable(m2.getNombre()).orElse("");
+                    return n1.compareToIgnoreCase(n2);
+                })
                 .collect(Collectors.toList());
 
         return new RachaData(miembrosOrdenados, rachaPorMiembro);
@@ -71,6 +89,52 @@ public class ServicioRacha {
         quehacerDAO.update(q);
 
         return Optional.ofNullable(miembro.getNombre());
+    }
+
+    /**
+     * Versión pura para pruebas: calcula rachas y ordena usando miembros y tareas en memoria.
+     */
+    public RachaData calcularRachas(List<MiembroHogar> miembros, List<Quehacer> todasLasTareas) {
+        if (miembros == null) miembros = Collections.emptyList();
+        if (todasLasTareas == null) todasLasTareas = Collections.emptyList();
+
+        Map<Long, List<LocalDate>> fechasPorMiembro = new HashMap<>();
+        for (Quehacer q : todasLasTareas) {
+            if (q == null || q.getMiembroHogar() == null || q.getFechaFinalizacion() == null) continue;
+            if (!q.isCompletado()) continue;
+            Long mid = q.getMiembroHogar().getId();
+            if (mid == null) continue;
+            fechasPorMiembro.computeIfAbsent(mid, k -> new ArrayList<>())
+                    .add(q.getFechaFinalizacion().toLocalDate());
+        }
+
+        Map<Long, Integer> rachaPorMiembro = new HashMap<>();
+        for (MiembroHogar m : miembros) {
+            Integer racha = 0;
+            if (m != null && m.getId() != null) {
+                List<LocalDate> fechas = fechasPorMiembro.getOrDefault(m.getId(), Collections.emptyList());
+                racha = calculadoraRacha.calcularRacha(fechas);
+            }
+            rachaPorMiembro.put(m != null ? m.getId() : null, racha);
+        }
+
+        List<MiembroHogar> miembrosOrdenados = miembros.stream()
+                .filter(Objects::nonNull)
+                .sorted((m1, m2) -> {
+                    int r1 = rachaPorMiembro.getOrDefault(m1.getId(), 0);
+                    int r2 = rachaPorMiembro.getOrDefault(m2.getId(), 0);
+                    if (r1 != r2) return Integer.compare(r2, r1);
+                    String n1 = Optional.ofNullable(m1.getNombre()).orElse("");
+                    String n2 = Optional.ofNullable(m2.getNombre()).orElse("");
+                    return n1.compareToIgnoreCase(n2);
+                })
+                .collect(Collectors.toList());
+
+        return new RachaData(miembrosOrdenados, rachaPorMiembro);
+    }
+
+    protected int calcularRachaFechas(List<LocalDate> fechas, boolean isFrozen) {
+        return new CalculadoraRacha().calcularRacha(fechas, isFrozen);
     }
 
     public static class RachaData {
