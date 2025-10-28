@@ -79,4 +79,21 @@ public class ServicioRachaTest {
         assertEquals(2, data.rachaPorMiembro.get(Beto.getId()).intValue());
         assertEquals(2, data.rachaPorMiembro.get(Carlos.getId()).intValue());
     }
+
+    @Test
+    public void escenario_13_RachaCero_alFinal() {
+        MiembroHogar Ana = miembro(1L, "Ana");
+        MiembroHogar Beto = miembro(2L, "Beto");
+        List<MiembroHogar> miembros = Arrays.asList(Ana, Beto);
+
+        LocalDateTime base = LocalDateTime.now();
+        List<Quehacer> tareas = new ArrayList<>();
+        for (int i=0;i<3;i++) tareas.add(tareaCompletadaPara(Ana, base.minusDays(i)));
+
+        var data = servicio.calcularRachas(miembros, tareas);
+
+        assertEquals(Arrays.asList(Ana, Beto), data.miembrosOrdenados);
+        assertEquals(3, data.rachaPorMiembro.get(Ana.getId()).intValue());
+        assertEquals(0, data.rachaPorMiembro.get(Beto.getId()).intValue());
+    }
 }

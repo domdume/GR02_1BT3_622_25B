@@ -37,4 +37,23 @@ public class RankingServiceTest {
         var ranking = rs.getStreakRanking(Collections.emptyList(), Collections.emptyList());
         assertEquals(0, ranking.size());
     }
+    
+    @Test
+    public void dado_DosMiembrosConRachasDistintas_Cuando_GeneraRanking_Entonces_DevuelveListaOrdenadaDescendentemente() {
+        MiembroHogar ana = miembro(1L, "Ana");
+        MiembroHogar beto = miembro(2L, "Beto");
+        List<MiembroHogar> miembros = Arrays.asList(ana, beto);
+
+        LocalDateTime base = LocalDateTime.now();
+        List<Quehacer> tareas = new ArrayList<>();
+        // Ana: 3 consecutivos
+        for (int i=0;i<3;i++) tareas.add(tareaCompletadaPara(ana, base.minusDays(i)));
+        // Beto: solo hoy
+        tareas.add(tareaCompletadaPara(beto, base));
+
+        RankingService rs = new RankingService();
+        var ranking = rs.getStreakRanking(miembros, tareas);
+
+        assertEquals(Arrays.asList(ana, beto), ranking);
+    }
 }
