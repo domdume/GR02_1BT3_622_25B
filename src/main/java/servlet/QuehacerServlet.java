@@ -107,7 +107,7 @@ public class QuehacerServlet extends HttpServlet {
                 if (q.getEstado() == EstadoQuehacer.COMPLETADO) {
                     quehaceresCompletados.add(q);
                 } else if (q.getEstado() == EstadoQuehacer.VENCIDO) {
-                    // Para esta vista los vencidos seguiremos marcándolos en la UI con la bandera 'vencido'
+                   
                     quehaceresPendientes.add(q);
                 } else {
                     quehaceresPendientes.add(q);
@@ -129,7 +129,7 @@ public class QuehacerServlet extends HttpServlet {
                     int puntosActuales = puntosProgresivos.getOrDefault(nombreMiembro, 0);
                     int puntosDificultad = switch (q.getDificultad()) {
                         case FACIL -> 10;
-                        case MEDIO -> 20;
+                        case MEDIO -> 10;
                         case DIFICIL -> 30;
                     };
                     if (q.fueCompletadoATiempo()) {
@@ -299,7 +299,7 @@ public class QuehacerServlet extends HttpServlet {
                 
                 int puntosDificultad = switch (q.getDificultad()) {
                     case FACIL -> 10;
-                    case MEDIO -> 20;
+                    case MEDIO -> 10;
                     case DIFICIL -> 30;
                 };
                 if (q.isCompletado() && q.fueCompletadoATiempo()) {
@@ -422,7 +422,7 @@ public class QuehacerServlet extends HttpServlet {
                 // Usar la misma lógica de puntos que en Incentivo
                 int puntosDificultad = switch (q.getDificultad()) {
                     case FACIL -> 10;
-                    case MEDIO -> 20;
+                    case MEDIO -> 10;
                     case DIFICIL -> 30;
                 };
                 if (q.fueCompletadoATiempo()) {
@@ -578,7 +578,7 @@ public class QuehacerServlet extends HttpServlet {
             }
 
             // VALIDACIÓN: Solo se pueden completar tareas que están pendientes
-            if (quehacer.isCompletado()) { // Usar método del diagrama UML
+            if (quehacer.isCompletado()) {
                 request.getSession().setAttribute("errorMessage", "Esta tarea ya está completada");
                 response.sendRedirect(request.getContextPath() + "/quehaceres?action=complete");
                 return;
@@ -597,7 +597,6 @@ public class QuehacerServlet extends HttpServlet {
                 return;
             }
 
-            // Parse de fecha tolerante: intentaremos varios formatos comunes.
             LocalDateTime fechaFinalizacion;
             try {
                 fechaFinalizacion = parseDateTimeLenient(fechaFinalizacionStr);
@@ -608,26 +607,23 @@ public class QuehacerServlet extends HttpServlet {
             }
             quehacer.setFechaFinalizacion(fechaFinalizacion);
 
-            // Recuperar el miembro con fetch join para evitar lazy loading
+            System.out.println("[DEBUG] Fecha finalización establecida: " + fechaFinalizacion);
+            System.out.println("[DEBUG] Tiempo límite del quehacer: " + quehacer.getTiempoLimite());
+
             MiembroHogar miembro = null;
             if (quehacer.getMiembroHogar() != null && quehacer.getMiembroHogar().getId() != null) {
                 miembro = new dao.MiembroHogarDAO().findById(quehacer.getMiembroHogar().getId());
             }
 
-            // Marcar como completado explícitamente y conservar la fecha de finalización enviada
-            // Evitamos llamar a quehacer.marcarCompletado() porque este método sobrescribe
-            // la fecha de finalización con LocalDateTime.now(); ya asignamos la fecha
-            // desde el formulario (fechaFinalizacion) y queremos preservarla.
             quehacer.setEstado(EstadoQuehacer.COMPLETADO);
             if (miembro != null) {
+                System.out.println("[DEBUG] Aplicando incentivo para miembro: " + miembro.getNombre());
                 Incentivo.aplicarIncentivo(miembro, quehacer);
-                // Persistir el quehacer para que el estado y la fecha de finalización queden guardados
                 try {
                     quehacerDAO.update(quehacer);
                 } catch (Exception e) {
                     logger.severe("Error: " + e.getMessage());
                 }
-                // Releer desde BD para verificar que el estado y la fecha quedaron persistidos
                 try {
                     Quehacer persisted = quehacerDAO.findById(quehacer.getId());
                     logger.info("Después de update - Quehacer id=" + (persisted != null ? persisted.getId() : "null") +
@@ -636,13 +632,13 @@ public class QuehacerServlet extends HttpServlet {
                 } catch (Exception ex) {
                     logger.severe("No se pudo releer quehacer tras update: " + ex.getMessage());
                 }
-                // Asegurarnos de que el miembro también quede persistido (IncentivoService ya lo intenta, pero reafirmamos)
                 try {
                     miembroHogarDAO.update(miembro);
                 } catch (Exception e) {
                     logger.severe("Error: " + e.getMessage());
                 }
             } else {
+                System.out.println("[DEBUG] Aplicando incentivo para miembro anónimo o no encontrado.");
                 Incentivo.aplicarIncentivo(quehacer.getMiembroHogar(), quehacer);
                 try {
                     quehacerDAO.update(quehacer);
@@ -657,10 +653,13 @@ public class QuehacerServlet extends HttpServlet {
             int puntosActuales = miembro != null ? miembro.getPuntos() : quehacer.getMiembroHogar().getPuntos();
             int puntosDificultad = switch (quehacer.getDificultad()) {
                 case FACIL -> 10;
-                case MEDIO -> 20;
+                case MEDIO -> 10;
                 case DIFICIL -> 30;
             };
             int puntosMostrados = quehacer.fueCompletadoATiempo() ? puntosDificultad : -puntosDificultad;
+            System.out.println("[DEBUG] Puntos mostrados: " + puntosMostrados);
+            System.out.println("[DEBUG] Puntos actuales del miembro: " + puntosActuales);
+
             request.getSession().setAttribute("successMessage",
                 "¡Quehacer completado! " + nombreMiembro + " ganó " + (puntosMostrados >= 0 ? "+" + puntosMostrados : puntosMostrados) + " puntos. Total actual: " + puntosActuales + " puntos.");
             System.out.println("[DEBUG] Quehacer actualizado exitosamente");
