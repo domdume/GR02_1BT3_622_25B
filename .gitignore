@@ -9,6 +9,9 @@
 *.iml
 *.ipr
 
+# Ignora todo en target
+/target/*
+
 ### Eclipse ###
 .apt_generated
 .classpath
