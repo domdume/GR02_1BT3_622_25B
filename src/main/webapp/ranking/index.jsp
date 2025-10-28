@@ -32,7 +32,7 @@
             </tr>
           </thead>
           <tbody>
-            <c:forEach var="m" items="${topGlobal}" varStatus="st">
+            <c:forEach var="m" items="${rankingTopGlobal}" varStatus="st">
               <tr>
                 <td>${st.index + 1}</td>
                 <td>${m.nombre}</td>
@@ -52,7 +52,7 @@
     <!-- Por liga -->
     <section class="section-card">
       <h3>🥇🥈🥉 Ranking por Liga</h3>
-      <c:forEach var="entry" items="${porLiga}">
+      <c:forEach var="entry" items="${rankingPorLiga}">
         <h4 style="margin-top:12px;">${entry.key}</h4>
         <div class="table-responsive">
           <table class="data-table">
@@ -76,9 +76,44 @@
         </div>
       </c:forEach>
     </section>
+
+    <!-- Rachas -->
+    <section class="section-card" id="rachas">
+      <h3>🔥 Ranking de Rachas</h3>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Miembro</th>
+              <th>Racha (días)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <c:set var="prevRacha" value="-1" />
+            <c:set var="rank" value="0" />
+            <c:forEach var="m" items="${rankingMiembrosRacha}" varStatus="st">
+              <c:set var="racha" value="${rankingRachaPorMiembro[m.id]}" />
+              <c:if test="${empty racha}"><c:set var="racha" value="0" /></c:if>
+              <c:choose>
+                <c:when test="${racha != prevRacha}">
+                  <c:set var="rank" value="${st.index + 1}" />
+                  <c:set var="prevRacha" value="${racha}" />
+                </c:when>
+              </c:choose>
+              <tr>
+                <td>${rank}</td>
+                <td>${m.nombre}</td>
+                <td><strong>${racha}</strong></td>
+              </tr>
+            </c:forEach>
+          </tbody>
+        </table>
+      </div>
+      <p class="muted">Empates se muestran con la misma posición y se resuelven alfabéticamente por nombre.</p>
+    </section>
   </div>
 </main>
 
 <jsp:include page="../common/footer.jsp" />
 <jsp:include page="../common/layout-foot.jsp" />
-
