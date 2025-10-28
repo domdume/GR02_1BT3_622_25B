@@ -9,7 +9,7 @@
 *.iml
 *.ipr
 
-# Ignora target directory
+# Ignora todo en target
 /target/*
 
 ### Eclipse ###
