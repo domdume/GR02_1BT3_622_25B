@@ -15,33 +15,54 @@ public class CalculadoraRacha {
             return 0;
         }
         Set<LocalDate> dias = new HashSet<>(historialTareas);
-        LocalDate inicio = LocalDate.now();
-        // Si hoy no hay tareas, permitir que la racha comience en "ayer"
-        if (!dias.contains(inicio)) {
-            inicio = inicio.minusDays(1);
-            if (!dias.contains(inicio)) {
-                return 0; // Ni hoy ni ayer: racha 0
-            }
+
+        // Determinar fecha de inicio (hoy o ayer). Si ninguna aplica, racha = 0
+        LocalDate inicio = determinarFechaInicio(dias);
+        if (inicio == null) {
+            return 0;
         }
+
+        // Delegar el conteo de la racha al método específico
+        return contarRachaDesde(dias, inicio, isFrozen);
+    }
+
+    private LocalDate determinarFechaInicio(Set<LocalDate> dias) {
+        LocalDate hoy = LocalDate.now();
+        boolean tieneHoy = dias.contains(hoy);
+        LocalDate ayer = hoy.minusDays(1);
+        boolean tieneAyer = dias.contains(ayer);
+
+        if (tieneHoy) return hoy;
+        if (tieneAyer) return ayer;
+        return null; // Ni hoy ni ayer
+    }
+
+    private int contarRachaDesde(Set<LocalDate> dias, LocalDate inicio, boolean isFrozen) {
         int racha = 0;
-        // Contar días consecutivos hacia atrás desde el día de inicio
         boolean gapUsado = false;
         LocalDate cursor = inicio;
+
+        // Contar días consecutivos hacia atrás desde el día de inicio
         while (true) {
-            if (dias.contains(cursor)) {
+            boolean tieneDia = dias.contains(cursor);
+            if (tieneDia) {
                 racha++;
                 cursor = cursor.minusDays(1);
                 continue;
             }
+
             // Día faltante
-            if (isFrozen && !gapUsado) {
-                gapUsado = true;       // consumir un gap de 1 día
+            boolean puedeSaltar = isFrozen && !gapUsado;
+            if (puedeSaltar) {
+                gapUsado = true; // consumir un gap de 1 día
                 cursor = cursor.minusDays(1); // saltar el día faltante
                 // no incrementa racha por el día faltante
                 continue;
             }
+
             break; // rotura definitiva
         }
+
         return racha;
     }
 }
