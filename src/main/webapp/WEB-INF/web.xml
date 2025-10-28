@@ -52,4 +52,14 @@
         <servlet-name>RachaServlet</servlet-name>
         <url-pattern>/rachas</url-pattern>
     </servlet-mapping>
+
+    <!-- Nuevo servlet para proteger/desproteger rachas -->
+    <servlet>
+        <servlet-name>CongelarRachaServlet</servlet-name>
+        <servlet-class>servlet.CongelarRachaServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>CongelarRachaServlet</servlet-name>
+        <url-pattern>/miembros/congelar</url-pattern>
+    </servlet-mapping>
 </web-app>

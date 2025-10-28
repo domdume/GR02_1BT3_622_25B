@@ -34,13 +34,16 @@
             Tomar en cuenta que este demo indica solo hasta 3 días de racha.
         </p>
     </div>
-    <table class="table">
+    <div class="table-responsive">
+    <table class="data-table">
         <thead>
         <tr>
             <th>Miembro</th>
             <th>Puntos</th>
-            <th>Racha actual (días)</th>
+            <th>Racha actual</th>
+            <th>Estado</th>
             <th>Simular Tarea (Demo)</th>
+            <th>Acciones Jefe</th>
         </tr>
         </thead>
         <tbody>
@@ -48,21 +51,42 @@
             <tr>
                 <td>${m.nombre}</td>
                 <td>${m.puntos}</td>
-                <td>${rachaPorMiembro[m.id]}</td>
+                <td>
+                    <span class="points-badge">${rachaPorMiembro[m.id]}<span style="margin-left:6px;">día(s)</span></span>
+                </td>
+                <td>
+                    <c:choose>
+                        <c:when test="${m.rachaCongelada}"><span class="status-badge completed">❄️ Protegida</span></c:when>
+                        <c:otherwise><span class="status-badge pending">Activa</span></c:otherwise>
+                    </c:choose>
+                </td>
                 <td>
                     <a class="btn btn-primary btn-sm" href="${pageContext.request.contextPath}/rachas?action=addToday&miembroId=${m.id}">+ Hoy</a>
                     <a class="btn btn-secondary btn-sm" href="${pageContext.request.contextPath}/rachas?action=addYesterday&miembroId=${m.id}">+ Ayer</a>
                     <a class="btn btn-secondary btn-sm" href="${pageContext.request.contextPath}/rachas?action=addTwoDaysAgo&miembroId=${m.id}">+ Anteayer</a>
                 </td>
+                <td>
+                    <c:if test="${sessionScope.viewRole == 'JEFE'}">
+                        <form method="post" action="${pageContext.request.contextPath}/miembros/congelar" style="display:inline-flex; align-items:center; gap:8px;">
+                            <input type="hidden" name="miembroId" value="${m.id}"/>
+                            <input type="hidden" name="freeze" value="${!m.rachaCongelada}"/>
+                            <button type="submit" class="btn btn-outline btn-sm">
+                                <c:choose>
+                                    <c:when test="${m.rachaCongelada}">Quitar Protección</c:when>
+                                    <c:otherwise>Proteger Racha ❄️</c:otherwise>
+                                </c:choose>
+                            </button>
+                        </form>
+                    </c:if>
+                </td>
             </tr>
         </c:forEach>
         </tbody>
     </table>
+    </div>
 
-    <p class="muted">Reglas: la racha cuenta días consecutivos terminando en hoy o ayer. Varias tareas el mismo día cuentan como 1.</p>
+    <p class="muted">Reglas: la racha cuenta días consecutivos terminando en hoy o ayer. Varias tareas el mismo día cuentan como 1. Cuando la racha está protegida (❄️), se puede ignorar un día faltante al calcular la racha.</p>
 </div>
 <jsp:include page="/common/footer.jsp" />
-</body>
-</html>
 </body>
 </html>
