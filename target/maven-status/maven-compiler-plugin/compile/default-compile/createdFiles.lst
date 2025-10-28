@@ -19,6 +19,7 @@ service\ServicioRacha.class
 util\RouteController$MiembrosActions.class
 util\RouteController$QuehaceresActions.class
 servlet\HomeServlet.class
+service\RankingService.class
 service\LigaService.class
 model\Liga.class
 util\RouteController$IncentivosActions.class
@@ -37,6 +38,7 @@ service\IncentivoService$1.class
 util\RouteController$Breadcrumbs.class
 servlet\RachaServlet.class
 util\JPAUtil.class
+repository\TaskRepository.class
 dao\QuehacerDAO.class
 model\EstadoQuehacer.class
 servlet\QuehacerServlet$1.class

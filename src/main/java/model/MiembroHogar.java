@@ -42,20 +42,27 @@ public class MiembroHogar implements Observador {
 
     private int factorDeCarga; // Campo requerido según diagrama UML
 
+    @Column(name = "racha_congelada", nullable = false)
+    private boolean rachaCongelada = false;
+
     // Constructor vacío requerido por JPA
     public MiembroHogar() {
-    this.quehaceres = new java.util.HashSet<>();
-    this.incentivos = new java.util.HashSet<>();
+        this.quehaceres = new java.util.HashSet<>();
+        this.incentivos = new java.util.HashSet<>();
+        // Inicializar a no congelado por defecto
+        this.rachaCongelada = false;
     }
 
     public MiembroHogar(String nombre, int edad) {
-    this.nombre = nombre;
-    this.edad = edad;
-    this.quehaceres = new java.util.HashSet<>();
-    this.incentivos = new java.util.HashSet<>();
-    this.puntos = 0; // Initialize points
-    this.factorDeCarga = 0;
-    this.liga = Liga.BRONCE;
+        this.nombre = nombre;
+        this.edad = edad;
+        this.quehaceres = new java.util.HashSet<>();
+        this.incentivos = new java.util.HashSet<>();
+        this.puntos = 0; // Initialize points
+        this.factorDeCarga = 0;
+        this.liga = Liga.BRONCE;
+        // Inicializar a no congelado por defecto
+        this.rachaCongelada = false;
     }
 
     // Getters y Setters para JPA y JSP
@@ -121,7 +128,11 @@ public class MiembroHogar implements Observador {
         // Aplicar incentivo solo desde el service (que persiste en BD)
         Incentivo.aplicarIncentivo(this, quehacer);
     }
-//    public void reducirFactorDeCarga() { this.factorDeCarga--; }
+    public boolean isRachaCongelada() { return rachaCongelada; }
+    public boolean getRachaCongelada() { return rachaCongelada; }
+    public void setRachaCongelada(boolean rachaCongelada) { this.rachaCongelada = rachaCongelada; }
+
+    //    public void reducirFactorDeCarga() { this.factorDeCarga--; }
 //    public void aumentarFactorDeCarga() { this.factorDeCarga++; }
 //    public void removerQuehacer(Quehacer q) { this.quehaceres.remove(q); }
 //    public int getFactorDeCarga() { return this.factorDeCarga; }
