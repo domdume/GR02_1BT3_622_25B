@@ -5,11 +5,12 @@
 .idea/jarRepositories.xml
 .idea/compiler.xml
 .idea/libraries/
-./target
-/target
 *.iws
 *.iml
 *.ipr
+
+# Ignora target directory
+/target/*
 
 ### Eclipse ###
 .apt_generated
