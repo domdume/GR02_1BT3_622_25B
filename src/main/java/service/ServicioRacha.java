@@ -31,19 +31,24 @@ public class ServicioRacha {
         this.calculadoraRacha = calculadoraRacha != null ? calculadoraRacha : new CalculadoraRacha();
     }
 
-    public RachaData obtenerRachasActuales() {
-        List<MiembroHogar> miembros = miembroDAO.findAll();
-        List<Quehacer> todasLasTareas = quehacerDAO.findAllWithMiembroHogar();
-
+    private Map<Long, List<LocalDate>> procesarFechasPorMiembro(List<Quehacer> todasLasTareas) {
         Map<Long, List<LocalDate>> fechasPorMiembro = new HashMap<>();
         for (Quehacer q : todasLasTareas) {
             if (q.getMiembroHogar() != null && q.isCompletado() && q.getFechaFinalizacion() != null) {
                 Long mid = q.getMiembroHogar().getId();
-                if (mid == null) continue; // Igualar comportamiento seguro si no hay ID
+                if (mid == null) continue;
                 fechasPorMiembro.computeIfAbsent(mid, k -> new ArrayList<>())
                         .add(q.getFechaFinalizacion().toLocalDate());
             }
         }
+        return fechasPorMiembro;
+    }
+
+    public RachaData obtenerRachasActuales() {
+        List<MiembroHogar> miembros = miembroDAO.findAll();
+        List<Quehacer> todasLasTareas = quehacerDAO.findAllWithMiembroHogar();
+
+        Map<Long, List<LocalDate>> fechasPorMiembro = procesarFechasPorMiembro(todasLasTareas);
 
         Map<Long, Integer> rachaPorMiembro = new HashMap<>();
         CalculadoraRacha calc = new CalculadoraRacha();
@@ -78,36 +83,29 @@ public class ServicioRacha {
         MiembroHogar miembro = miembroDAO.findById(miembroId);
         if (miembro == null) return Optional.empty();
 
-        // 2. Crear el Quehacer con un límite futuro (para asegurar que fueCompletadoATiempo() sea TRUE).
-        // Usamos el día proporcionado para el límite.
-        LocalDateTime tiempoLimite = dia.atTime(23, 59, 59);
-        Quehacer q = new Quehacer("Tarea rápida de racha", tiempoLimite, Dificultad.MEDIO);
-        q.setMiembroHogar(miembro);
+        // 2. Definir tiempos límite para la tarea
+        final LocalDateTime FINAL_DEL_DIA = dia.atTime(23, 59, 59);
+        final LocalDateTime MOMENTO_COMPLETADO = dia.atTime(23, 58, 0);
 
-        // 3. Persistir el Quehacer ANTES de completarlo.
-        quehacerDAO.create(q);
+        // 3. Crear el Quehacer con un límite futuro
+        Quehacer tareaRapida = new Quehacer("Tarea rápida de racha", FINAL_DEL_DIA, Dificultad.MEDIO);
+        tareaRapida.setMiembroHogar(miembro);
 
-        // 4. Forzar la fecha de finalización al día indicado (antes del límite).
-        // Esto asegura que se registre como completado a tiempo.
-        LocalDateTime fechaFinalizacionForzada = dia.atTime(23, 58, 0);
-        q.setFechaFinalizacion(fechaFinalizacionForzada);
+        // 4. Persistir el Quehacer ANTES de completarlo.
+        quehacerDAO.create(tareaRapida);
 
-        // 5. 🔥 PUNTO CRÍTICO: Llama a la lógica de negocio completa del miembro.
-        // ESTO dispara:
-        //   a) La actualización de estado de 'q'.
-        //   b) La llamada a IncentivoService, que SUMA los puntos y ACTUALIZA la liga.
-        //   c) La persistencia del MiembroHogar (nuevos puntos/liga).
-        miembro.registrarQuehacerCompleto(q);
+        // 5. Registrar la finalización de la tarea
+        tareaRapida.setFechaFinalizacion(MOMENTO_COMPLETADO);
 
-        // NOTA: No es necesario llamar a quehacerDAO.update(q) ni miembroDAO.update(miembro)
-        // aquí, ya que miembro.registrarQuehacerCompleto() lo hace internamente a través del IncentivoService.
+        // 6. Actualizar el estado del miembro y sus incentivos
+        miembro.registrarQuehacerCompleto(tareaRapida);
 
-        // 6. Recargar el miembro para asegurar que esta instancia refleje los puntos/liga actualizados.
-        // (Esto ayuda a mitigar problemas de caché de JPA).
+        // 7. Recargar el miembro para reflejar los cambios actualizados
         miembro = miembroDAO.findById(miembroId);
 
         return Optional.ofNullable(miembro != null ? miembro.getNombre() : null);
     }
+
     /**
      * Versión pura para pruebas: calcula rachas y ordena usando miembros y tareas en memoria.
      */

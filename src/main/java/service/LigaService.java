@@ -49,11 +49,19 @@ public class LigaService {
     }
 
     /**
+     * Valida si un miembro es válido para actualización de puntos
+     */
+    private boolean esActualizacionValida(MiembroHogar miembro, int puntos) {
+        return miembro != null && puntos != 0;
+    }
+
+    /**
      * Añade puntos al miembro y actualiza su liga según los umbrales.
      * No realiza ninguna acción relacionada con incentivos o logros.
      */
     public void actualizarPuntos(MiembroHogar miembro, int puntos) {
-        if (miembro == null) return;
+        if (!esActualizacionValida(miembro, puntos)) return;
+
         if (puntos < 0) {
             // Si se pasa valor negativo, delegar a removerPuntos para comportamiento consistente
             removerPuntos(miembro, -puntos);
@@ -68,26 +76,27 @@ public class LigaService {
      * Remueve puntos del miembro (sin llegar a negativos) y actualiza su liga.
      */
     public void removerPuntos(MiembroHogar miembro, int puntosARemover) {
-        if (miembro == null) return;
-        if (puntosARemover <= 0) return;
-        int nuevos = miembro.getPuntos() - puntosARemover;
-        if (nuevos < 0) nuevos = 0;
+        if (!esActualizacionValida(miembro, puntosARemover)) return;
+
+        int nuevos = Math.max(0, miembro.getPuntos() - puntosARemover);
         miembro.setPuntos(nuevos);
         actualizarLigaSegunPuntos(miembro);
+    }
+
+    /**
+     * Determina la liga correspondiente según los puntos
+     */
+    private Liga determinarLigaPorPuntos(int puntos) {
+        if (puntos >= ORO_UMBRAL) return Liga.ORO;
+        if (puntos >= PLATA_UMBRAL) return Liga.PLATA;
+        return Liga.BRONCE;
     }
 
     /**
      * Actualiza la liga del miembro utilizando los umbrales definidos.
      */
     private void actualizarLigaSegunPuntos(MiembroHogar miembro) {
-        int pts = miembro.getPuntos();
-        if (pts >= ORO_UMBRAL) {
-            miembro.setLiga(Liga.ORO);
-        } else if (pts >= PLATA_UMBRAL) {
-            miembro.setLiga(Liga.PLATA);
-        } else {
-            miembro.setLiga(Liga.BRONCE);
-        }
+        miembro.setLiga(determinarLigaPorPuntos(miembro.getPuntos()));
     }
 
 }
