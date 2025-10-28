@@ -71,26 +71,43 @@ public class ServicioRacha {
         return new RachaData(miembrosOrdenados, rachaPorMiembro);
     }
 
-    /**
-     * Registra una tarea rápida para el miembro y la marca como completada en la fecha indicada.
-     * Devuelve el nombre del miembro para mensajes.
-     */
     public Optional<String> registrarTareaRapida(Long miembroId, LocalDate dia) {
         if (miembroId == null || dia == null) return Optional.empty();
+
+        // 1. Obtener el miembro.
         MiembroHogar miembro = miembroDAO.findById(miembroId);
         if (miembro == null) return Optional.empty();
 
-        Quehacer q = new Quehacer("Tarea rápida de racha", LocalDateTime.now().plusHours(2), Dificultad.MEDIO);
+        // 2. Crear el Quehacer con un límite futuro (para asegurar que fueCompletadoATiempo() sea TRUE).
+        // Usamos el día proporcionado para el límite.
+        LocalDateTime tiempoLimite = dia.atTime(23, 59, 59);
+        Quehacer q = new Quehacer("Tarea rápida de racha", tiempoLimite, Dificultad.MEDIO);
         q.setMiembroHogar(miembro);
+
+        // 3. Persistir el Quehacer ANTES de completarlo.
         quehacerDAO.create(q);
 
-        q.marcarCompletado();
-        q.setFechaFinalizacion(dia.atTime(12, 0));
-        quehacerDAO.update(q);
+        // 4. Forzar la fecha de finalización al día indicado (antes del límite).
+        // Esto asegura que se registre como completado a tiempo.
+        LocalDateTime fechaFinalizacionForzada = dia.atTime(23, 58, 0);
+        q.setFechaFinalizacion(fechaFinalizacionForzada);
 
-        return Optional.ofNullable(miembro.getNombre());
+        // 5. 🔥 PUNTO CRÍTICO: Llama a la lógica de negocio completa del miembro.
+        // ESTO dispara:
+        //   a) La actualización de estado de 'q'.
+        //   b) La llamada a IncentivoService, que SUMA los puntos y ACTUALIZA la liga.
+        //   c) La persistencia del MiembroHogar (nuevos puntos/liga).
+        miembro.registrarQuehacerCompleto(q);
+
+        // NOTA: No es necesario llamar a quehacerDAO.update(q) ni miembroDAO.update(miembro)
+        // aquí, ya que miembro.registrarQuehacerCompleto() lo hace internamente a través del IncentivoService.
+
+        // 6. Recargar el miembro para asegurar que esta instancia refleje los puntos/liga actualizados.
+        // (Esto ayuda a mitigar problemas de caché de JPA).
+        miembro = miembroDAO.findById(miembroId);
+
+        return Optional.ofNullable(miembro != null ? miembro.getNombre() : null);
     }
-
     /**
      * Versión pura para pruebas: calcula rachas y ordena usando miembros y tareas en memoria.
      */
