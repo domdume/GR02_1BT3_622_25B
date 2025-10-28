@@ -21,6 +21,7 @@ public class HogarService {
     private MiembroHogarDAO miembroDAO;
     private QuehacerDAO quehacerDAO;
 
+
     // Referencia al singleton del dominio
     private Hogar hogar;
 
@@ -442,7 +443,7 @@ public class HogarService {
         public final String detalles;
 
         public ResultadoSincronizacion(boolean exitoso, TipoInconsistencia tipo,
-                                       int miembros, int quehaceres, int conflictos, String detalles) {
+            int miembros, int quehaceres, int conflictos, String detalles) {
             this.exitoso = exitoso;
             this.tipoInconsistencia = tipo;
             this.miembrosSincronizados = miembros;

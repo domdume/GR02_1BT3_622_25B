@@ -12,6 +12,7 @@
 <div class="container">
     <h2>Rachas de Consistencia</h2>
 
+    <%-- Mensajes de éxito/error --%>
     <c:if test="${not empty sessionScope.successMessage}">
         <div class="alert alert-success">${sessionScope.successMessage}</div>
         <c:remove var="successMessage" scope="session"/>
@@ -21,13 +22,25 @@
         <c:remove var="errorMessage" scope="session"/>
     </c:if>
 
+    <div class="alert alert-info" role="alert" style="margin-top: 15px; margin-bottom: 15px;">
+        <strong>Nota importante para probar la funcionalidad de la racha:</strong>
+        <p>
+            Para probar la funcionalidad de las rachas, utilice los botones de la columna <strong>"Simular Tarea"</strong>.
+            Estos botones registran una tarea completada ficticia en el día indicado (Hoy, Ayer, Anteayer) y recalcularán
+            la racha del miembro automáticamente.
+        </p>
+        <p class="mb-0">
+            Ejemplo: Para probar una racha de 2 días, haga clic en "+ Ayer" y luego en "+ Hoy".
+            Tomar en cuenta que este demo indica solo hasta 3 días de racha.
+        </p>
+    </div>
     <table class="table">
         <thead>
         <tr>
             <th>Miembro</th>
             <th>Puntos</th>
             <th>Racha actual (días)</th>
-            <th>Acciones rápidas</th>
+            <th>Simular Tarea (Demo)</th>
         </tr>
         </thead>
         <tbody>
