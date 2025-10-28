@@ -590,13 +590,6 @@ public class QuehacerServlet extends HttpServlet {
                 return;
             }
 
-            LocalDateTime ahora = LocalDateTime.now();
-            if (ahora.isAfter(quehacer.getTiempoLimite())) {
-                request.getSession().setAttribute("errorMessage", "Esta tarea ya venció. No se puede marcar como completada.");
-                response.sendRedirect(request.getContextPath() + "/quehaceres?action=complete");
-                return;
-            }
-
             LocalDateTime fechaFinalizacion;
             try {
                 fechaFinalizacion = parseDateTimeLenient(fechaFinalizacionStr);
@@ -605,6 +598,7 @@ public class QuehacerServlet extends HttpServlet {
                 response.sendRedirect(request.getContextPath() + "/quehaceres?action=complete");
                 return;
             }
+
             quehacer.setFechaFinalizacion(fechaFinalizacion);
 
             System.out.println("[DEBUG] Fecha finalización establecida: " + fechaFinalizacion);
