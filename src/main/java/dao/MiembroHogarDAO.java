@@ -69,7 +69,13 @@ public class MiembroHogarDAO {
     public List<MiembroHogar> findAll() {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            List<MiembroHogar> miembros = em.createQuery("SELECT m FROM MiembroHogar m LEFT JOIN FETCH m.quehaceres", MiembroHogar.class).getResultList();
+            // Recuperar miembros incluyendo colecciones que se mostrarán en las vistas para evitar LazyInitializationException
+            List<MiembroHogar> miembros = em.createQuery(
+                    "SELECT DISTINCT m FROM MiembroHogar m " +
+                    "LEFT JOIN FETCH m.quehaceres " +
+                    "LEFT JOIN FETCH m.logros",
+                    MiembroHogar.class
+            ).getResultList();
             System.out.println("Miembros recuperados: " + miembros);
             return miembros;
         } catch (Exception e) {

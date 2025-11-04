@@ -99,12 +99,21 @@ public class IncentivoService {
         MiembroHogarDAO miembroDao = new MiembroHogarDAO();
         model.MiembroHogar miembro = miembroDao.findById(miembroId);
         if (miembro != null) {
+            // Capturar liga antes de modificar puntos
+            model.Liga ligaAntes = miembro.getLiga();
             if (recompensa) {
                 ligaService.actualizarPuntos(miembro, puntos);
             } else {
                 ligaService.removerPuntos(miembro, puntos);
             }
+            // Persistir cambios en miembro
             miembroDao.update(miembro);
+            // Intentar asignar emblema si hubo ascenso
+            try {
+                logroService.asignarEmblemaAscenso(miembro, ligaAntes, miembro.getLiga());
+            } catch (Exception ex) {
+                System.out.println("[IncentivoService] Error al asignar emblema (byIds): " + ex.getMessage());
+            }
             System.out.println("[IncentivoService] aplicarIncentivoByIds - miembroId=" + miembroId + " puntos actualizados a " + miembro.getPuntos());
         } else {
             System.out.println("[IncentivoService] aplicarIncentivoByIds - no se encontró miembroId=" + miembroId);
@@ -121,9 +130,17 @@ public class IncentivoService {
         incentivo.setPuntos(puntos);
         incentivo.setDescripcion("Completado a tiempo: " + quehacer.getNombre());
         int antes = miembro.getPuntos();
+        // Capturar liga antes del cambio
+        model.Liga ligaAntes = miembro.getLiga();
         // Usar el servicio de ligas para aplicar puntos y recalcular liga
         ligaService.actualizarPuntos(miembro, puntos);
         int despues = miembro.getPuntos();
+        // Después de actualizar puntos/ligas, asignar emblema si hubo ascenso
+        try {
+            logroService.asignarEmblemaAscenso(miembro, ligaAntes, miembro.getLiga());
+        } catch (Exception ex) {
+            System.out.println("[IncentivoService] Error al asignar emblema: " + ex.getMessage());
+        }
         System.out.println("👍 ¡Felicidades! " + miembro.getNombre() + " terminó '" + quehacer.getNombre() + "' a tiempo. Puntos añadidos: " + puntos + " (" + antes + " -> " + despues + ")");
     }
 

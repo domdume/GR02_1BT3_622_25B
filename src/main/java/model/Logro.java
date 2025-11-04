@@ -89,6 +89,26 @@ public class Logro {
         this.tipoLogro = tipoLogro;
     }
 
+    /**
+     * Nombre legible para mostrar en vistas. Si logroId corresponde a un código
+     * conocido, se devuelve el nombre humano; en caso contrario se devuelve el
+     * propio logroId.
+     */
+    public String getNombre() {
+        if (this.logroId == null) return "";
+        switch (this.logroId) {
+            case "EMBLEMA_APRENDIZ_CONSTANTE":
+                return "Aprendiz Constante";
+            case "EMBLEMA_EXPLORADOR_PERSISTENTE":
+                return "Explorador Persistente";
+            case "EMBLEMA_MAESTRO_QUEHACERES":
+                return "Maestro de los Quehaceres";
+            default:
+                // Si el logroId ya es un texto legible, devolverlo tal cual
+                return this.logroId;
+        }
+    }
+
 
     public int getTareasRequeridas() {
         return tareasRequeridas;

@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import model.Logro;
+import model.TipoLogro;
 
 /**
  * Entidad que representa un miembro del hogar.
@@ -68,6 +70,15 @@ public class MiembroHogar implements Observador {
         this.liga = Liga.BRONCE;
         // Inicializar a no congelado por defecto
         this.rachaCongelada = false;
+        // Asignar emblema de Bronce por defecto a todos los miembros nuevos
+        try {
+            // Asignar la primera insignia (emblema de bronce) con el código esperado por la lógica de negocio
+            Logro emblemaBronce = new Logro("EMBLEMA_APRENDIZ_CONSTANTE", TipoLogro.EMBLEMA, 0);
+            this.addLogro(emblemaBronce);
+        } catch (Exception ex) {
+            // No detener la creación por un fallo en la asignación de logro
+            System.out.println("[MiembroHogar] No se pudo asignar emblema por defecto: " + ex.getMessage());
+        }
     }
 
     // Getters y Setters para JPA y JSP
