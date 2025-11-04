@@ -39,7 +39,6 @@
             <version>2.0.0</version>
         </dependency>
 
-
         <!-- JPA + Hibernate -->
         <dependency>
             <groupId>jakarta.persistence</groupId>
@@ -60,7 +59,7 @@
             <version>2.2.224</version>
         </dependency>
 
-        <!-- Testing con JUnit 4 + Mockito -->
+        <!-- ✅ Testing con JUnit 4 + Mockito -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -75,6 +74,7 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
 
     <build>
         <testSourceDirectory>src/test/java</testSourceDirectory>

@@ -140,8 +140,14 @@
                                                    title="Ver tareas pendientes">
                                                     📋 Tareas
                                                 </a>
-                                                <!-- Incentives/history hidden from GUI -->
                                                 <c:if test="${sessionScope.viewRole == 'JEFE'}">
+                                                    <a href="${pageContext.request.contextPath}/miembros?action=toggleFreeze&id=${miembro.id}"
+                                                       class="btn btn-sm btn-outline" title="Proteger racha">
+                                                        <c:choose>
+                                                            <c:when test="${miembro.rachaCongelada}">❄️ Descongelar</c:when>
+                                                            <c:otherwise>❄️ Proteger Racha</c:otherwise>
+                                                        </c:choose>
+                                                    </a>
                                                     <a href="${pageContext.request.contextPath}/miembros?action=delete&id=${miembro.id}"
                                                        class="btn btn-sm btn-outline" style="color:#fca5a5; border-color: rgba(239,68,68,0.35);"
                                                        onclick="return confirm('¿Eliminar al miembro ${miembro.nombre}? Esta acción es irreversible.');"

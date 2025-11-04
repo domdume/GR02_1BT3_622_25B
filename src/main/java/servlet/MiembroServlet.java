@@ -51,6 +51,9 @@ public class MiembroServlet extends HttpServlet {
             case "tasks":
                 showTasks(request, response);
                 break;
+            case "toggleFreeze":
+                toggleFreeze(request, response);
+                break;
             default:
                 listMiembros(request, response);
                 break;
@@ -207,5 +210,29 @@ public class MiembroServlet extends HttpServlet {
         request.setAttribute("miembro", miembro);
         request.setAttribute("listaQuehaceres", miembro.getQuehaceres());
         request.getRequestDispatcher("/miembros/tasks.jsp").forward(request, response);
+    }
+
+    private void toggleFreeze(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String idStr = request.getParameter("id");
+        if (idStr == null) {
+            request.getSession().setAttribute("errorMessage", "Miembro no especificado.");
+            response.sendRedirect(request.getContextPath() + "/miembros");
+            return;
+        }
+        try {
+            Long id = Long.parseLong(idStr);
+            MiembroHogar m = miembroHogarDAO.findById(id);
+            if (m == null) {
+                request.getSession().setAttribute("errorMessage", "Miembro no encontrado.");
+            } else {
+                boolean nuevoEstado = !m.getRachaCongelada();
+                m.setRachaCongelada(nuevoEstado);
+                miembroHogarDAO.update(m);
+                request.getSession().setAttribute("successMessage", nuevoEstado ? "Racha protegida ❄️" : "Racha descongelada");
+            }
+        } catch (NumberFormatException e) {
+            request.getSession().setAttribute("errorMessage", "ID inválido.");
+        }
+        response.sendRedirect(request.getContextPath() + "/miembros");
     }
 }
