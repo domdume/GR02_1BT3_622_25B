@@ -1,9 +1,9 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 
-<c:if test="${not empty sessionScope.achievementMessage}">
+<c:if test="${not empty sessionScope.achievementMessage && sessionScope.achievementTipo == 'LOGRO_RACHA'}">
     <div class="achievement-toast">
-        <div class="achievement-icon">🏆</div>
+        <div class="achievement-icon">🔥</div>
         <div class="achievement-content">
             <div class="achievement-title">
                 <c:choose>
@@ -24,5 +24,5 @@
     </script>
     <c:remove var="achievementMessage" scope="session"/>
     <c:remove var="achievementLogroId" scope="session"/>
+    <c:remove var="achievementTipo" scope="session"/>
 </c:if>
-

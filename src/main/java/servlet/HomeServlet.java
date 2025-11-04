@@ -11,6 +11,9 @@ import model.MiembroHogar;
 import model.Quehacer;
 import model.EstadoQuehacer;
 import service.LigaService;
+import jakarta.persistence.EntityManager; // added
+import util.JPAUtil; // added
+import model.Logro; // added
 
 import java.io.IOException;
 import java.util.*;
@@ -41,6 +44,23 @@ public class HomeServlet extends HttpServlet {
 
         System.out.println("[DEBUG HomeServlet] Quehaceres cargados: " + listaQuehaceres.size());
         System.out.println("[DEBUG HomeServlet] Miembros cargados: " + listaMiembros.size());
+
+        // NUEVO: Cargar logros existentes y agruparlos por miembro
+        List<Logro> listaLogros = java.util.Collections.emptyList();
+        Map<Long, List<Logro>> logrosPorMiembro = new HashMap<>();
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            listaLogros = em.createQuery("SELECT a FROM Logro a LEFT JOIN FETCH a.miembro", Logro.class).getResultList();
+            for (Logro a : listaLogros) {
+                if (a.getMiembro() != null && a.getMiembro().getId() != null) {
+                    logrosPorMiembro.computeIfAbsent(a.getMiembro().getId(), k -> new ArrayList<>()).add(a);
+                }
+            }
+        } catch (Exception ex) {
+            System.err.println("[WARN] No se pudieron cargar logros: " + ex.getMessage());
+        } finally {
+            em.close();
+        }
 
         // Actualizar ligas basadas en puntos actuales antes de calcular tops
         for (MiembroHogar m : listaMiembros) {
@@ -151,6 +171,9 @@ public class HomeServlet extends HttpServlet {
         request.setAttribute("topBronce", topBronce);
         request.setAttribute("topPlata", topPlata);
         request.setAttribute("topOro", topOro);
+        // NUEVO: logros
+        request.setAttribute("listaLogros", listaLogros);
+        request.setAttribute("logrosPorMiembro", logrosPorMiembro);
 
         request.getRequestDispatcher("/dashboard.jsp").forward(request, response);
     }

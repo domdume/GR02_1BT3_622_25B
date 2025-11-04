@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import repository.JpaAchievementRepository;
 import service.LogroRachaService;
 import service.ServicioRacha;
+import model.TipoLogro; // import enum
 
 import java.io.IOException;
 import java.util.Map;
@@ -49,10 +50,11 @@ public class StreakAchievementServlet extends HttpServlet {
             String logroId = rachaActual >= 7 ? LogroRachaService.LOGRO_RACHA_7 : LogroRachaService.LOGRO_RACHA_3;
             req.getSession().setAttribute("achievementMessage", notificacion.get());
             req.getSession().setAttribute("achievementLogroId", logroId);
+            // Propagar el tipo de logro usando enum para que el front sepa que es LOGRO_RACHA
+            req.getSession().setAttribute("achievementTipo", TipoLogro.LOGRO_RACHA.name());
         }
 
-        // Redirigir a la pantalla de rachas (u otra) para mostrar el toast
-        resp.sendRedirect(req.getContextPath() + "/rachas");
+        // Redirigir al Dashboard en la sección de Logros
+        resp.sendRedirect(req.getContextPath() + "/home#logros");
     }
 }
-

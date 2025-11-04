@@ -212,8 +212,74 @@
                 <a class="btn btn-secondary" href="${pageContext.request.contextPath}/ranking">Ver ranking completo</a>
             </div>
         </section>
+
+        <!-- NUEVO: Sección de Logros -->
+        <section class="section-card" id="logros">
+            <h2>🏅 Logros</h2>
+            <c:choose>
+                <c:when test="${not empty listaMiembros}">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Miembro</th>
+                                    <th>Cantidad de Logros</th>
+                                    <th>Listado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <c:forEach var="m" items="${listaMiembros}">
+                                    <c:set var="items" value="${logrosPorMiembro[m.id]}" />
+                                    <tr>
+                                        <td><c:out value="${m.nombre}" /></td>
+                                        <td><span class="points-badge">${empty items ? 0 : fn:length(items)}</span></td>
+                                        <td>
+                                            <c:choose>
+                                                <c:when test="${empty items}">
+                                                    <span class="status-badge pending">Sin logros aún</span>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <ul style="margin:0; padding-left: 18px;">
+                                                        <c:forEach var="a" items="${items}">
+                                                            <li>
+                                                                <span class="status-badge ${a.tipoLogro == 'LOGRO_RACHA' ? 'completed' : ''}">
+                                                                    <c:choose>
+                                                                        <c:when test="${a.tipoLogro == 'LOGRO_RACHA'}">🔥 Racha</c:when>
+                                                                        <c:otherwise>🏅 ${a.tipoLogro}</c:otherwise>
+                                                                    </c:choose>
+                                                                </span>
+                                                                <span style="margin-left:8px; color: var(--muted);">ID: ${a.logroId}</span>
+                                                            </li>
+                                                        </c:forEach>
+                                                    </ul>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </td>
+                                    </tr>
+                                </c:forEach>
+                            </tbody>
+                        </table>
+                    </div>
+                </c:when>
+                <c:otherwise>
+                    <div class="empty-state">No hay miembros para mostrar logros.</div>
+                </c:otherwise>
+            </c:choose>
+        </section>
     </div>
 </main>
 
 <jsp:include page="common/footer.jsp" />
 <jsp:include page="common/layout-foot.jsp" />
+
+<jsp:include page="/common/achievement-toast.jsp" />
+
+<script>
+// Si la URL trae #logros, hacemos un scroll suave al cargar
+if (window.location.hash === '#logros') {
+    window.addEventListener('load', function(){
+        var el = document.getElementById('logros');
+        if (el) el.scrollIntoView({behavior:'smooth'});
+    });
+}
+</script>
