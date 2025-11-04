@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import service.IncentivoService;
 
 /**
  * Entidad que representa un miembro del hogar.
@@ -38,6 +37,12 @@ public class MiembroHogar implements Observador {
 
     @OneToMany(mappedBy = "miembroHogar", cascade = CascadeType.ALL, orphanRemoval = true)
     private java.util.Set<Incentivo> incentivos;
+
+    @OneToMany(mappedBy = "miembro", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Logro> logros = new ArrayList<>();
+
+    // Contador de tareas completadas (usado por LogroService/repository)
+    private int tareasCompletadas = 0;
 
     private int factorDeCarga; // Campo requerido según diagrama UML
 
@@ -106,11 +111,21 @@ public class MiembroHogar implements Observador {
     }
 
     public List<Incentivo> getIncentivos() {
-    return new java.util.ArrayList<>(incentivos);
+        return new java.util.ArrayList<>(incentivos);
     }
 
     public void setIncentivos(List<Incentivo> incentivos) {
-    this.incentivos = new java.util.HashSet<>(incentivos);
+        this.incentivos = new java.util.HashSet<>(incentivos);
+    }
+
+    public List<Logro> getLogros() {
+        return new ArrayList<>(logros);
+    }
+
+    public void addLogro(Logro logro) {
+        if (logro == null) return;
+        this.logros.add(logro);
+        logro.setMiembro(this);
     }
 
     public void anadirIncentivo(Incentivo incentivo) {
@@ -142,16 +157,16 @@ public class MiembroHogar implements Observador {
 //    public void aumentarFactorDeCarga() { this.factorDeCarga++; }
 //    public void removerQuehacer(Quehacer q) { this.quehaceres.remove(q); }
 //    public int getFactorDeCarga() { return this.factorDeCarga; }
-    
 
-public void asignarQuehacer(Quehacer q) {
+
+    public void asignarQuehacer(Quehacer q) {
         if (q == null) return;
         // Set owning side so JPA persist the relationship
         q.setMiembroHogar(this);
         if (!this.quehaceres.contains(q)) {
             this.quehaceres.add(q);
         }
-    }    
+    }
     public int getPuntos() {
         return puntos;
     }
@@ -159,6 +174,16 @@ public void asignarQuehacer(Quehacer q) {
     public void setPuntos(int puntos) {
         this.puntos = puntos;
     }
+
+    public int getTareasCompletadas() {
+        return tareasCompletadas;
+    }
+
+    public void setTareasCompletadas(int tareasCompletadas) {
+        this.tareasCompletadas = tareasCompletadas;
+    }
+
+
 
 //    // Método según diagrama UML
 //    public void realizarQuehacer(Quehacer q) {
@@ -170,7 +195,5 @@ public void asignarQuehacer(Quehacer q) {
 //            System.out.println("AVISO: " + this.nombre + " no puede realizar una tarea que no tiene asignada.");
 //        }
 //    }
-
-
 
 }

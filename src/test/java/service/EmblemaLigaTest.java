@@ -12,7 +12,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.eq;
 
 /**
  * Tests agrupados para HU3 (T1 y T2). Cada test usa el formato

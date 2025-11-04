@@ -2,7 +2,7 @@ package model;
 
 public enum TipoLogro {
     MEDALLA,
-    EMBLEMA,
-    INSIGNIA,
-    TROFEO
+    LOGRO_RACHA,
+    EMBLEMA
 }
+

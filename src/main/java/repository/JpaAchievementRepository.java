@@ -1,7 +1,7 @@
 package repository;
 
 import model.TipoMedalla;
-import model.TipoLogro;
+// import model.TipoLogro; // unused
 import model.MiembroHogar;
 import model.Logro;
 import util.JPAUtil;
@@ -19,10 +19,10 @@ public class JpaAchievementRepository implements AchievementRepository {
         EntityManager em = JPAUtil.getEntityManager();
         try {
             TypedQuery<Long> query = em.createQuery(
-                "SELECT COUNT(l) FROM Logro l WHERE l.miembro.id = :miembroId AND l.logroId = :logroId",
-                Long.class)
-                .setParameter("miembroId", miembroId)
-                .setParameter("logroId", logroId);
+                            "SELECT COUNT(l) FROM Logro l WHERE l.miembro.id = :miembroId AND l.logroId = :logroId",
+                            Long.class)
+                    .setParameter("miembroId", miembroId)
+                    .setParameter("logroId", logroId);
 
             return query.getSingleResult() > 0;
         } catch (Exception ex) {
@@ -50,7 +50,7 @@ public class JpaAchievementRepository implements AchievementRepository {
             }
 
             Logro logro = new Logro(miembro, logroId);
-            logro.setTipoLogro(obtenerTipoLogro(logroId));
+            //logro.setTipoLogro(obtenerTipoLogro(logroId));
             logro.setNivel(obtenerNivel(logroId));
 
             em.persist(logro);
@@ -102,7 +102,7 @@ public class JpaAchievementRepository implements AchievementRepository {
                 return; // Si el miembro no existe, simplemente retornamos sin lanzar excepción
             }
 
-            miembro.setTareasCompletadas(miembro.getTareasCompletadas() + 1);
+            //miembro.setTareasCompletadas(miembro.getTareasCompletadas() + 1);
             em.merge(miembro);
             tx.commit();
         } catch (Exception ex) {
@@ -117,7 +117,24 @@ public class JpaAchievementRepository implements AchievementRepository {
         }
     }
 
-    private TipoLogro obtenerTipoLogro(String logroId) {
+    @Override
+    public boolean tieneCualquierLogro(Long miembroId) {
+        if (miembroId == null) return false;
+        EntityManager em = JPAUtil.getEntityManager();
+        try {
+            TypedQuery<Long> query = em.createQuery(
+                    "SELECT COUNT(l) FROM Logro l WHERE l.miembro.id = :miembroId",
+                    Long.class)
+                    .setParameter("miembroId", miembroId);
+            return query.getSingleResult() > 0;
+        } catch (Exception ex) {
+            return false;
+        } finally {
+            if (em != null && em.isOpen()) em.close();
+        }
+    }
+
+    /*private TipoLogro obtenerTipoLogro(String logroId) {
         if (logroId == null) return TipoLogro.TROFEO;
 
         if (logroId.startsWith("TAREAS_")) {
@@ -128,7 +145,7 @@ public class JpaAchievementRepository implements AchievementRepository {
             return TipoLogro.INSIGNIA;
         }
         return TipoLogro.TROFEO;
-    }
+    }*/
 
     private TipoMedalla obtenerNivel(String logroId) {
         if (logroId == null) return TipoMedalla.NINGUNA;

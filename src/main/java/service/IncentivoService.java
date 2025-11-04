@@ -3,24 +3,46 @@ package service;
 import dao.IncentivoDAO;
 import dao.MiembroHogarDAO;
 import model.Incentivo;
+import model.Logro;
 import model.MiembroHogar;
 import model.Quehacer;
 import model.TipoIncentivo;
+import java.util.function.Supplier;
 
 public class IncentivoService {
+    /**
+     * Factory used to create IncentivoService instances. By default it constructs a new instance.
+     * Tests can replace this factory to inject a mock without needing constructor interception.
+     */
+    public static Supplier<IncentivoService> factory = IncentivoService::new;
+
+    public static void setFactory(Supplier<IncentivoService> newFactory) {
+        factory = newFactory != null ? newFactory : IncentivoService::new;
+    }
     private final IncentivoDAO incentivoDAO;
     private final LigaService ligaService;
+    private LogroService logroService;
 
     public IncentivoService() {
         this.incentivoDAO = new IncentivoDAO();
         // Inyectar un AchievementRepository JPA por defecto para persistir logros
         this.ligaService = new LigaService();
+        // Inicializar LogroService por defecto para evitar NPEs cuando no se inyecte
+        this.logroService = new LogroService();
+    }
+
+    public IncentivoService(LogroService logroService) {
+        this.incentivoDAO = new IncentivoDAO();
+        this.ligaService = new LigaService();
+        this.logroService = logroService;
     }
 
     // Constructor para testing con mock
     IncentivoService(IncentivoDAO incentivoDAO) {
         this.incentivoDAO = incentivoDAO;
         this.ligaService = new LigaService();
+        // Inicialización por defecto del servicio de logros para entornos de test que no lo pasan
+        this.logroService = new LogroService();
     }
 
     public void aplicarIncentivo(MiembroHogar miembro, Quehacer quehacer) {
@@ -90,10 +112,21 @@ public class IncentivoService {
         MiembroHogarDAO miembroDao = new MiembroHogarDAO();
         model.MiembroHogar miembro = miembroDao.findById(miembroId);
         if (miembro != null) {
+            // Guardar liga anterior para detectar ascenso
+            model.Liga ligaAntes = miembro.getLiga();
             if (recompensa) {
                 ligaService.actualizarPuntos(miembro, puntos);
             } else {
                 ligaService.removerPuntos(miembro, puntos);
+            }
+            // Después de actualizar puntos, verificar si hubo ascenso
+            model.Liga ligaDespues = miembro.getLiga();
+            try {
+                if (ligaAntes != null && ligaDespues != null && ligaDespues.getNivel() > ligaAntes.getNivel()) {
+                    logroService.asignarEmblemaAscenso(miembro, ligaAntes, ligaDespues);
+                }
+            } catch (Exception ex) {
+                System.out.println("[WARN] No se pudo asignar emblema en aplicarIncentivoByIds: " + ex.getMessage());
             }
             miembroDao.update(miembro);
             System.out.println("[IncentivoService] aplicarIncentivoByIds - miembroId=" + miembroId + " puntos actualizados a " + miembro.getPuntos());
@@ -112,10 +145,22 @@ public class IncentivoService {
         incentivo.setPuntos(puntos);
         incentivo.setDescripcion("Completado a tiempo: " + quehacer.getNombre());
         int antes = miembro.getPuntos();
+        // Guardar liga anterior antes de aplicar puntos
+        model.Liga ligaAntes = miembro.getLiga();
         // Usar el servicio de ligas para aplicar puntos y recalcular liga
         ligaService.actualizarPuntos(miembro, puntos);
         int despues = miembro.getPuntos();
+        model.Liga ligaDespues = miembro.getLiga();
         System.out.println("👍 ¡Felicidades! " + miembro.getNombre() + " terminó '" + quehacer.getNombre() + "' a tiempo. Puntos añadidos: " + puntos + " (" + antes + " -> " + despues + ")");
+
+        // Si el miembro ascendió, delegar en LogroService para asignar y persistir el emblema correspondiente
+        try {
+            if (ligaAntes != null && ligaDespues != null && ligaDespues.getNivel() > ligaAntes.getNivel()) {
+                logroService.asignarEmblemaAscenso(miembro, ligaAntes, ligaDespues);
+            }
+        } catch (Exception ex) {
+            System.out.println("[WARN] No se pudo asignar emblema de ascenso: " + ex.getMessage());
+        }
     }
 
     private void crearPenalizacion(Incentivo incentivo, MiembroHogar miembro, Quehacer quehacer) {
