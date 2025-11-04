@@ -20,8 +20,10 @@
                         📋 Quehaceres</a></li>
                         <li><a href="${pageContext.request.contextPath}/rachas"
                            class="${pageContext.request.requestURI.contains('/rachas') ? 'active' : ''}">🔥 Rachas</a></li>
-                    <li><a href="${pageContext.request.contextPath}/ranking"
-                           class="${pageContext.request.requestURI.contains('/ranking') ? 'active' : ''}">🏆 Ranking</a></li>
+                    <li>
+                        <a href="${pageContext.request.contextPath}/ranking"
+                           class="${pageContext.request.requestURI.contains('/ranking') ? 'active' : ''}">🏆 Ranking</a>
+                    </li>
                 </ul>
             </nav>
         </div>
