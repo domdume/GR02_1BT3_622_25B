@@ -3,6 +3,7 @@ package service;
 import dao.IncentivoDAO;
 import dao.MiembroHogarDAO;
 import model.Incentivo;
+import model.Liga;
 import model.MiembroHogar;
 import model.Quehacer;
 import model.TipoIncentivo;
@@ -10,17 +11,30 @@ import model.TipoIncentivo;
 public class IncentivoService {
     private final IncentivoDAO incentivoDAO;
     private final LigaService ligaService;
+    private final IEmblemaService emblemaService;
+    private final MiembroHogarDAO miembroHogarDAO;
 
     public IncentivoService() {
         this.incentivoDAO = new IncentivoDAO();
-        // Inyectar un AchievementRepository JPA por defecto para persistir logros
         this.ligaService = new LigaService();
+        this.emblemaService = null; // Sin servicio de emblemas por defecto
+        this.miembroHogarDAO = new MiembroHogarDAO();
     }
 
-    // Constructor para testing con mock
-    IncentivoService(IncentivoDAO incentivoDAO) {
+    // Constructor para testing con mocks
+    public IncentivoService(IEmblemaService emblemaService, IncentivoDAO incentivoDAO, MiembroHogarDAO miembroHogarDAO) {
         this.incentivoDAO = incentivoDAO;
         this.ligaService = new LigaService();
+        this.emblemaService = emblemaService;
+        this.miembroHogarDAO = miembroHogarDAO;
+    }
+
+    // Constructor para testing con mock de EmblemaService
+    public IncentivoService(IEmblemaService emblemaService) {
+        this.incentivoDAO = new IncentivoDAO();
+        this.ligaService = new LigaService();
+        this.emblemaService = emblemaService;
+        this.miembroHogarDAO = new MiembroHogarDAO();
     }
 
     public void aplicarIncentivo(MiembroHogar miembro, Quehacer quehacer) {
@@ -47,7 +61,7 @@ public class IncentivoService {
     // Después de persistir, actualizar la liga (ya lo hacemos dentro de crearRecompensa/crearPenalizacion)
         // Persistir el miembro para que los cambios de puntos y liga se reflejen en la BD
         try {
-            new MiembroHogarDAO().update(miembro);
+            miembroHogarDAO.update(miembro);
         } catch (Exception e) {
             System.out.println("[ERROR] No se pudo persistir MiembroHogar tras aplicar incentivo: " + e.getMessage());
             e.printStackTrace();
@@ -112,10 +126,31 @@ public class IncentivoService {
         incentivo.setPuntos(puntos);
         incentivo.setDescripcion("Completado a tiempo: " + quehacer.getNombre());
         int antes = miembro.getPuntos();
+        Liga ligaAntes = miembro.getLiga();
         // Usar el servicio de ligas para aplicar puntos y recalcular liga
         ligaService.actualizarPuntos(miembro, puntos);
         int despues = miembro.getPuntos();
+        Liga ligaDespues = miembro.getLiga();
+
         System.out.println("👍 ¡Felicidades! " + miembro.getNombre() + " terminó '" + quehacer.getNombre() + "' a tiempo. Puntos añadidos: " + puntos + " (" + antes + " -> " + despues + ")");
+
+        // Si tenemos servicio de emblemas
+        if (emblemaService != null) {
+            // Caso: primera liga (antes no tenía puntos/liga significativo)
+            // Nota: MiembroHogar puede inicializar la liga por defecto a BRONCE,
+            // por lo que detectamos "primera liga" también cuando los puntos antes eran 0.
+            if ((ligaAntes == null || antes == 0) && ligaDespues != null) {
+                emblemaService.asignarEmblemaAprendiz(miembro.getId());
+            }
+            // Si hubo ascenso de liga, notificar
+            else if (ligaAntes != null && ligaDespues != null && ligaDespues.ordinal() > ligaAntes.ordinal()) {
+                emblemaService.asignarEmblemaAscenso(
+                    miembro.getId(),
+                    ligaAntes.name(),
+                    ligaDespues.name()
+                );
+            }
+        }
     }
 
     private void crearPenalizacion(Incentivo incentivo, MiembroHogar miembro, Quehacer quehacer) {
@@ -133,5 +168,12 @@ public class IncentivoService {
         ligaService.removerPuntos(miembro, puntos);
         int despues = miembro.getPuntos();
         System.out.println("👎 Lástima, " + miembro.getNombre() + " se retrasó con '" + quehacer.getNombre() + "'. Penalización: -" + puntos + " puntos. (" + antes + " -> " + despues + ")");
+    }
+
+    private String obtenerEmblemaPorAscenso(Liga anterior, Liga nueva) {
+        if (anterior == Liga.BRONCE && nueva == Liga.PLATA) return "Explorador Persistente";
+        if (anterior == Liga.PLATA && nueva == Liga.ORO) return "Maestro de los Quehaceres";
+        // Si se requiere asignar una insignia por primera vez en Bronce, se podría manejar aquí
+        return null;
     }
 }
