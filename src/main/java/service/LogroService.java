@@ -136,6 +136,26 @@ public class LogroService {
 
     }
 
+    public Logro verificarLogro(MiembroHogar miembro) {
+        // Si ya tiene una medalla, no se le da otra
+        boolean yaTieneMedalla = miembro.getLogros().stream()
+                .anyMatch(l -> l.getTipo() == TipoLogro.MEDALLA);
+
+        if (yaTieneMedalla) {
+            return null;
+        }
+
+        // Si completó más de 10 tareas, se le otorga la medalla
+        if (miembro.getTareasCompletadas() >= 10) {
+            Logro medalla = new Logro();
+            medalla.setTipoLogro(TipoLogro.MEDALLA);
+            miembro.addLogro(medalla);
+            return medalla;
+        }
+
+        return null;
+    }
+
     // DTO simple para notificar tipo y mensaje del logro
     public static class AchievementNotification {
         private final String logroId;

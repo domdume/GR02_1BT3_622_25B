@@ -1,11 +1,14 @@
 package service;
 
 
+import model.Logro;
 import model.MiembroHogar;
 import model.TipoLogro;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.mockito.Mockito;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -17,6 +20,8 @@ public class LogroServiceTest {
 
     private final int tareasCompletadas;
     private final boolean debeRecibirMedalla;
+    private LogroService logroService;
+
 
     public LogroServiceTest(int tareasCompletadas, boolean debeRecibirMedalla) {
         this.tareasCompletadas = tareasCompletadas;
@@ -47,6 +52,27 @@ public class LogroServiceTest {
 
         assertEquals("El resultado no coincide para " + tareasCompletadas + " tareas",
                 debeRecibirMedalla, tieneMedalla);
+    }
+    @Before
+    public void setUp() {
+        logroService = new LogroService();
+    }
+
+    @Test
+    public void dado_MiembroYaTieneMedalla_Cuando_CompletaMasTareas_Entonces_NoOtorgaMedallaDuplicada() {
+        // Arrange
+        MiembroHogar miembro = new MiembroHogar("Mateo", 20);
+        miembro.setTareasCompletadas(12);
+        Logro logroExistente = new Logro();
+        logroExistente.setTipoLogro(TipoLogro.MEDALLA);
+        miembro.addLogro(logroExistente);
+
+        // Act
+        Logro nuevoLogro = logroService.verificarLogro(miembro);
+
+        // Assert
+        assertNull("No debe otorgarse otra medalla si el miembro ya tiene una", nuevoLogro);
+        assertEquals("Debe seguir teniendo solo una medalla", 1, miembro.getLogros().size());
     }
 
 }
