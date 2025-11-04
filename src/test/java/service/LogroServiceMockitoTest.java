@@ -19,7 +19,7 @@ import static org.mockito.Mockito.*;
 /**
  * Pruebas unitarias para LogroService usando JUnit 4 y Mockito.
  */
-public class LogroServiceMockTest {
+public class LogroServiceMockitoTest {
 
     // 1. Reemplaza @ExtendWith(MockitoExtension.class)
     //    por la regla @Rule de JUnit 4 y Mockito.
