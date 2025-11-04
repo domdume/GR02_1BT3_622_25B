@@ -1,6 +1,8 @@
 package repository;
 
 public interface AchievementRepository {
-    void guardarLogro(Long miembroId, String codigoLogro);
-    boolean tieneLogro(Long miembroId, String codigoLogro);
+    boolean tieneLogro(Long miembroId, String logroId);
+    void guardarLogro(Long miembroId, String logroId);
+    int obtenerTareasCompletadas(Long miembroId);
+    void incrementarContadorTareas(Long miembroId);
 }

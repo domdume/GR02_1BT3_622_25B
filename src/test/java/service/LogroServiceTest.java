@@ -62,4 +62,19 @@ public class LogroServiceTest {
         verify(mockRepository, never()).guardarLogro(eq(miembroId), eq("TAREAS_5"));
         verifyNoMoreInteractions(mockRepository);
     }
+
+    @Test
+    public void dado_ContadorEnCero_Cuando_CompletaPrimeraTarea_Entonces_ContadorEsUno() {
+        // Arrange
+        Long miembroId = 1L;
+        when(mockRepository.obtenerTareasCompletadas(miembroId)).thenReturn(0);
+
+        // Act
+        logroService.registrarTareaCompletada(miembroId);
+
+        // Assert
+        verify(mockRepository).incrementarContadorTareas(miembroId);
+        verify(mockRepository).obtenerTareasCompletadas(miembroId);
+        verifyNoMoreInteractions(mockRepository);
+    }
 }

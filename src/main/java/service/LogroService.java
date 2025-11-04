@@ -10,6 +10,14 @@ public class LogroService {
         this.achievementRepository = achievementRepository;
     }
 
+    public void registrarTareaCompletada(Long miembroId) {
+        if (miembroId == null) return;
+
+        int tareasCompletadas = achievementRepository.obtenerTareasCompletadas(miembroId);
+        achievementRepository.incrementarContadorTareas(miembroId);
+        verificarLogroPorTareas(miembroId, tareasCompletadas + 1);
+    }
+
     public TipoMedalla verificarLogroPorTareas(Long miembroId, int tareasCompletadas) {
         TipoMedalla nivelMasAlto = TipoMedalla.NINGUNA;
 
