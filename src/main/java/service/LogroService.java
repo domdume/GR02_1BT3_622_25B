@@ -13,15 +13,17 @@ public class LogroService {
     public TipoMedalla verificarLogroPorTareas(Long miembroId, int tareasCompletadas) {
         TipoMedalla nivelMasAlto = TipoMedalla.NINGUNA;
 
-        // Verificar logro de 5 tareas
+        // Verificar logros en orden ascendente de tareas requeridas
         if (tareasCompletadas >= 5 && !achievementRepository.tieneLogro(miembroId, "TAREAS_5")) {
             achievementRepository.guardarLogro(miembroId, "TAREAS_5");
         }
 
-        // Verificar logro de 10 tareas
-        if (tareasCompletadas >= 10 && !achievementRepository.tieneLogro(miembroId, "TAREAS_10")) {
-            achievementRepository.guardarLogro(miembroId, "TAREAS_10");
-            nivelMasAlto = TipoMedalla.BRONCE;
+        // Solo verificar el siguiente nivel si cumple con la cantidad de tareas
+        if (tareasCompletadas >= 10) {
+            if (!achievementRepository.tieneLogro(miembroId, "TAREAS_10")) {
+                achievementRepository.guardarLogro(miembroId, "TAREAS_10");
+                nivelMasAlto = TipoMedalla.BRONCE;
+            }
         }
 
         return nivelMasAlto;

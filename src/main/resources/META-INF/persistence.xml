@@ -12,6 +12,7 @@
         <class>model.TipoIncentivo</class>
         <class>model.Dificultad</class>
         <class>model.LogroMiembro</class>
+        <class>model.Logro</class>
         <properties>
             <property name="jakarta.persistence.jdbc.driver" value="org.h2.Driver" />
             <property name="jakarta.persistence.jdbc.url" value="jdbc:h2:./data/testdb" />

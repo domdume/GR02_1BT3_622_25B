@@ -4,6 +4,7 @@ import model.LogroMiembro;
 import model.TipoMedalla;
 import model.TipoLogro;
 import model.MiembroHogar;
+import model.Logro;
 import util.JPAUtil;
 
 import jakarta.persistence.EntityManager;
@@ -13,15 +14,17 @@ public class JpaAchievementRepository implements AchievementRepository {
 
     @Override
     public boolean tieneLogro(Long miembroId, String logroId) {
+        if (miembroId == null || logroId == null) return false;
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            return em.createQuery(
-                    "SELECT COUNT(l) FROM LogroMiembro l WHERE l.miembro.id = :miembroId AND l.logroId = :logroId",
+            Long count = em.createQuery(
+                    "SELECT COUNT(l) FROM Logro l WHERE l.miembro.id = :miembroId AND l.logroId = :logroId",
                     Long.class)
                     .setParameter("miembroId", miembroId)
                     .setParameter("logroId", logroId)
-                    .getSingleResult() > 0;
-        } catch (NoResultException e) {
+                    .getSingleResult();
+            return count != null && count > 0;
+        } catch (Exception ex) {
             return false;
         } finally {
             em.close();
@@ -30,19 +33,27 @@ public class JpaAchievementRepository implements AchievementRepository {
 
     @Override
     public void guardarLogro(Long miembroId, String logroId) {
-        if (!tieneLogro(miembroId, logroId)) {
-            EntityManager em = JPAUtil.getEntityManager();
-            try {
-                em.getTransaction().begin();
-                MiembroHogar miembro = em.find(MiembroHogar.class, miembroId);
-                if (miembro != null) {
-                    LogroMiembro logroMiembro = new LogroMiembro(miembro, logroId, obtenerTipoLogro(logroId), obtenerNivel(logroId));
-                    em.persist(logroMiembro);
-                    em.getTransaction().commit();
-                }
-            } finally {
-                em.close();
-            }
+        if (miembroId == null || logroId == null) return;
+        if (tieneLogro(miembroId, logroId)) return; // Evitar duplicados
+
+        EntityManager em = JPAUtil.getEntityManager();
+        var tx = em.getTransaction();
+        try {
+            tx.begin();
+            MiembroHogar miembro = em.find(MiembroHogar.class, miembroId);
+            if (miembro == null) throw new NoResultException("Miembro no encontrado: " + miembroId);
+
+            Logro logro = new Logro(miembro, logroId);
+            logro.setTipoLogro(obtenerTipoLogro(logroId));
+            logro.setNivel(obtenerNivel(logroId));
+
+            em.persist(logro);
+            tx.commit();
+        } catch (Exception ex) {
+            if (tx.isActive()) tx.rollback();
+            throw ex;
+        } finally {
+            em.close();
         }
     }
 
