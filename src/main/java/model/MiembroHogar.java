@@ -142,7 +142,7 @@ public class MiembroHogar implements Observador {
 //    public void aumentarFactorDeCarga() { this.factorDeCarga++; }
 //    public void removerQuehacer(Quehacer q) { this.quehaceres.remove(q); }
 //    public int getFactorDeCarga() { return this.factorDeCarga; }
-    
+    //Subir todo
 
 public void asignarQuehacer(Quehacer q) {
         if (q == null) return;
