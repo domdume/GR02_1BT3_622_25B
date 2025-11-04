@@ -48,20 +48,26 @@
                                             <small>ID: ${miembro.id}</small>
                                         </td>
 
-                                        <%-- preparar nombres para cada tipo de logro (si existen) --%>
+                                        <%-- preparar nombres y tipos para cada tipo de logro (si existen) --%>
                                         <c:set var="medallaNombre" value="" />
                                         <c:set var="rachaNombre" value="" />
                                         <c:set var="emblemaNombre" value="" />
+                                        <c:set var="medallaTipo" value="" />
+                                        <c:set var="rachaTipo" value="" />
+                                        <c:set var="emblemaTipo" value="" />
                                         <c:forEach var="l" items="${miembro.logros}">
                                             <c:choose>
                                                 <c:when test="${l.tipoLogro != null and l.tipoLogro.name() == 'MEDALLA'}">
                                                     <c:set var="medallaNombre" value="${l.nombre}" />
+                                                    <c:set var="medallaTipo" value="${l.tipoLogro}" />
                                                 </c:when>
                                                 <c:when test="${l.tipoLogro != null and l.tipoLogro.name() == 'LOGRO_RACHA'}">
                                                     <c:set var="rachaNombre" value="${l.nombre}" />
+                                                    <c:set var="rachaTipo" value="${l.tipoLogro}" />
                                                 </c:when>
                                                 <c:when test="${l.tipoLogro != null and l.tipoLogro.name() == 'EMBLEMA'}">
                                                     <c:set var="emblemaNombre" value="${l.nombre}" />
+                                                    <c:set var="emblemaTipo" value="${l.tipoLogro}" />
                                                 </c:when>
                                             </c:choose>
                                         </c:forEach>
@@ -70,6 +76,7 @@
                                         <td class="center">
                                             <c:if test="${not empty medallaNombre}">
                                                 <span class="badge achievement medalla">🏅 ${medallaNombre}</span>
+                                                <div class="muted small">Tipo: ${medallaTipo}</div>
                                             </c:if>
                                             <c:if test="${empty medallaNombre}">
                                                 <span class="muted">Debes trabajar duro para conseguir un logro</span>
@@ -79,6 +86,7 @@
                                         <td class="center">
                                             <c:if test="${not empty rachaNombre}">
                                                 <span class="badge achievement racha">🔥 ${rachaNombre}</span>
+                                                <div class="muted small">Tipo: ${rachaTipo}</div>
                                             </c:if>
                                             <c:if test="${empty rachaNombre}">
                                                 <span class="muted">Debes trabajar duro para conseguir un logro</span>
@@ -88,6 +96,7 @@
                                         <td class="center">
                                             <c:if test="${not empty emblemaNombre}">
                                                 <span class="badge achievement emblema">🎖️ ${emblemaNombre}</span>
+                                                <div class="muted small">Tipo: ${emblemaTipo}</div>
                                             </c:if>
                                             <c:if test="${empty emblemaNombre}">
                                                 <span class="muted">Debes trabajar duro para conseguir un logro</span>
