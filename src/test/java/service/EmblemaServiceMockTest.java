@@ -13,7 +13,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
-public class IncentivoServiceMockTest {
+public class EmblemaServiceMockTest {
 
     @Test
     public void dado_AscensoDeLiga_Cuando_ActualizaPuntos_Entonces_IncentivoServiceEsLlamado() {
