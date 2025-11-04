@@ -5,13 +5,16 @@ import repository.JpaAchievementRepository;
 import model.MiembroHogar;
 import model.Liga;
 
+import java.util.Optional;
+
 /**
  * Servicio para gestionar la lógica de logros.
  * Se proporciona un constructor por defecto que crea un repository JPA
  * para que los métodos no lancen NullPointerException si se usa el ctor vacío.
  */
 public class LogroService {
-
+    public static final String LOGRO_RACHA_3 = "LOGRO_3";
+    public static final String LOGRO_RACHA_7 = "LOGRO_7";
     private final AchievementRepository achievementRepository;
 
     public LogroService() {
@@ -54,6 +57,41 @@ public class LogroService {
             System.out.println("[ERROR] asignarEmblemaAscenso: " + ex.getMessage());
         }
     }
+    /**
+     * Verifica y asigna, si corresponde, el logro de racha alcanzado.
+     * Regla de precedencia: si racha >= 7, se evalúa primero el logro de 7 días
+     * y no se otorga el de 3 días en el mismo evento. Si no aplica 7, se evalúa 3.
+     *
+     * @param miembroId  id del miembro
+     * @param rachaActual racha actual calculada externamente
+     * @return mensaje opcional con la notificación a mostrar
+     */
+    public Optional<String> verificarYAsignarLogroRacha(Long miembroId, int rachaActual) {
+        if (miembroId == null) return Optional.empty();
+        if (rachaActual >= 7) {
+            if (!achievementRepository.tieneLogro(miembroId, LOGRO_RACHA_7)) {
+                achievementRepository.guardarLogro(miembroId, LOGRO_RACHA_7);
+                return Optional.of(mensajeLogro7());
+            }
+            // Si ya tenía el de 7, no otorgar el de 3 en este evento
+            return Optional.empty();
+        }
+        if (rachaActual >= 3) {
+            if (!achievementRepository.tieneLogro(miembroId, LOGRO_RACHA_3)) {
+                achievementRepository.guardarLogro(miembroId, LOGRO_RACHA_3);
+                return Optional.of(mensajeLogro3());
+            }
+            return Optional.empty();
+        }
+        return Optional.empty();
+    }
 
+    public String mensajeLogro3() {
+        return "¡Felicidades!, Ha ganado el logro “Chispazo”";
+    }
+
+    public String mensajeLogro7() {
+        return "¡Increíble! Ha ganado el logro “Semana Perfecta”";
+    }
 
 }
