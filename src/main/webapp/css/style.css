@@ -179,6 +179,10 @@ body.default-page nav a:hover {
 .penalty-badge { background: rgba(239,68,68,0.15); color:#fca5a5; border-color: rgba(239,68,68,0.35); }
 .role-badge.jefe { background: rgba(245,158,11,0.15); color:#fbbf24; border-color: rgba(245,158,11,0.35); }
 
+/* Emblem badge */
+.emblema-badge { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:800; letter-spacing:.2px; background: rgba(245,158,11,0.12); color: #fbbf24; border:1px solid rgba(245,158,11,0.28); margin-right:6px; }
+.emblems-cell { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+
 /* Members */
 .members-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
 .member-card { padding: 16px; }

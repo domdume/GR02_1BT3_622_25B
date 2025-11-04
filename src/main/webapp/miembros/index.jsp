@@ -67,6 +67,7 @@
                                     <th>Edad</th>
                                     <th>Rol</th>
                                     <th>Puntos</th>
+                                    <th>Emblema</th>
                                     <th>Tareas</th>
                                     <th>Estado Observer</th>
                                     <th>Acciones</th>
@@ -110,19 +111,18 @@
                                             </span>
                                         </td>
                                         <td>
-                                            <div class="tasks-summary">
-                                                <span class="task-count">${fn:length(miembro.quehaceres)} tareas</span>
-                                                <c:if test="${fn:length(miembro.quehaceres) > 0}">
-                                                    <small class="task-details">
-                                                        <c:set var="completadas" value="0" />
-                                                        <c:forEach var="quehacer" items="${miembro.quehaceres}">
-                                                            <c:if test="${quehacer.completado}">
-                                                                <c:set var="completadas" value="${completadas + 1}" />
-                                                            </c:if>
+                                            <div class="emblems-cell">
+                                                <c:set var="emblemas" value="${emblemasPorMiembro[miembro.id]}" />
+                                                <c:choose>
+                                                    <c:when test="${not empty emblemas}">
+                                                        <c:forEach var="e" items="${emblemas}">
+                                                            <span class="emblema-badge">🏅 <c:out value="${e}"/></span>
                                                         </c:forEach>
-                                                        ${completadas} completadas
-                                                    </small>
-                                                </c:if>
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <span class="muted">—</span>
+                                                    </c:otherwise>
+                                                </c:choose>
                                             </div>
                                         </td>
                                         <td>

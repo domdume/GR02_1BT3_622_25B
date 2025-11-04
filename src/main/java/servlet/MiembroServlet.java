@@ -1,6 +1,7 @@
 package servlet;
 
 import dao.MiembroHogarDAO;
+import service.EmblemaService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -107,6 +108,20 @@ public class MiembroServlet extends HttpServlet {
         }
         
         request.setAttribute("listaMiembros", listaMiembros); // Pasa los datos al JSP
+        // Preparar emblemas (servicio en memoria). Esto permite mostrar badges en la vista.
+        try {
+            EmblemaService emblemaService = new EmblemaService();
+            java.util.Map<Long, java.util.Set<String>> emblemasPorMiembro = new java.util.HashMap<>();
+            if (listaMiembros != null) {
+                for (MiembroHogar miembro : listaMiembros) {
+                    emblemasPorMiembro.put(miembro.getId(), emblemaService.obtenerEmblemas(miembro.getId()));
+                }
+            }
+            request.setAttribute("emblemasPorMiembro", emblemasPorMiembro);
+        } catch (Exception e) {
+            // No bloquear la vista por errores del servicio de emblemas; simplemente no mostrarlos
+            System.err.println("[MiembroServlet] Error al obtener emblemas: " + e.getMessage());
+        }
         request.getRequestDispatcher("/miembros/index.jsp").forward(request, response); // Redirige al JSP
     }
 
