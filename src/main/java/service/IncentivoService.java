@@ -10,17 +10,26 @@ import model.TipoIncentivo;
 public class IncentivoService {
     private final IncentivoDAO incentivoDAO;
     private final LigaService ligaService;
+    private final LogroService logroService;
 
     public IncentivoService() {
         this.incentivoDAO = new IncentivoDAO();
         // Inyectar un AchievementRepository JPA por defecto para persistir logros
         this.ligaService = new LigaService();
+        this.logroService = new LogroService();
     }
 
     // Constructor para testing con mock
     IncentivoService(IncentivoDAO incentivoDAO) {
         this.incentivoDAO = incentivoDAO;
         this.ligaService = new LigaService();
+        this.logroService = new LogroService();
+    }
+
+    public IncentivoService(LogroService logroService) {
+        this.incentivoDAO = new IncentivoDAO();
+        this.ligaService = new LigaService();
+        this.logroService = logroService;
     }
 
     public void aplicarIncentivo(MiembroHogar miembro, Quehacer quehacer) {

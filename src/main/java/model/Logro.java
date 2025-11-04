@@ -24,9 +24,6 @@ public class Logro {
     @Column(name = "tipo_logro")
     private TipoLogro tipoLogro;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "nivel_medalla")
-    private TipoMedalla nivel;
 
     @Column(name = "tareas_requeridas")
     private int tareasRequeridas;
@@ -44,10 +41,9 @@ public class Logro {
     }
 
     // Constructor completo para crear logros
-    public Logro(String logroId, TipoLogro tipoLogro, TipoMedalla nivel, int tareasRequeridas) {
+    public Logro(String logroId, TipoLogro tipoLogro, int tareasRequeridas) {
         this.logroId = logroId;
         this.tipoLogro = tipoLogro;
-        this.nivel = nivel;
         this.tareasRequeridas = tareasRequeridas;
         this.fechaCreacion = LocalDateTime.now();
     }
@@ -93,13 +89,6 @@ public class Logro {
         this.tipoLogro = tipoLogro;
     }
 
-    public TipoMedalla getNivel() {
-        return nivel;
-    }
-
-    public void setNivel(TipoMedalla nivel) {
-        this.nivel = nivel;
-    }
 
     public int getTareasRequeridas() {
         return tareasRequeridas;
