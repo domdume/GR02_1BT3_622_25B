@@ -6,6 +6,7 @@ import model.Incentivo;
 import model.MiembroHogar;
 import model.Quehacer;
 import org.junit.Test;
+import repository.AchievementRepository;
 
 import java.lang.reflect.Method;
 import java.time.LocalDateTime;
