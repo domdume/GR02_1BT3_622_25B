@@ -71,7 +71,7 @@ public class LigaService {
             return;
         }
 
-        String logroId = "AscensoA" + ligaNueva;
+        String logroId = PREFIJO_LOGRO_ASCENSO + ligaNueva;
 
         // Verificar si YA tiene el logro
         boolean yaTieneLogro = achievementRepository.tieneLogro(miembro.getId(), logroId);
