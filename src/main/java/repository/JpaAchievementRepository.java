@@ -1,9 +1,9 @@
 package repository;
 
-// import model.TipoLogro; // unused
 import model.MiembroHogar;
 import model.Logro;
 import util.JPAUtil;
+import model.TipoLogro;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
@@ -27,7 +27,7 @@ public class JpaAchievementRepository implements AchievementRepository {
         } catch (Exception ex) {
             return false;
         } finally {
-            if (em != null && em.isOpen()) {
+            if (em.isOpen()) {
                 em.close();
             }
         }
@@ -49,7 +49,8 @@ public class JpaAchievementRepository implements AchievementRepository {
             }
 
             Logro logro = new Logro(miembro, logroId);
-            //logro.setTipoLogro(obtenerTipoLogro(logroId));
+            // Asignar tipo de logro basado en su identificador
+            logro.setTipoLogro(obtenerTipoLogro(logroId));
             //logro.setNivel(obtenerNivel(logroId));
 
             em.persist(logro);
@@ -60,7 +61,7 @@ public class JpaAchievementRepository implements AchievementRepository {
             }
             throw new RuntimeException("Error al guardar el logro: " + ex.getMessage(), ex);
         } finally {
-            if (em != null && em.isOpen()) {
+            if (em.isOpen()) {
                 em.close();
             }
         }
@@ -96,7 +97,7 @@ public class JpaAchievementRepository implements AchievementRepository {
             }
             throw new RuntimeException("Error al incrementar contador: " + ex.getMessage(), ex);
         } finally {
-            if (em != null && em.isOpen()) {
+            if (em.isOpen()) {
                 em.close();
             }
         }
@@ -115,20 +116,22 @@ public class JpaAchievementRepository implements AchievementRepository {
         } catch (Exception ex) {
             return false;
         } finally {
-            if (em != null && em.isOpen()) em.close();
+            if (em.isOpen()) em.close();
         }
     }
 
-    /*private TipoLogro obtenerTipoLogro(String logroId) {
-        if (logroId == null) return TipoLogro.TROFEO;
-
-        if (logroId.startsWith("TAREAS_")) {
-            return TipoLogro.MEDALLA;
-        } else if (logroId.startsWith("STREAK_")) {
+    // Mapea el identificador del logro a su tipo correspondiente
+    private TipoLogro obtenerTipoLogro(String logroId) {
+        if (logroId == null) return null;
+        // Emblemas por ascenso de liga
+        if (logroId.startsWith("EMBLEMA_")) {
             return TipoLogro.EMBLEMA;
-        } else if (logroId.startsWith("POINTS_")) {
-            return TipoLogro.INSIGNIA;
         }
-        return TipoLogro.TROFEO;
-    }*/
+        // Logros de racha
+        if (logroId.startsWith("LOGRO_")) {
+            return TipoLogro.LOGRO_RACHA;
+        }
+        // Por defecto, considerar como medalla
+        return TipoLogro.MEDALLA;
+    }
 }

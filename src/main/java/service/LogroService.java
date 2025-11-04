@@ -4,6 +4,7 @@ import repository.AchievementRepository;
 import repository.JpaAchievementRepository;
 import model.MiembroHogar;
 import model.Liga;
+import model.TipoLogro;
 
 import java.util.Optional;
 
@@ -50,8 +51,6 @@ public class LogroService {
                 // Plata -> Oro
                 String logroId = "EMBLEMA_MAESTRO_QUEHACERES";
                 achievementRepository.guardarLogro(miembroId, logroId);
-            } else {
-                // Otros ascensos no mapeados explícitamente por ahora
             }
         } catch (Exception ex) {
             System.out.println("[ERROR] asignarEmblemaAscenso: " + ex.getMessage());
@@ -86,6 +85,26 @@ public class LogroService {
         return Optional.empty();
     }
 
+    // Variante que también devuelve el tipo de logro ganado
+    public Optional<AchievementNotification> verificarYAsignarLogroRachaConTipo(Long miembroId, int rachaActual) {
+        if (miembroId == null) return Optional.empty();
+        if (rachaActual >= 7) {
+            if (!achievementRepository.tieneLogro(miembroId, LOGRO_RACHA_7)) {
+                achievementRepository.guardarLogro(miembroId, LOGRO_RACHA_7);
+                return Optional.of(new AchievementNotification(LOGRO_RACHA_7, TipoLogro.LOGRO_RACHA, mensajeLogro7()));
+            }
+            return Optional.empty();
+        }
+        if (rachaActual >= 3) {
+            if (!achievementRepository.tieneLogro(miembroId, LOGRO_RACHA_3)) {
+                achievementRepository.guardarLogro(miembroId, LOGRO_RACHA_3);
+                return Optional.of(new AchievementNotification(LOGRO_RACHA_3, TipoLogro.LOGRO_RACHA, mensajeLogro3()));
+            }
+            return Optional.empty();
+        }
+        return Optional.empty();
+    }
+
     public String mensajeLogro3() {
         return "¡Felicidades!, Ha ganado el logro “Chispazo”";
     }
@@ -94,4 +113,20 @@ public class LogroService {
         return "¡Increíble! Ha ganado el logro “Semana Perfecta”";
     }
 
+    // DTO simple para notificar tipo y mensaje del logro
+    public static class AchievementNotification {
+        private final String logroId;
+        private final TipoLogro tipo;
+        private final String mensaje;
+
+        public AchievementNotification(String logroId, TipoLogro tipo, String mensaje) {
+            this.logroId = logroId;
+            this.tipo = tipo;
+            this.mensaje = mensaje;
+        }
+
+        public String getLogroId() { return logroId; }
+        public TipoLogro getTipo() { return tipo; }
+        public String getMensaje() { return mensaje; }
+    }
 }
