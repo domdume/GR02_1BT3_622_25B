@@ -11,7 +11,8 @@ public class EmblemaServiceTest {
     @Test
     public void dado_MiembroEsNuevo_Cuando_GanaPrimeraLiga_Entonces_AsignaEmblemaAprendiz() {
         // Arrange: usar EmblemaService real, pero evitar DB via mocks
-    EmblemaService emblemaService = new EmblemaService();
+    EmblemaService emblemaService;
+        emblemaService = EmblemaService.getInstancia();
     MiembroHogar miembro = new MiembroHogar("Test", 0);
     miembro.setId(123L);
 
@@ -32,7 +33,8 @@ public class EmblemaServiceTest {
     @Test
     public void dado_PuntosBajan_Cuando_Procesa_Entonces_EmblemaNoSeQuita() {
         // Arrange
-        EmblemaService emblemaService = new EmblemaService();
+        EmblemaService emblemaService;
+        emblemaService = EmblemaService.getInstancia();
         MiembroHogar miembro = new MiembroHogar("Test", 0);
         miembro.setId(456L);
 

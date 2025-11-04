@@ -110,7 +110,8 @@ public class MiembroServlet extends HttpServlet {
         request.setAttribute("listaMiembros", listaMiembros); // Pasa los datos al JSP
         // Preparar emblemas (servicio en memoria). Esto permite mostrar badges en la vista.
         try {
-            EmblemaService emblemaService = new EmblemaService();
+            EmblemaService emblemaService;
+            emblemaService = EmblemaService.getInstancia();
             java.util.Map<Long, java.util.Set<String>> emblemasPorMiembro = new java.util.HashMap<>();
             if (listaMiembros != null) {
                 for (MiembroHogar miembro : listaMiembros) {
