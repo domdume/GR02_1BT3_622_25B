@@ -102,4 +102,8 @@ public class Logro {
     public boolean seCumpleConTareas(int tareasCompletadas) {
         return tareasCompletadas >= tareasRequeridas;
     }
+
+    public TipoLogro getTipo() {
+        return tipoLogro;
+    }
 }

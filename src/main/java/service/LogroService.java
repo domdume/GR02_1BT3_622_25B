@@ -1,5 +1,6 @@
 package service;
 
+import model.Logro;
 import repository.AchievementRepository;
 import repository.JpaAchievementRepository;
 import model.MiembroHogar;
@@ -113,6 +114,28 @@ public class LogroService {
         return "¡Increíble! Ha ganado el logro “Semana Perfecta”";
     }
 
+    public void verificarLogroPorQuehaceres(MiembroHogar miembro) {
+        if (miembro == null) {
+            throw new IllegalArgumentException("El miembro no puede ser nulo");
+        }
+
+        // Verificar si ya tiene una medalla
+        boolean yaTieneMedalla = miembro.getLogros().stream()
+                .anyMatch(logro -> logro.getTipo() == TipoLogro.MEDALLA);
+
+        // Otorgar medalla si cumple la condición
+        if (!yaTieneMedalla && miembro.getTareasCompletadas() >= 10) {
+            Logro logro = new Logro();
+            logro.setTipoLogro(TipoLogro.MEDALLA);
+            miembro.addLogro(logro);
+            System.out.println("🏅 Se otorgó una medalla a " + miembro.getNombre());
+        } else {
+            System.out.println("ℹ️ " + miembro.getNombre() + " aún no cumple los requisitos para una medalla.");
+        }
+
+
+    }
+
     // DTO simple para notificar tipo y mensaje del logro
     public static class AchievementNotification {
         private final String logroId;
@@ -128,5 +151,5 @@ public class LogroService {
         public String getLogroId() { return logroId; }
         public TipoLogro getTipo() { return tipo; }
         public String getMensaje() { return mensaje; }
-    }
-}
+
+}}
