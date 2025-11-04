@@ -443,7 +443,7 @@ public class HogarService {
         public final String detalles;
 
         public ResultadoSincronizacion(boolean exitoso, TipoInconsistencia tipo,
-                                       int miembros, int quehaceres, int conflictos, String detalles) {
+            int miembros, int quehaceres, int conflictos, String detalles) {
             this.exitoso = exitoso;
             this.tipoInconsistencia = tipo;
             this.miembrosSincronizados = miembros;

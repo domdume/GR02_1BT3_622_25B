@@ -142,6 +142,16 @@ public class MiembroHogar implements Observador {
 //    public void aumentarFactorDeCarga() { this.factorDeCarga++; }
 //    public void removerQuehacer(Quehacer q) { this.quehaceres.remove(q); }
 //    public int getFactorDeCarga() { return this.factorDeCarga; }
+    
+
+public void asignarQuehacer(Quehacer q) {
+        if (q == null) return;
+        // Set owning side so JPA persist the relationship
+        q.setMiembroHogar(this);
+        if (!this.quehaceres.contains(q)) {
+            this.quehaceres.add(q);
+        }
+    }    
     public int getPuntos() {
         return puntos;
     }

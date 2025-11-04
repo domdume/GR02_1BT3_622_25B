@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import model.Liga;
 import model.MiembroHogar;
 import service.LigaService;
+import service.ServicioRacha;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -21,11 +22,13 @@ import java.util.stream.Collectors;
 public class RankingServlet extends HttpServlet {
     private MiembroHogarDAO miembroDAO;
     private LigaService ligaService;
+    private ServicioRacha servicioRacha;
 
     @Override
     public void init() {
         miembroDAO = new MiembroHogarDAO();
         ligaService = new LigaService();
+        servicioRacha = new ServicioRacha();
     }
 
     @Override
@@ -51,9 +54,14 @@ public class RankingServlet extends HttpServlet {
             e.getValue().sort(Comparator.comparingInt(MiembroHogar::getPuntos).reversed());
         }
 
-        request.setAttribute("topGlobal", topGlobal);
-        request.setAttribute("porLiga", porLiga);
+        // Datos de rachas (ordenado desc y empates por nombre asc)
+        var rachaData = servicioRacha.obtenerRachasActuales();
+
+        // Atributos con nombres únicos para evitar colisiones
+        request.setAttribute("rankingTopGlobal", topGlobal);
+        request.setAttribute("rankingPorLiga", porLiga);
+        request.setAttribute("rankingMiembrosRacha", rachaData.miembrosOrdenados);
+        request.setAttribute("rankingRachaPorMiembro", rachaData.rachaPorMiembro);
         request.getRequestDispatcher("/ranking/index.jsp").forward(request, response);
     }
 }
-

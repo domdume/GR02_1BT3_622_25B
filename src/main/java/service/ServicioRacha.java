@@ -31,19 +31,24 @@ public class ServicioRacha {
         this.calculadoraRacha = calculadoraRacha != null ? calculadoraRacha : new CalculadoraRacha();
     }
 
-    public RachaData obtenerRachasActuales() {
-        List<MiembroHogar> miembros = miembroDAO.findAll();
-        List<Quehacer> todasLasTareas = quehacerDAO.findAllWithMiembroHogar();
-
+    private Map<Long, List<LocalDate>> procesarFechasPorMiembro(List<Quehacer> todasLasTareas) {
         Map<Long, List<LocalDate>> fechasPorMiembro = new HashMap<>();
         for (Quehacer q : todasLasTareas) {
             if (q.getMiembroHogar() != null && q.isCompletado() && q.getFechaFinalizacion() != null) {
                 Long mid = q.getMiembroHogar().getId();
-                if (mid == null) continue; // Igualar comportamiento seguro si no hay ID
+                if (mid == null) continue;
                 fechasPorMiembro.computeIfAbsent(mid, k -> new ArrayList<>())
                         .add(q.getFechaFinalizacion().toLocalDate());
             }
         }
+        return fechasPorMiembro;
+    }
+
+    public RachaData obtenerRachasActuales() {
+        List<MiembroHogar> miembros = miembroDAO.findAll();
+        List<Quehacer> todasLasTareas = quehacerDAO.findAllWithMiembroHogar();
+
+        Map<Long, List<LocalDate>> fechasPorMiembro = procesarFechasPorMiembro(todasLasTareas);
 
         Map<Long, Integer> rachaPorMiembro = new HashMap<>();
         CalculadoraRacha calc = new CalculadoraRacha();
@@ -71,24 +76,34 @@ public class ServicioRacha {
         return new RachaData(miembrosOrdenados, rachaPorMiembro);
     }
 
-    /**
-     * Registra una tarea rápida para el miembro y la marca como completada en la fecha indicada.
-     * Devuelve el nombre del miembro para mensajes.
-     */
     public Optional<String> registrarTareaRapida(Long miembroId, LocalDate dia) {
         if (miembroId == null || dia == null) return Optional.empty();
+
+        // 1. Obtener el miembro.
         MiembroHogar miembro = miembroDAO.findById(miembroId);
         if (miembro == null) return Optional.empty();
 
-        Quehacer q = new Quehacer("Tarea rápida de racha", LocalDateTime.now().plusHours(2), Dificultad.MEDIO);
-        q.setMiembroHogar(miembro);
-        quehacerDAO.create(q);
+        // 2. Definir tiempos límite para la tarea
+        final LocalDateTime FINAL_DEL_DIA = dia.atTime(23, 59, 59);
+        final LocalDateTime MOMENTO_COMPLETADO = dia.atTime(23, 58, 0);
 
-        q.marcarCompletado();
-        q.setFechaFinalizacion(dia.atTime(12, 0));
-        quehacerDAO.update(q);
+        // 3. Crear el Quehacer con un límite futuro
+        Quehacer tareaRapida = new Quehacer("Tarea rápida de racha", FINAL_DEL_DIA, Dificultad.MEDIO);
+        tareaRapida.setMiembroHogar(miembro);
 
-        return Optional.ofNullable(miembro.getNombre());
+        // 4. Persistir el Quehacer ANTES de completarlo.
+        quehacerDAO.create(tareaRapida);
+
+        // 5. Registrar la finalización de la tarea
+        tareaRapida.setFechaFinalizacion(MOMENTO_COMPLETADO);
+
+        // 6. Actualizar el estado del miembro y sus incentivos
+        miembro.registrarQuehacerCompleto(tareaRapida);
+
+        // 7. Recargar el miembro para reflejar los cambios actualizados
+        miembro = miembroDAO.findById(miembroId);
+
+        return Optional.ofNullable(miembro != null ? miembro.getNombre() : null);
     }
 
     /**

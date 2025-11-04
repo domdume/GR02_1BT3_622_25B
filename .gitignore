@@ -1,9 +1,5 @@
-target/
-!.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
-.kotlin
 
+.kotlin
 ### IntelliJ IDEA ###
 .idea/modules.xml
 .idea/jarRepositories.xml
@@ -12,6 +8,9 @@ target/
 *.iws
 *.iml
 *.ipr
+
+# Ignora todo en target
+/target/*
 
 ### Eclipse ###
 .apt_generated
@@ -30,14 +29,12 @@ target/
 /.nb-gradle/
 build/
 !**/src/main/**/build/
-!**/src/test/**/build/
 
 ### VS Code ###
 .vscode/
 
 ### Mac OS ###
 .DS_Store
-
-/target/
+/WebContent
 /out/
 /.idea/

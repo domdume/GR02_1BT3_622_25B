@@ -125,10 +125,10 @@ public class Quehacer {
     }
 
     public boolean fueCompletadoATiempo() {
-        if (estado != EstadoQuehacer.COMPLETADO || fechaFinalizacion == null) {
+        if (estado != EstadoQuehacer.COMPLETADO || fechaFinalizacion == null|| tiempoLimite == null) {
             return false;
         }
-        return fechaFinalizacion.isBefore(tiempoLimite) || fechaFinalizacion.isEqual(tiempoLimite);
+        return !fechaFinalizacion.toLocalDate().isAfter(tiempoLimite.toLocalDate());
     }
 
     public boolean estaVencido() {

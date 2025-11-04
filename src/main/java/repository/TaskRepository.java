@@ -6,4 +6,3 @@ import java.util.List;
 public interface TaskRepository {
     List<Quehacer> getCompletedTasksByUser(Long miembroId);
 }
-
