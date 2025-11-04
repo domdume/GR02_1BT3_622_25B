@@ -53,6 +53,9 @@ public class RachaServlet extends HttpServlet {
             var nombre = servicioRacha.registrarTareaRapida(miembroId, dia);
             if (nombre.isPresent()) {
                 request.getSession().setAttribute("successMessage", "Se registró una tarea completada el " + dia + " para " + nombre.get());
+                // Redirigir a verificación de logro de racha para mostrar el toast si aplica
+                response.sendRedirect(request.getContextPath() + "/logros/racha/verify?miembroId=" + miembroId);
+                return;
             } else {
                 request.getSession().setAttribute("errorMessage", "Miembro no encontrado");
             }

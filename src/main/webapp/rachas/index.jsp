@@ -64,6 +64,7 @@
                     <a class="btn btn-primary btn-sm" href="${pageContext.request.contextPath}/rachas?action=addToday&miembroId=${m.id}">+ Hoy</a>
                     <a class="btn btn-secondary btn-sm" href="${pageContext.request.contextPath}/rachas?action=addYesterday&miembroId=${m.id}">+ Ayer</a>
                     <a class="btn btn-secondary btn-sm" href="${pageContext.request.contextPath}/rachas?action=addTwoDaysAgo&miembroId=${m.id}">+ Anteayer</a>
+                    <a class="btn btn-success btn-sm" href="${pageContext.request.contextPath}/logros/racha/verify?miembroId=${m.id}">Verificar Logro de Racha</a>
                 </td>
                 <td>
                     <c:if test="${sessionScope.viewRole == 'JEFE'}">
@@ -87,6 +88,7 @@
 
     <p class="muted">Reglas: la racha cuenta días consecutivos terminando en hoy o ayer. Varias tareas el mismo día cuentan como 1. Cuando la racha está protegida (❄️), se puede ignorar un día faltante al calcular la racha.</p>
 </div>
+<jsp:include page="/common/achievement-toast.jsp" />
 <jsp:include page="/common/footer.jsp" />
 </body>
 </html>
