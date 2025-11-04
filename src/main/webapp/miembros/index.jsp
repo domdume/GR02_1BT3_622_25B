@@ -128,12 +128,6 @@
 
                                                     <%-- Mostramos un badge diferente según el tipo --%>
                                                     <c:choose>
-                                                        <c:when test="${tipo == 'MEDALLA'}">
-                                                            <span class="badge achievement medalla">🏅 ${nombre}</span>
-                                                        </c:when>
-                                                        <c:when test="${tipo == 'LOGRO_RACHA'}">
-                                                            <span class="badge achievement racha">🔥 ${nombre}</span>
-                                                        </c:when>
                                                         <c:when test="${tipo == 'EMBLEMA'}">
                                                             <span class="badge achievement emblema">🎖️ ${nombre}</span>
                                                         </c:when>

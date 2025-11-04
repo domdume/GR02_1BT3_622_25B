@@ -6,7 +6,7 @@ import model.CalculadoraRacha;
 import model.Dificultad;
 import model.MiembroHogar;
 import model.Quehacer;
-
+import model.EstadoQuehacer;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -76,6 +76,7 @@ public class ServicioRacha {
         return new RachaData(miembrosOrdenados, rachaPorMiembro);
     }
 
+
     public Optional<String> registrarTareaRapida(Long miembroId, LocalDate dia) {
         if (miembroId == null || dia == null) return Optional.empty();
 
@@ -87,25 +88,21 @@ public class ServicioRacha {
         final LocalDateTime FINAL_DEL_DIA = dia.atTime(23, 59, 59);
         final LocalDateTime MOMENTO_COMPLETADO = dia.atTime(23, 58, 0);
 
-        // 3. Crear el Quehacer con un límite futuro
+        // 3. Crear el Quehacer con un límite futuro (para ese día)
         Quehacer tareaRapida = new Quehacer("Tarea rápida de racha", FINAL_DEL_DIA, Dificultad.MEDIO);
         tareaRapida.setMiembroHogar(miembro);
 
         // 4. Persistir el Quehacer ANTES de completarlo.
         quehacerDAO.create(tareaRapida);
 
-        // 5. Registrar la finalización de la tarea
+        // 5. Marcar como COMPLETADO con una fecha de finalización dentro del día especificado
         tareaRapida.setFechaFinalizacion(MOMENTO_COMPLETADO);
+        tareaRapida.setEstado(EstadoQuehacer.COMPLETADO);
+        quehacerDAO.update(tareaRapida);
 
-        // 6. Actualizar el estado del miembro y sus incentivos
-        miembro.registrarQuehacerCompleto(tareaRapida);
-
-        // 7. Recargar el miembro para reflejar los cambios actualizados
-        miembro = miembroDAO.findById(miembroId);
-
-        return Optional.ofNullable(miembro != null ? miembro.getNombre() : null);
+        // 6. Retornar el nombre para mensajes
+        return Optional.ofNullable(miembro.getNombre());
     }
-
     /**
      * Versión pura para pruebas: calcula rachas y ordena usando miembros y tareas en memoria.
      */

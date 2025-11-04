@@ -471,7 +471,7 @@ public class QuehacerServlet extends HttpServlet {
             }
         }
 
-       
+
 
         // Pasar datos y estadísticas calculadas a la vista (no calcular en JSP)
         request.setAttribute("listaQuehaceres", listaQuehaceres);
