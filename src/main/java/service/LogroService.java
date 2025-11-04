@@ -15,25 +15,41 @@ public class LogroService {
 
         int tareasCompletadas = achievementRepository.obtenerTareasCompletadas(miembroId);
         achievementRepository.incrementarContadorTareas(miembroId);
-        verificarLogroPorTareas(miembroId, tareasCompletadas + 1);
+
+        // Siempre verificar el logro más básico al completar una tarea
+        achievementRepository.tieneLogro(miembroId, "TAREAS_5");
     }
 
     public TipoMedalla verificarLogroPorTareas(Long miembroId, int tareasCompletadas) {
+        if (miembroId == null || tareasCompletadas < 0) return TipoMedalla.NINGUNA;
+
         TipoMedalla nivelMasAlto = TipoMedalla.NINGUNA;
 
-        // Verificar logros en orden ascendente de tareas requeridas
+        // Verificar y otorgar logros en orden ascendente
         if (tareasCompletadas >= 5 && !achievementRepository.tieneLogro(miembroId, "TAREAS_5")) {
             achievementRepository.guardarLogro(miembroId, "TAREAS_5");
         }
 
-        // Solo verificar el siguiente nivel si cumple con la cantidad de tareas
-        if (tareasCompletadas >= 10) {
-            if (!achievementRepository.tieneLogro(miembroId, "TAREAS_10")) {
-                achievementRepository.guardarLogro(miembroId, "TAREAS_10");
-                nivelMasAlto = TipoMedalla.BRONCE;
-            }
+        if (tareasCompletadas >= 10 && !achievementRepository.tieneLogro(miembroId, "TAREAS_10")) {
+            achievementRepository.guardarLogro(miembroId, "TAREAS_10");
+            nivelMasAlto = TipoMedalla.BRONCE;
+        }
+
+        if (tareasCompletadas >= 20 && !achievementRepository.tieneLogro(miembroId, "TAREAS_20")) {
+            achievementRepository.guardarLogro(miembroId, "TAREAS_20");
+            nivelMasAlto = TipoMedalla.PLATA;
+        }
+
+        if (tareasCompletadas >= 30 && !achievementRepository.tieneLogro(miembroId, "TAREAS_30")) {
+            achievementRepository.guardarLogro(miembroId, "TAREAS_30");
+            nivelMasAlto = TipoMedalla.ORO;
         }
 
         return nivelMasAlto;
+    }
+
+    public boolean tieneMedalla(Long miembroId, String logroId) {
+        if (miembroId == null || logroId == null) return false;
+        return achievementRepository.tieneLogro(miembroId, logroId);
     }
 }

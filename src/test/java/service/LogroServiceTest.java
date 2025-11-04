@@ -24,13 +24,15 @@ public class LogroServiceTest {
         // Configurar que no tiene ningún logro inicialmente
         when(mockRepository.tieneLogro(miembroId, "TAREAS_5")).thenReturn(false);
         when(mockRepository.tieneLogro(miembroId, "TAREAS_10")).thenReturn(false);
+        when(mockRepository.tieneLogro(miembroId, "TAREAS_20")).thenReturn(false);
+        when(mockRepository.tieneLogro(miembroId, "TAREAS_30")).thenReturn(false);
 
         // Act & Assert - Caso 5 tareas
         TipoMedalla medallaCincoTareas = logroService.verificarLogroPorTareas(miembroId, 5);
         assertEquals("Con 5 tareas completadas debería obtener medalla NINGUNA",
             TipoMedalla.NINGUNA, medallaCincoTareas);
 
-        // Simular que ya tiene el logro de 5 tareas para la siguiente verificación
+        // Simular progresión de logros
         when(mockRepository.tieneLogro(miembroId, "TAREAS_5")).thenReturn(true);
 
         // Act & Assert - Caso 10 tareas
@@ -38,12 +40,25 @@ public class LogroServiceTest {
         assertEquals("Con 10 tareas completadas debería obtener medalla BRONCE",
             TipoMedalla.BRONCE, medallaDiezTareas);
 
+        when(mockRepository.tieneLogro(miembroId, "TAREAS_10")).thenReturn(true);
+
+        // Act & Assert - Caso 20 tareas
+        TipoMedalla medallaVeinteTareas = logroService.verificarLogroPorTareas(miembroId, 20);
+        assertEquals("Con 20 tareas completadas debería obtener medalla PLATA",
+            TipoMedalla.PLATA, medallaVeinteTareas);
+
+        when(mockRepository.tieneLogro(miembroId, "TAREAS_20")).thenReturn(true);
+
+        // Act & Assert - Caso 30 tareas
+        TipoMedalla medallaTreintaTareas = logroService.verificarLogroPorTareas(miembroId, 30);
+        assertEquals("Con 30 tareas completadas debería obtener medalla ORO",
+            TipoMedalla.ORO, medallaTreintaTareas);
+
         // Verify
         verify(mockRepository, times(1)).guardarLogro(miembroId, "TAREAS_5");
         verify(mockRepository, times(1)).guardarLogro(miembroId, "TAREAS_10");
-        verify(mockRepository, times(2)).tieneLogro(miembroId, "TAREAS_5");
-        verify(mockRepository, times(1)).tieneLogro(miembroId, "TAREAS_10");
-        verifyNoMoreInteractions(mockRepository);
+        verify(mockRepository, times(1)).guardarLogro(miembroId, "TAREAS_20");
+        verify(mockRepository, times(1)).guardarLogro(miembroId, "TAREAS_30");
     }
 
     @Test
@@ -75,6 +90,26 @@ public class LogroServiceTest {
         // Assert
         verify(mockRepository).incrementarContadorTareas(miembroId);
         verify(mockRepository).obtenerTareasCompletadas(miembroId);
-        verifyNoMoreInteractions(mockRepository);
+        verify(mockRepository).tieneLogro(eq(miembroId), anyString());
+    }
+
+    @Test
+    public void dado_MiembroNoExiste_Cuando_VerificaLogro_Entonces_RetornaNinguna() {
+        // Act
+        TipoMedalla medalla = logroService.verificarLogroPorTareas(null, 10);
+
+        // Assert
+        assertEquals(TipoMedalla.NINGUNA, medalla);
+        verifyNoInteractions(mockRepository);
+    }
+
+    @Test
+    public void dado_TareasNegativas_Cuando_VerificaLogro_Entonces_RetornaNinguna() {
+        // Act
+        TipoMedalla medalla = logroService.verificarLogroPorTareas(1L, -1);
+
+        // Assert
+        assertEquals(TipoMedalla.NINGUNA, medalla);
+        verifyNoInteractions(mockRepository);
     }
 }

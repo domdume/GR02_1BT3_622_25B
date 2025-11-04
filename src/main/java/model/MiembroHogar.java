@@ -2,156 +2,94 @@ package model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import service.IncentivoService;
+import java.util.HashSet;
+import java.util.Set;
 
-/**
- * Entidad que representa un miembro del hogar.
- * Implementa el patrón Observer para recibir notificaciones.
- * Clase base para la jerarquía de miembros (JefeDelHogar hereda de esta).
- */
 @Entity
-@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-@DiscriminatorColumn(name = "DTYPE", discriminatorType = DiscriminatorType.STRING)
-@DiscriminatorValue("MiembroHogar")
-public class MiembroHogar implements Observador {
-    /**
-     * Indica si el miembro es jefe del hogar (para JSP).
-     */
-    public boolean getEsJefe() {
-        return false;
-    }
-
+@Table(name = "miembro_hogar")
+public class MiembroHogar {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String nombre;
+
+    @Column(nullable = false)
     private int edad;
-    private int puntos;
-    @Enumerated(EnumType.STRING)
-    private Liga liga; // Added for rewards
 
-    @OneToMany(mappedBy = "miembroHogar", cascade = CascadeType.ALL, orphanRemoval = true)
-    private java.util.Set<Quehacer> quehaceres;
+    @Column(name = "tareas_completadas")
+    private int tareasCompletadas = 0;
 
-    @OneToMany(mappedBy = "miembroHogar", cascade = CascadeType.ALL, orphanRemoval = true)
-    private java.util.Set<Incentivo> incentivos;
-
-    private int factorDeCarga; // Campo requerido según diagrama UML
-
-    // NUEVO: flag para proteger la racha (congelamiento)
-    @Column(name = "racha_congelada", nullable = false)
+    @Column(name = "racha_congelada")
     private boolean rachaCongelada = false;
 
-    // Constructor vacío requerido por JPA
+    @Column(name = "puntos")
+    private int puntos = 0;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "liga")
+    private Liga liga = Liga.BRONCE; // Inicializado en BRONCE por defecto
+
+    @OneToMany(mappedBy = "miembro", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Logro> logros = new HashSet<>();
+
+    @OneToMany(mappedBy = "miembroHogar", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Quehacer> quehaceres = new HashSet<>();
+
+    // Constructor por defecto requerido por JPA
     public MiembroHogar() {
-        this.quehaceres = new java.util.HashSet<>();
-        this.incentivos = new java.util.HashSet<>();
-        // Inicializar a no congelado por defecto
-        this.rachaCongelada = false;
     }
 
     public MiembroHogar(String nombre, int edad) {
         this.nombre = nombre;
         this.edad = edad;
-        this.quehaceres = new java.util.HashSet<>();
-        this.incentivos = new java.util.HashSet<>();
-        this.puntos = 0; // Initialize points
-        this.factorDeCarga = 0;
-        this.liga = Liga.BRONCE;
-        // Inicializar a no congelado por defecto
         this.rachaCongelada = false;
+        this.puntos = 0;
+        this.liga = Liga.BRONCE;
     }
 
-    // Getters y Setters para JPA y JSP
+    // Getters y setters básicos
     public Long getId() {
         return id;
     }
+
     public void setId(Long id) {
         this.id = id;
     }
+
     public String getNombre() {
         return nombre;
     }
+
     public void setNombre(String nombre) {
         this.nombre = nombre;
     }
+
     public int getEdad() {
         return edad;
     }
+
     public void setEdad(int edad) {
         this.edad = edad;
     }
 
-    // NUEVO: acceso al estado de congelamiento para servicios/JSP
-    public boolean isRachaCongelada() { return rachaCongelada; }
-    public boolean getRachaCongelada() { return rachaCongelada; }
-    public void setRachaCongelada(boolean rachaCongelada) { this.rachaCongelada = rachaCongelada; }
-
-    public Liga getLiga() {
-        return liga;
-    }
-    public void setLiga(Liga liga) {
-        this.liga = liga;
+    public boolean getRachaCongelada() {
+        return rachaCongelada;
     }
 
-    public List<Quehacer> getQuehaceres() {
-        return new java.util.ArrayList<>(quehaceres);
+    public void setRachaCongelada(boolean rachaCongelada) {
+        this.rachaCongelada = rachaCongelada;
     }
 
-    public void setQuehaceres(List<Quehacer> quehaceres) {
-        this.quehaceres = new java.util.HashSet<>(quehaceres);
+    public int getTareasCompletadas() {
+        return tareasCompletadas;
     }
 
-    public List<Incentivo> getIncentivos() {
-    return new java.util.ArrayList<>(incentivos);
+    public void setTareasCompletadas(int tareasCompletadas) {
+        this.tareasCompletadas = tareasCompletadas;
     }
 
-    public void setIncentivos(List<Incentivo> incentivos) {
-    this.incentivos = new java.util.HashSet<>(incentivos);
-    }
-
-    public void anadirIncentivo(Incentivo incentivo) {
-        this.incentivos.add(incentivo);
-        incentivo.setMiembroHogar(this);
-    }
-
-    @Override
-    public void actualizar(String mensaje) {
-        System.out.println("[Notificación para " + nombre + "]: " + mensaje);
-    }
-
-    public void registrarQuehacerCompleto(Quehacer quehacer) {
-        if (quehacer == null) {
-            throw new IllegalArgumentException("El quehacer no puede ser nulo");
-        }
-        if (!this.quehaceres.contains(quehacer)) {
-            System.out.println("AVISO: " + nombre + " no puede completar una tarea que no tiene asignada.");
-            return;
-        }
-        // El miembro actualiza el estado de la tarea y su propia lista.
-        quehacer.setFechaFinalizacion(LocalDateTime.now());
-        quehacer.setEstado(EstadoQuehacer.COMPLETADO);
-        this.quehaceres.remove(quehacer);
-        // Aplicar incentivo solo desde el service (que persiste en BD)
-        Incentivo.aplicarIncentivo(this, quehacer);
-    }
-//    public void reducirFactorDeCarga() { this.factorDeCarga--; }
-//    public void aumentarFactorDeCarga() { this.factorDeCarga++; }
-//    public void removerQuehacer(Quehacer q) { this.quehaceres.remove(q); }
-//    public int getFactorDeCarga() { return this.factorDeCarga; }
-    //Subir todo
-
-public void asignarQuehacer(Quehacer q) {
-        if (q == null) return;
-        // Set owning side so JPA persist the relationship
-        q.setMiembroHogar(this);
-        if (!this.quehaceres.contains(q)) {
-            this.quehaceres.add(q);
-        }
-    }    
     public int getPuntos() {
         return puntos;
     }
@@ -160,17 +98,102 @@ public void asignarQuehacer(Quehacer q) {
         this.puntos = puntos;
     }
 
-//    // Método según diagrama UML
-//    public void realizarQuehacer(Quehacer q) {
-//        if (this.quehaceres.contains(q)) {
-//            q.marcarCompletado();
-//            this.quehaceres.remove(q);
-//            System.out.println(this.nombre + " ha realizado el quehacer: " + q.getNombre());
-//        } else {
-//            System.out.println("AVISO: " + this.nombre + " no puede realizar una tarea que no tiene asignada.");
-//        }
-//    }
+    public Liga getLiga() {
+        return liga;
+    }
 
+    public void setLiga(Liga liga) {
+        this.liga = liga;
+    }
 
+    public Set<Logro> getLogros() {
+        return logros;
+    }
 
+    public void setLogros(Set<Logro> logros) {
+        this.logros = logros;
+    }
+
+    public Set<Quehacer> getQuehaceres() {
+        return new HashSet<>(quehaceres);
+    }
+
+    public void setQuehaceres(Set<Quehacer> quehaceres) {
+        this.quehaceres = new HashSet<>(quehaceres);
+    }
+
+    // Métodos de gestión de logros
+    public void agregarLogro(Logro logro) {
+        logros.add(logro);
+        logro.setMiembro(this);
+    }
+
+    public void removerLogro(Logro logro) {
+        logros.remove(logro);
+        logro.setMiembro(null);
+    }
+
+    public void registrarQuehacerCompleto(Quehacer quehacer) {
+        if (quehacer == null) {
+            throw new IllegalArgumentException("El quehacer no puede ser nulo");
+        }
+
+        // Verificar que el quehacer pertenezca a este miembro
+        if (!this.equals(quehacer.getMiembroHogar())) {
+            throw new IllegalStateException("El quehacer no pertenece a este miembro");
+        }
+
+        // Actualizar el estado de la tarea
+        quehacer.setFechaFinalizacion(LocalDateTime.now());
+        quehacer.setEstado(EstadoQuehacer.COMPLETADO);
+
+        // Actualizar contador de tareas y puntos
+        this.tareasCompletadas++;
+        this.puntos += calcularPuntosPorDificultad(quehacer.getDificultad());
+
+        // Remover la tarea de la lista de quehaceres pendientes
+        this.quehaceres.remove(quehacer);
+    }
+
+    private int calcularPuntosPorDificultad(Dificultad dificultad) {
+        if (dificultad == null) return 1;
+
+        switch (dificultad) {
+            case FACIL:
+                return 1;
+            case MEDIO:
+                return 2;
+            case DIFICIL:
+                return 3;
+            default:
+                return 1;
+        }
+    }
+
+    public void agregarQuehacer(Quehacer quehacer) {
+        if (quehacer != null) {
+            quehaceres.add(quehacer);
+            quehacer.setMiembroHogar(this);
+        }
+    }
+
+    public void removerQuehacer(Quehacer quehacer) {
+        if (quehacer != null) {
+            quehaceres.remove(quehacer);
+            quehacer.setMiembroHogar(null);
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        MiembroHogar that = (MiembroHogar) o;
+        return id != null && id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return id != null ? id.hashCode() : 31;
+    }
 }
