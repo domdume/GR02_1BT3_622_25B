@@ -2,8 +2,11 @@ package service;
 
 import dao.MiembroHogarDAO;
 import dao.QuehacerDAO;
-import model.*;
-
+import model.CalculadoraRacha;
+import model.Dificultad;
+import model.MiembroHogar;
+import model.Quehacer;
+import model.EstadoQuehacer;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -84,20 +87,23 @@ public class ServicioRacha {
         final LocalDateTime FINAL_DEL_DIA = dia.atTime(23, 59, 59);
         final LocalDateTime MOMENTO_COMPLETADO = dia.atTime(23, 58, 0);
 
-        // 3. Crear el Quehacer con un límite futuro (para ese día)
+        // 3. Crear el Quehacer con un límite futuro
         Quehacer tareaRapida = new Quehacer("Tarea rápida de racha", FINAL_DEL_DIA, Dificultad.MEDIO);
         tareaRapida.setMiembroHogar(miembro);
 
         // 4. Persistir el Quehacer ANTES de completarlo.
         quehacerDAO.create(tareaRapida);
 
-        // 5. Marcar como COMPLETADO con una fecha de finalización dentro del día especificado
+        // 5. Registrar la finalización de la tarea
         tareaRapida.setFechaFinalizacion(MOMENTO_COMPLETADO);
-        tareaRapida.setEstado(EstadoQuehacer.COMPLETADO);
-        quehacerDAO.update(tareaRapida);
 
-        // 6. Retornar el nombre para mensajes
-        return Optional.ofNullable(miembro.getNombre());
+        // 6. Actualizar el estado del miembro y sus incentivos
+        miembro.registrarQuehacerCompleto(tareaRapida);
+
+        // 7. Recargar el miembro para reflejar los cambios actualizados
+        miembro = miembroDAO.findById(miembroId);
+
+        return Optional.ofNullable(miembro != null ? miembro.getNombre() : null);
     }
 
     /**
