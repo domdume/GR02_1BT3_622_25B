@@ -2,6 +2,8 @@ package model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 
 @Entity
 @Table(name = "logro", uniqueConstraints = @UniqueConstraint(columnNames = {"miembro_id", "logro_id"}))
@@ -89,6 +91,44 @@ public class Logro {
         this.tipoLogro = tipoLogro;
     }
 
+    /**
+     * Nombre legible para mostrar en vistas. Si logroId corresponde a un código
+     * conocido, se devuelve el nombre humano; en caso contrario se devuelve el
+     * propio logroId.
+     */
+    public String getNombre() {
+        if (this.logroId == null) return "";
+        switch (this.logroId) {
+            case "EMBLEMA_APRENDIZ_CONSTANTE":
+                return "Aprendiz Constante";
+            case "EMBLEMA_EXPLORADOR_PERSISTENTE":
+                return "Explorador Persistente";
+            case "EMBLEMA_MAESTRO_QUEHACERES":
+                return "Maestro de los Quehaceres";
+            // Logros de racha
+            case "LOGRO_3":
+                return "Racha de 3 días: Chispazo";
+            case "LOGRO_7":
+                return "Racha de 7 días: Semana Perfecta";
+            default:
+                // Si es una medalla con formato MEDALLA_<n>, devolver un nombre legible
+                if (this.logroId != null && this.logroId.startsWith("MEDALLA_")) {
+                    if (this.tareasRequeridas > 0) {
+                        return "Medalla por " + this.tareasRequeridas + " tareas";
+                    }
+                    try {
+                        String part = this.logroId.substring("MEDALLA_".length());
+                        int tareasReq = Integer.parseInt(part);
+                        return "Medalla por " + tareasReq + " tareas";
+                    } catch (NumberFormatException ex) {
+                        // fallback
+                    }
+                }
+                // Si el logroId ya es un texto legible, devolverlo tal cual
+                return this.logroId;
+        }
+    }
+
 
     public int getTareasRequeridas() {
         return tareasRequeridas;
@@ -105,5 +145,14 @@ public class Logro {
 
     public TipoLogro getTipo() {
         return tipoLogro;
+    }
+
+    /**
+     * Helper para JSP: devuelve la fecha de creacion como java.util.Date
+     * porque JSTL fmt:formatDate no soporta LocalDateTime directamente.
+     */
+    public Date getFechaCreacionDate() {
+        if (this.fechaCreacion == null) return null;
+        return Date.from(this.fechaCreacion.atZone(ZoneId.systemDefault()).toInstant());
     }
 }

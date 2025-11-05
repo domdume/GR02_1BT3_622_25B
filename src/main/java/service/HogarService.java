@@ -3,6 +3,7 @@ package service;
 import dao.MiembroHogarDAO;
 import dao.QuehacerDAO;
 import model.*;
+import repository.JpaAchievementRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -61,6 +62,8 @@ public class HogarService {
                 System.out.println("[HogarService] Creando nuevo jefe del hogar: " + nombre);
                 JefeDelHogar nuevoJefe = new JefeDelHogar(nombre, edad);
                 miembroDAO.create(nuevoJefe);
+                // Asignar emblema inicial por defecto (Aprendiz Constante)
+                try { new JpaAchievementRepository().guardarLogro(nuevoJefe.getId(), "EMBLEMA_APRENDIZ_CONSTANTE"); } catch (Exception ex) { System.out.println("[HogarService] No se pudo asignar emblema inicial: " + ex.getMessage()); }
                 hogar.registrarMiembro(nuevoJefe);
 
             } else if (esPrimerMiembroQueSeraJefe) {
@@ -68,6 +71,7 @@ public class HogarService {
                 System.out.println("[HogarService] Primer miembro, creando como jefe: " + nombre);
                 JefeDelHogar primerJefe = new JefeDelHogar(nombre, edad);
                 miembroDAO.create(primerJefe);
+                try { new JpaAchievementRepository().guardarLogro(primerJefe.getId(), "EMBLEMA_APRENDIZ_CONSTANTE"); } catch (Exception ex) { System.out.println("[HogarService] No se pudo asignar emblema inicial: " + ex.getMessage()); }
                 hogar.registrarMiembro(primerJefe);
 
             } else if (debeUsarMetodoDelDominio) {
@@ -79,6 +83,7 @@ public class HogarService {
                 MiembroHogar miembroCreado = hogar.buscarMiembroPorNombre(nombre);
                 if (miembroCreado != null) {
                     miembroDAO.create(miembroCreado);
+                    try { new JpaAchievementRepository().guardarLogro(miembroCreado.getId(), "EMBLEMA_APRENDIZ_CONSTANTE"); } catch (Exception ex) { System.out.println("[HogarService] No se pudo asignar emblema inicial: " + ex.getMessage()); }
                 }
 
             } else {
@@ -86,6 +91,7 @@ public class HogarService {
                 System.out.println("[HogarService] Creando miembro regular: " + nombre);
                 MiembroHogar nuevoMiembro = new MiembroHogar(nombre, edad);
                 miembroDAO.create(nuevoMiembro);
+                try { new JpaAchievementRepository().guardarLogro(nuevoMiembro.getId(), "EMBLEMA_APRENDIZ_CONSTANTE"); } catch (Exception ex) { System.out.println("[HogarService] No se pudo asignar emblema inicial: " + ex.getMessage()); }
                 hogar.registrarMiembro(nuevoMiembro);
             }
 

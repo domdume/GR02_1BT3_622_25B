@@ -31,31 +31,41 @@ public class LogroService {
     public void asignarEmblemaAscenso(MiembroHogar miembro, Liga ligaAntes, Liga ligaDespues) {
         if (miembro == null || ligaAntes == null || ligaDespues == null) return;
         try {
-            // Solo actuar si hubo un ascenso
-            if (ligaDespues.getNivel() <= ligaAntes.getNivel()) return;
+            // Introducir variable explicativa
+            boolean huboAscenso = ligaDespues.getNivel() > ligaAntes.getNivel();
+            if (!huboAscenso) return;
 
             Long miembroId = miembro.getId();
             if (miembroId == null) return;
 
             // Si es la primera insignia del usuario, asignar Aprendiz Constante
-            if (!achievementRepository.tieneCualquierLogro(miembroId)) {
-                achievementRepository.guardarLogro(miembroId, "EMBLEMA_APRENDIZ_CONSTANTE");
-                return; // primera insignia asignada, no asignar la habitual
-            }
+            if (asignarEmblemaPrimeraVez(miembroId)) return;
 
-            // Mapear ascensos a identificadores de emblema
-            if (ligaAntes == Liga.BRONCE && ligaDespues == Liga.PLATA) {
-                // Bronce -> Plata
-                String logroId = "EMBLEMA_EXPLORADOR_PERSISTENTE";
-                achievementRepository.guardarLogro(miembroId, logroId);
-            } else if (ligaAntes == Liga.PLATA && ligaDespues == Liga.ORO) {
-                // Plata -> Oro
-                String logroId = "EMBLEMA_MAESTRO_QUEHACERES";
-                achievementRepository.guardarLogro(miembroId, logroId);
-            }
+            // Mapear ascenso -> emblema y persistir si aplica
+            emblemaParaAscenso(ligaAntes, ligaDespues).ifPresent(id -> achievementRepository.guardarLogro(miembroId, id));
         } catch (Exception ex) {
             System.out.println("[ERROR] asignarEmblemaAscenso: " + ex.getMessage());
         }
+    }
+
+    // Extraer método: asigna el emblema por primera vez si corresponde.
+    private boolean asignarEmblemaPrimeraVez(Long miembroId) {
+        if (!achievementRepository.tieneCualquierLogro(miembroId)) {
+            achievementRepository.guardarLogro(miembroId, "EMBLEMA_APRENDIZ_CONSTANTE");
+            return true;
+        }
+        return false;
+    }
+
+    // Extraer método: devuelve el id del emblema correspondiente al ascenso si existe
+    private java.util.Optional<String> emblemaParaAscenso(Liga antes, Liga despues) {
+        if (antes == Liga.BRONCE && despues == Liga.PLATA) {
+            return java.util.Optional.of("EMBLEMA_EXPLORADOR_PERSISTENTE");
+        }
+        if (antes == Liga.PLATA && despues == Liga.ORO) {
+            return java.util.Optional.of("EMBLEMA_MAESTRO_QUEHACERES");
+        }
+        return java.util.Optional.empty();
     }
     /**
      * Verifica y asigna, si corresponde, el logro de racha alcanzado.
@@ -67,33 +77,23 @@ public class LogroService {
      * @return mensaje opcional con la notificación a mostrar
      */
     public Optional<String> verificarYAsignarLogroRacha(Long miembroId, int rachaActual) {
-        if (miembroId == null) return Optional.empty();
-        if (rachaActual >= 7) {
-            if (!achievementRepository.tieneLogro(miembroId, LOGRO_RACHA_7)) {
-                achievementRepository.guardarLogro(miembroId, LOGRO_RACHA_7);
-                return Optional.of(mensajeLogro7());
-            }
-            // Si ya tenía el de 7, no otorgar el de 3 en este evento
-            return Optional.empty();
-        }
-        if (rachaActual >= 3) {
-            if (!achievementRepository.tieneLogro(miembroId, LOGRO_RACHA_3)) {
-                achievementRepository.guardarLogro(miembroId, LOGRO_RACHA_3);
-                return Optional.of(mensajeLogro3());
-            }
-            return Optional.empty();
-        }
-        return Optional.empty();
+        return procesarRacha(miembroId, rachaActual).map(AchievementNotification::getMensaje);
     }
 
     // Variante que también devuelve el tipo de logro ganado
     public Optional<AchievementNotification> verificarYAsignarLogroRachaConTipo(Long miembroId, int rachaActual) {
+        return procesarRacha(miembroId, rachaActual);
+    }
+
+    // Extraer y centralizar la lógica de racha para evitar duplicación
+    private Optional<AchievementNotification> procesarRacha(Long miembroId, int rachaActual) {
         if (miembroId == null) return Optional.empty();
         if (rachaActual >= 7) {
             if (!achievementRepository.tieneLogro(miembroId, LOGRO_RACHA_7)) {
                 achievementRepository.guardarLogro(miembroId, LOGRO_RACHA_7);
                 return Optional.of(new AchievementNotification(LOGRO_RACHA_7, TipoLogro.LOGRO_RACHA, mensajeLogro7()));
             }
+            // Si ya tenía el de 7, no otorgar el de 3 en este evento
             return Optional.empty();
         }
         if (rachaActual >= 3) {
@@ -107,11 +107,10 @@ public class LogroService {
     }
 
     public String mensajeLogro3() {
-        return "¡Felicidades!, Ha ganado el logro “Chispazo”";
+        return "¡Felicidades!, Ha ganado el logro “Racha de 3 días: Chispazo”";
     }
-
     public String mensajeLogro7() {
-        return "¡Increíble! Ha ganado el logro “Semana Perfecta”";
+        return "¡Increíble! Ha ganado el logro “Racha de 7 días: Semana Perfecta”";
     }
 
     public void verificarLogroPorQuehaceres(MiembroHogar miembro) {
@@ -119,41 +118,76 @@ public class LogroService {
             throw new IllegalArgumentException("El miembro no puede ser nulo");
         }
 
-        // Verificar si ya tiene una medalla
-        boolean yaTieneMedalla = miembro.getLogros().stream()
-                .anyMatch(logro -> logro.getTipo() == TipoLogro.MEDALLA);
-
-        // Otorgar medalla si cumple la condición
-        if (!yaTieneMedalla && miembro.getTareasCompletadas() >= 10) {
-            Logro logro = new Logro();
-            logro.setTipoLogro(TipoLogro.MEDALLA);
-            miembro.addLogro(logro);
-            System.out.println("🏅 Se otorgó una medalla a " + miembro.getNombre());
-        } else {
+        // Nuevo comportamiento: medallas por umbrales que se duplican (2,4,8,16...)
+        int tareas = miembro.getTareasCompletadas();
+        if (tareas <= 0) {
             System.out.println("ℹ️ " + miembro.getNombre() + " aún no cumple los requisitos para una medalla.");
+            return;
+        }
+
+        // Calcular umbrales alcanzados (2^k) hasta el número de tareas actual
+        java.util.List<Integer> umbrales = new java.util.ArrayList<>();
+        for (int um = 2; um <= tareas; um *= 2) {
+            umbrales.add(um);
+            // proteger contra overflow infinito
+            if (um > Integer.MAX_VALUE / 2) break;
+        }
+
+        boolean otorgado = false;
+        for (int umbral : umbrales) {
+            // Si ya tiene una medalla para ese umbral, la saltamos (revisar persistencia primero)
+            Long miembroId = miembro.getId();
+            String logroId = "MEDALLA_" + umbral;
+            boolean tienePersistente = (miembroId != null) && achievementRepository.tieneLogro(miembroId, logroId);
+            boolean tieneEnMemoria = miembro.getLogros().stream()
+                    .anyMatch(l -> l.getTipo() == TipoLogro.MEDALLA && l.getTareasRequeridas() == umbral);
+            if (!tienePersistente && !tieneEnMemoria) {
+                // Persistir usando el repository si es posible
+                if (miembroId != null) {
+                    try {
+                        achievementRepository.guardarLogro(miembroId, logroId);
+                    } catch (Exception ex) {
+                        System.out.println("[WARN] No se pudo persistir medalla " + logroId + " para miembroId=" + miembroId + ": " + ex.getMessage());
+                    }
+                }
+                // Añadir al objeto en memoria para que la vista actual lo muestre sin necesidad de recargar desde BD
+                Logro logro = new Logro(logroId, TipoLogro.MEDALLA, umbral);
+                miembro.addLogro(logro);
+                System.out.println("🏅 Se otorgó medalla por " + umbral + " tareas a " + miembro.getNombre());
+                otorgado = true;
+            }
+        }
+        if (!otorgado) {
+            System.out.println("ℹ️ " + miembro.getNombre() + " aún no cumple los requisitos para una nueva medalla.");
         }
 
 
     }
 
     public Logro verificarLogro(MiembroHogar miembro) {
-        // Si ya tiene una medalla, no se le da otra
-        boolean yaTieneMedalla = miembro.getLogros().stream()
-                .anyMatch(l -> l.getTipo() == TipoLogro.MEDALLA);
+        if (miembro == null) return null;
 
-        if (yaTieneMedalla) {
-            return null;
+        int tareas = miembro.getTareasCompletadas();
+        if (tareas < 2) return null;
+
+        // Buscar el mayor umbral 2^k <= tareas para el que aún no tenga medalla
+        int umbral = 2;
+        int ultimo = 0;
+        while (umbral <= tareas) {
+            ultimo = umbral;
+            if (umbral > Integer.MAX_VALUE / 2) break;
+            umbral *= 2;
         }
 
-        // Si completó más de 10 tareas, se le otorga la medalla
-        if (miembro.getTareasCompletadas() >= 10) {
-            Logro medalla = new Logro();
-            medalla.setTipoLogro(TipoLogro.MEDALLA);
-            miembro.addLogro(medalla);
-            return medalla;
-        }
+    // Si ya tiene medalla para el último umbral, no otorgar
+    final int ultimoFinal = ultimo;
+    boolean tiene = miembro.getLogros().stream()
+        .anyMatch(l -> l.getTipo() == TipoLogro.MEDALLA && l.getTareasRequeridas() == ultimoFinal);
+    if (tiene) return null;
 
-        return null;
+    Logro medalla = new Logro("MEDALLA_" + ultimoFinal, TipoLogro.MEDALLA, ultimoFinal);
+        miembro.addLogro(medalla);
+        return medalla;
     }
 
     // DTO simple para notificar tipo y mensaje del logro

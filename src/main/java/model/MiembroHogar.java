@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import model.Logro;
+import model.TipoLogro;
 
 /**
  * Entidad que representa un miembro del hogar.
@@ -68,6 +70,7 @@ public class MiembroHogar implements Observador {
         this.liga = Liga.BRONCE;
         // Inicializar a no congelado por defecto
         this.rachaCongelada = false;
+        // Ya no asignamos logros por defecto en el constructor para evitar efectos colaterales en tests
     }
 
     // Getters y Setters para JPA y JSP

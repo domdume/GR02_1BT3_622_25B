@@ -1,9 +1,7 @@
 package service;
 
 
-import model.Logro;
-import model.MiembroHogar;
-import model.TipoLogro;
+import model.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -21,6 +19,7 @@ public class LogroServiceTest {
     private final int tareasCompletadas;
     private final boolean debeRecibirMedalla;
     private LogroService logroService;
+    private MiembroHogar miembro;
 
 
     public LogroServiceTest(int tareasCompletadas, boolean debeRecibirMedalla) {
@@ -30,9 +29,10 @@ public class LogroServiceTest {
 
     @Parameterized.Parameters(name = "{index}: {0} tareas => medalla? {1}")
     public static Collection<Object[]> data() {
+        // Ajustado a nueva lógica: umbrales 2,4,8,... -> primera medalla desde 2 tareas
         return Arrays.asList(new Object[][] {
-                {5, false},
-                {10, true}
+                {1, false},
+                {2, true}
         });
     }
 
@@ -56,6 +56,8 @@ public class LogroServiceTest {
     @Before
     public void setUp() {
         logroService = new LogroService();
+        miembro = new MiembroHogar("Mateo", 20);
+        miembro.setTareasCompletadas(0);
     }
 
     @Test
@@ -63,16 +65,28 @@ public class LogroServiceTest {
         // Arrange
         MiembroHogar miembro = new MiembroHogar("Mateo", 20);
         miembro.setTareasCompletadas(12);
-        Logro logroExistente = new Logro();
-        logroExistente.setTipoLogro(TipoLogro.MEDALLA);
+        // Simular que ya tiene la medalla correspondiente al último umbral alcanzado (8)
+        Logro logroExistente = new Logro("MEDALLA_8", TipoLogro.MEDALLA, 8);
         miembro.addLogro(logroExistente);
 
         // Act
         Logro nuevoLogro = logroService.verificarLogro(miembro);
 
-        // Assert
-        assertNull("No debe otorgarse otra medalla si el miembro ya tiene una", nuevoLogro);
+        // Assert: como ya tiene la medalla para el umbral 8 y no ha alcanzado 16, no se otorga nueva
+        assertNull("No debe otorgarse otra medalla si el miembro ya tiene la del umbral alcanzado", nuevoLogro);
         assertEquals("Debe seguir teniendo solo una medalla", 1, miembro.getLogros().size());
+    }
+
+    @Test
+    public void dado_ContadorEnCero_Cuando_CompletaPrimeraTarea_Entonces_ContadorEsUno() {
+        // Arrange
+        miembro.setTareasCompletadas(0);
+
+        // Act
+        miembro.setTareasCompletadas(miembro.getTareasCompletadas() + 1);
+
+        // Assert
+        assertEquals("El contador de tareas completadas debe ser 1", 1, miembro.getTareasCompletadas());
     }
 
 }

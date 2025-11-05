@@ -113,7 +113,8 @@ public class Incentivo {
      * Reemplaza los métodos anteriores y delega al IncentivoService.
      */
     public static void aplicarIncentivo(MiembroHogar miembro, Quehacer quehacer) {
-        IncentivoService incentivoService = new IncentivoService();
+        // Usar la factory de IncentivoService para permitir mocks en tests
+        IncentivoService incentivoService = IncentivoService.factory.get();
         incentivoService.aplicarIncentivo(miembro, quehacer);
     }
 

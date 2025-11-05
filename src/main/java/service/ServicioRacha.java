@@ -6,7 +6,7 @@ import model.CalculadoraRacha;
 import model.Dificultad;
 import model.MiembroHogar;
 import model.Quehacer;
-
+import model.EstadoQuehacer;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -87,23 +87,20 @@ public class ServicioRacha {
         final LocalDateTime FINAL_DEL_DIA = dia.atTime(23, 59, 59);
         final LocalDateTime MOMENTO_COMPLETADO = dia.atTime(23, 58, 0);
 
-        // 3. Crear el Quehacer con un límite futuro
+        // 3. Crear el Quehacer con un límite futuro (para ese día)
         Quehacer tareaRapida = new Quehacer("Tarea rápida de racha", FINAL_DEL_DIA, Dificultad.MEDIO);
         tareaRapida.setMiembroHogar(miembro);
 
         // 4. Persistir el Quehacer ANTES de completarlo.
         quehacerDAO.create(tareaRapida);
 
-        // 5. Registrar la finalización de la tarea
+        // 5. Marcar como COMPLETADO con una fecha de finalización dentro del día especificado
         tareaRapida.setFechaFinalizacion(MOMENTO_COMPLETADO);
+        tareaRapida.setEstado(EstadoQuehacer.COMPLETADO);
+        quehacerDAO.update(tareaRapida);
 
-        // 6. Actualizar el estado del miembro y sus incentivos
-        miembro.registrarQuehacerCompleto(tareaRapida);
-
-        // 7. Recargar el miembro para reflejar los cambios actualizados
-        miembro = miembroDAO.findById(miembroId);
-
-        return Optional.ofNullable(miembro != null ? miembro.getNombre() : null);
+        // 6. Retornar el nombre para mensajes
+        return Optional.ofNullable(miembro.getNombre());
     }
 
     /**
@@ -113,25 +110,9 @@ public class ServicioRacha {
         if (miembros == null) miembros = Collections.emptyList();
         if (todasLasTareas == null) todasLasTareas = Collections.emptyList();
 
-        Map<Long, List<LocalDate>> fechasPorMiembro = new HashMap<>();
-        for (Quehacer q : todasLasTareas) {
-            if (q == null || q.getMiembroHogar() == null || q.getFechaFinalizacion() == null) continue;
-            if (!q.isCompletado()) continue;
-            Long mid = q.getMiembroHogar().getId();
-            if (mid == null) continue;
-            fechasPorMiembro.computeIfAbsent(mid, k -> new ArrayList<>())
-                    .add(q.getFechaFinalizacion().toLocalDate());
-        }
+        Map<Long, List<LocalDate>> fechasPorMiembro = getFechasPorMiembro(todasLasTareas);
 
-        Map<Long, Integer> rachaPorMiembro = new HashMap<>();
-        for (MiembroHogar m : miembros) {
-            Integer racha = 0;
-            if (m != null && m.getId() != null) {
-                List<LocalDate> fechas = fechasPorMiembro.getOrDefault(m.getId(), Collections.emptyList());
-                racha = calculadoraRacha.calcularRacha(fechas);
-            }
-            rachaPorMiembro.put(m != null ? m.getId() : null, racha);
-        }
+        Map<Long, Integer> rachaPorMiembro = getRachaPorMiembro(miembros, fechasPorMiembro);
 
         List<MiembroHogar> miembrosOrdenados = miembros.stream()
                 .filter(Objects::nonNull)
@@ -146,6 +127,32 @@ public class ServicioRacha {
                 .collect(Collectors.toList());
 
         return new RachaData(miembrosOrdenados, rachaPorMiembro);
+    }
+
+    private Map<Long, Integer> getRachaPorMiembro(List<MiembroHogar> miembros, Map<Long, List<LocalDate>> fechasPorMiembro) {
+        Map<Long, Integer> rachaPorMiembro = new HashMap<>();
+        for (MiembroHogar m : miembros) {
+            Integer racha = 0;
+            if (m != null && m.getId() != null) {
+                List<LocalDate> fechas = fechasPorMiembro.getOrDefault(m.getId(), Collections.emptyList());
+                racha = calculadoraRacha.calcularRacha(fechas);
+            }
+            rachaPorMiembro.put(m != null ? m.getId() : null, racha);
+        }
+        return rachaPorMiembro;
+    }
+
+    private static Map<Long, List<LocalDate>> getFechasPorMiembro(List<Quehacer> todasLasTareas) {
+        Map<Long, List<LocalDate>> fechasPorMiembro = new HashMap<>();
+        for (Quehacer q : todasLasTareas) {
+            if (q == null || q.getMiembroHogar() == null || q.getFechaFinalizacion() == null) continue;
+            if (!q.isCompletado()) continue;
+            Long mid = q.getMiembroHogar().getId();
+            if (mid == null) continue;
+            fechasPorMiembro.computeIfAbsent(mid, k -> new ArrayList<>())
+                    .add(q.getFechaFinalizacion().toLocalDate());
+        }
+        return fechasPorMiembro;
     }
 
     protected int calcularRachaFechas(List<LocalDate> fechas, boolean isFrozen) {

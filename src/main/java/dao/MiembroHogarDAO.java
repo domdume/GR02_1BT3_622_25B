@@ -50,10 +50,12 @@ public class MiembroHogarDAO {
         MiembroHogar miembro = null;
         try {
             // Siempre usar fetch join para inicializar incentivos y quehaceres
+            // Asegurarnos de inicializar también la colección de logros para evitar LazyInitialization
             miembro = em.createQuery(
                 "SELECT m FROM MiembroHogar m " +
                 "LEFT JOIN FETCH m.incentivos " +
                 "LEFT JOIN FETCH m.quehaceres " +
+                "LEFT JOIN FETCH m.logros " +
                 "WHERE m.id = :id", MiembroHogar.class)
                 .setParameter("id", id)
                 .getSingleResult();
@@ -65,13 +67,31 @@ public class MiembroHogarDAO {
         }
         return miembro;
     }
+    
 
     public List<MiembroHogar> findAll() {
         EntityManager em = JPAUtil.getEntityManager();
         try {
-            List<MiembroHogar> miembros = em.createQuery("SELECT m FROM MiembroHogar m LEFT JOIN FETCH m.quehaceres", MiembroHogar.class).getResultList();
-            System.out.println("Miembros recuperados: " + miembros);
+            // PASO 1: Cargar los miembros y UNA de las colecciones (ej. quehaceres).
+            // El DISTINCT es crucial aquí para obtener cada miembro una sola vez.
+            String jpqlMiembros = "SELECT DISTINCT m FROM MiembroHogar m LEFT JOIN FETCH m.quehaceres";
+            List<MiembroHogar> miembros = em.createQuery(jpqlMiembros, MiembroHogar.class).getResultList();
+
+            // PASO 2: Si hemos encontrado miembros, ahora cargamos la OTRA colección (logros) para ellos.
+            // Esto evita el producto cartesiano. Hibernate es lo suficientemente inteligente
+            // para ejecutar una sola consulta adicional para todos los miembros de la lista.
+            if (miembros != null && !miembros.isEmpty()) {
+                String jpqlLogros = "SELECT DISTINCT m FROM MiembroHogar m LEFT JOIN FETCH m.logros WHERE m IN :miembros";
+                // Ejecutamos la segunda consulta, pero el resultado ya está en nuestros objetos 'miembros'.
+                // No necesitamos capturar el resultado de esta segunda consulta, solo ejecutarla para que JPA "hidrate" los objetos.
+                em.createQuery(jpqlLogros, MiembroHogar.class)
+                        .setParameter("miembros", miembros)
+                        .getResultList();
+            }
+
+            System.out.println("Miembros recuperados (sin duplicados en colecciones): " + miembros.size());
             return miembros;
+
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println("Error al recuperar miembros: " + e.getMessage());
@@ -79,9 +99,7 @@ public class MiembroHogarDAO {
         } finally {
             em.close();
         }
-    }
-
-    public void update(MiembroHogar miembro) {
+    }    public void update(MiembroHogar miembro) {
         EntityManager em = JPAUtil.getEntityManager();
         EntityTransaction tx = em.getTransaction();
         try {
@@ -103,6 +121,8 @@ public class MiembroHogarDAO {
                     managed.setLiga(miembro.getLiga());
                     managed.setEdad(miembro.getEdad());
                     managed.setNombre(miembro.getNombre());
+                    // Persistir contador de tareas completadas también
+                    managed.setTareasCompletadas(miembro.getTareasCompletadas());
                     // NUEVO: persistir el estado de congelamiento de racha
                     managed.setRachaCongelada(miembro.getRachaCongelada());
                     System.out.println("[MiembroHogarDAO.update] Valores aplicados en managed: puntos ahora=" + managed.getPuntos() + ", rachaCongelada=" + managed.getRachaCongelada());
