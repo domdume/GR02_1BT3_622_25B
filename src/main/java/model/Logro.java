@@ -33,11 +33,6 @@ public class Logro {
         this.fechaCreacion = LocalDateTime.now();
     }
 
-    // Identificadores de emblemas/achievements usados por la lógica de negocio
-    public static final String EMBLEMA_APRENDIZ_CONSTANTE = "EMBLEMA_APRENDIZ_CONSTANTE";
-    public static final String EMBLEMA_EXPLORADOR_PERSISTENTE = "EMBLEMA_EXPLORADOR_PERSISTENTE";
-    public static final String EMBLEMA_MAESTRO_QUEHACERES = "EMBLEMA_MAESTRO_QUEHACERES";
-
     // Constructor para crear logros con información básica
     public Logro(MiembroHogar miembro, String logroId) {
         this.miembro = miembro;
@@ -102,17 +97,17 @@ public class Logro {
     public String getNombre() {
         if (this.logroId == null) return "";
         switch (this.logroId) {
-            case EMBLEMA_APRENDIZ_CONSTANTE:
+            case "EMBLEMA_APRENDIZ_CONSTANTE":
                 return "Aprendiz Constante";
-            case EMBLEMA_EXPLORADOR_PERSISTENTE:
+            case "EMBLEMA_EXPLORADOR_PERSISTENTE":
                 return "Explorador Persistente";
-            case EMBLEMA_MAESTRO_QUEHACERES:
+            case "EMBLEMA_MAESTRO_QUEHACERES":
                 return "Maestro de los Quehaceres";
             // Logros de racha
             case "LOGRO_3":
-                return "Chispazo";
+                return "Racha de 3 días: Chispazo";
             case "LOGRO_7":
-                return "Semana Perfecta";
+                return "Racha de 7 días: Semana Perfecta";
             default:
                 // Si el logroId ya es un texto legible, devolverlo tal cual
                 return this.logroId;
