@@ -95,6 +95,10 @@ public class Logro {
      * propio logroId.
      */
     public String getNombre() {
+        return getString();
+    }
+
+    private String getString() {
         if (this.logroId == null) return "";
         switch (this.logroId) {
             case "EMBLEMA_APRENDIZ_CONSTANTE":
