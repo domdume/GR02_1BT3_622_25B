@@ -105,9 +105,9 @@ public class Logro {
                 return "Maestro de los Quehaceres";
             // Logros de racha
             case "LOGRO_3":
-                return "Chispazo";
+                return "Racha de 3 días: Chispazo";
             case "LOGRO_7":
-                return "Semana Perfecta";
+                return "Racha de 7 días: Semana Perfecta";
             default:
                 // Si el logroId ya es un texto legible, devolverlo tal cual
                 return this.logroId;

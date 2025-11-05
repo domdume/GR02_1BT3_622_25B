@@ -107,11 +107,10 @@ public class LogroService {
     }
 
     public String mensajeLogro3() {
-        return "¡Felicidades!, Ha ganado el logro “Chispazo”";
+        return "¡Felicidades!, Ha ganado el logro “Racha de 3 días: Chispazo”";
     }
-
     public String mensajeLogro7() {
-        return "¡Increíble! Ha ganado el logro “Semana Perfecta”";
+        return "¡Increíble! Ha ganado el logro “Racha de 7 días: Semana Perfecta”";
     }
 
     public void verificarLogroPorQuehaceres(MiembroHogar miembro) {
