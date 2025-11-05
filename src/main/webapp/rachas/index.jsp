@@ -12,6 +12,9 @@
 <div class="container">
     <h2>Rachas de Consistencia</h2>
 
+    <%-- Toast de logro si existe --%>
+    <jsp:include page="/common/achievement-toast.jsp" />
+
     <%-- Mensajes de éxito/error --%>
     <c:if test="${not empty sessionScope.successMessage}">
         <div class="alert alert-success">${sessionScope.successMessage}</div>
@@ -30,8 +33,7 @@
             la racha del miembro automáticamente.
         </p>
         <p class="mb-0">
-            Ejemplo: Para probar una racha de 2 días, haga clic en "+ Ayer" y luego en "+ Hoy".
-            Tomar en cuenta que este demo indica solo hasta 3 días de racha.
+            Para probar el logro de 7 días rápidamente, use "Seed 6 días" y luego presione "+ Hoy".
         </p>
     </div>
     <div class="table-responsive">
@@ -64,6 +66,7 @@
                     <a class="btn btn-primary btn-sm" href="${pageContext.request.contextPath}/rachas?action=addToday&miembroId=${m.id}">+ Hoy</a>
                     <a class="btn btn-secondary btn-sm" href="${pageContext.request.contextPath}/rachas?action=addYesterday&miembroId=${m.id}">+ Ayer</a>
                     <a class="btn btn-secondary btn-sm" href="${pageContext.request.contextPath}/rachas?action=addTwoDaysAgo&miembroId=${m.id}">+ Anteayer</a>
+                    <a class="btn btn-outline btn-sm" href="${pageContext.request.contextPath}/rachas?action=seedSix&miembroId=${m.id}">Seed 6 días</a>
                 </td>
                 <td>
                     <c:if test="${sessionScope.viewRole == 'JEFE'}">

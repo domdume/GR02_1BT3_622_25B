@@ -6,11 +6,20 @@ import model.Incentivo;
 import model.MiembroHogar;
 import model.Quehacer;
 import model.TipoIncentivo;
+import java.util.function.Supplier;
 
 public class IncentivoService {
     private final IncentivoDAO incentivoDAO;
     private final LigaService ligaService;
     private final LogroService logroService;
+
+    // Factory para permitir tests que sustituyan la implementación real por un stub
+    public static Supplier<IncentivoService> factory = () -> new IncentivoService();
+
+    public static void setFactory(Supplier<IncentivoService> f) {
+        if (f == null) throw new IllegalArgumentException("factory no puede ser nulo");
+        factory = f;
+    }
 
     public IncentivoService() {
         this.incentivoDAO = new IncentivoDAO();

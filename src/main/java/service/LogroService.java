@@ -31,31 +31,41 @@ public class LogroService {
     public void asignarEmblemaAscenso(MiembroHogar miembro, Liga ligaAntes, Liga ligaDespues) {
         if (miembro == null || ligaAntes == null || ligaDespues == null) return;
         try {
-            // Solo actuar si hubo un ascenso
-            if (ligaDespues.getNivel() <= ligaAntes.getNivel()) return;
+            // Introducir variable explicativa
+            boolean huboAscenso = ligaDespues.getNivel() > ligaAntes.getNivel();
+            if (!huboAscenso) return;
 
             Long miembroId = miembro.getId();
             if (miembroId == null) return;
 
             // Si es la primera insignia del usuario, asignar Aprendiz Constante
-            if (!achievementRepository.tieneCualquierLogro(miembroId)) {
-                achievementRepository.guardarLogro(miembroId, "EMBLEMA_APRENDIZ_CONSTANTE");
-                return; // primera insignia asignada, no asignar la habitual
-            }
+            if (asignarEmblemaPrimeraVez(miembroId)) return;
 
-            // Mapear ascensos a identificadores de emblema
-            if (ligaAntes == Liga.BRONCE && ligaDespues == Liga.PLATA) {
-                // Bronce -> Plata
-                String logroId = "EMBLEMA_EXPLORADOR_PERSISTENTE";
-                achievementRepository.guardarLogro(miembroId, logroId);
-            } else if (ligaAntes == Liga.PLATA && ligaDespues == Liga.ORO) {
-                // Plata -> Oro
-                String logroId = "EMBLEMA_MAESTRO_QUEHACERES";
-                achievementRepository.guardarLogro(miembroId, logroId);
-            }
+            // Mapear ascenso -> emblema y persistir si aplica
+            emblemaParaAscenso(ligaAntes, ligaDespues).ifPresent(id -> achievementRepository.guardarLogro(miembroId, id));
         } catch (Exception ex) {
             System.out.println("[ERROR] asignarEmblemaAscenso: " + ex.getMessage());
         }
+    }
+
+    // Extraer método: asigna el emblema por primera vez si corresponde.
+    private boolean asignarEmblemaPrimeraVez(Long miembroId) {
+        if (!achievementRepository.tieneCualquierLogro(miembroId)) {
+            achievementRepository.guardarLogro(miembroId, "EMBLEMA_APRENDIZ_CONSTANTE");
+            return true;
+        }
+        return false;
+    }
+
+    // Extraer método: devuelve el id del emblema correspondiente al ascenso si existe
+    private java.util.Optional<String> emblemaParaAscenso(Liga antes, Liga despues) {
+        if (antes == Liga.BRONCE && despues == Liga.PLATA) {
+            return java.util.Optional.of("EMBLEMA_EXPLORADOR_PERSISTENTE");
+        }
+        if (antes == Liga.PLATA && despues == Liga.ORO) {
+            return java.util.Optional.of("EMBLEMA_MAESTRO_QUEHACERES");
+        }
+        return java.util.Optional.empty();
     }
     /**
      * Verifica y asigna, si corresponde, el logro de racha alcanzado.
@@ -67,33 +77,23 @@ public class LogroService {
      * @return mensaje opcional con la notificación a mostrar
      */
     public Optional<String> verificarYAsignarLogroRacha(Long miembroId, int rachaActual) {
-        if (miembroId == null) return Optional.empty();
-        if (rachaActual >= 7) {
-            if (!achievementRepository.tieneLogro(miembroId, LOGRO_RACHA_7)) {
-                achievementRepository.guardarLogro(miembroId, LOGRO_RACHA_7);
-                return Optional.of(mensajeLogro7());
-            }
-            // Si ya tenía el de 7, no otorgar el de 3 en este evento
-            return Optional.empty();
-        }
-        if (rachaActual >= 3) {
-            if (!achievementRepository.tieneLogro(miembroId, LOGRO_RACHA_3)) {
-                achievementRepository.guardarLogro(miembroId, LOGRO_RACHA_3);
-                return Optional.of(mensajeLogro3());
-            }
-            return Optional.empty();
-        }
-        return Optional.empty();
+        return procesarRacha(miembroId, rachaActual).map(AchievementNotification::getMensaje);
     }
 
     // Variante que también devuelve el tipo de logro ganado
     public Optional<AchievementNotification> verificarYAsignarLogroRachaConTipo(Long miembroId, int rachaActual) {
+        return procesarRacha(miembroId, rachaActual);
+    }
+
+    // Extraer y centralizar la lógica de racha para evitar duplicación
+    private Optional<AchievementNotification> procesarRacha(Long miembroId, int rachaActual) {
         if (miembroId == null) return Optional.empty();
         if (rachaActual >= 7) {
             if (!achievementRepository.tieneLogro(miembroId, LOGRO_RACHA_7)) {
                 achievementRepository.guardarLogro(miembroId, LOGRO_RACHA_7);
                 return Optional.of(new AchievementNotification(LOGRO_RACHA_7, TipoLogro.LOGRO_RACHA, mensajeLogro7()));
             }
+            // Si ya tenía el de 7, no otorgar el de 3 en este evento
             return Optional.empty();
         }
         if (rachaActual >= 3) {
@@ -107,11 +107,10 @@ public class LogroService {
     }
 
     public String mensajeLogro3() {
-        return "¡Felicidades!, Ha ganado el logro “Chispazo”";
+        return "¡Felicidades!, Ha ganado el logro “Racha de 3 días: Chispazo”";
     }
-
     public String mensajeLogro7() {
-        return "¡Increíble! Ha ganado el logro “Semana Perfecta”";
+        return "¡Increíble! Ha ganado el logro “Racha de 7 días: Semana Perfecta”";
     }
 
     public void verificarLogroPorQuehaceres(MiembroHogar miembro) {
