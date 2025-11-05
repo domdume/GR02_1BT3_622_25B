@@ -6,7 +6,7 @@ import model.CalculadoraRacha;
 import model.Dificultad;
 import model.MiembroHogar;
 import model.Quehacer;
-
+import model.EstadoQuehacer;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;

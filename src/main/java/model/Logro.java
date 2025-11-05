@@ -108,6 +108,11 @@ public class Logro {
                 return "Explorador Persistente";
             case EMBLEMA_MAESTRO_QUEHACERES:
                 return "Maestro de los Quehaceres";
+            // Logros de racha
+            case "LOGRO_3":
+                return "Chispazo";
+            case "LOGRO_7":
+                return "Semana Perfecta";
             default:
                 // Si el logroId ya es un texto legible, devolverlo tal cual
                 return this.logroId;
