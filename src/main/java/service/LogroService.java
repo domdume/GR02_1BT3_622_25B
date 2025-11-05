@@ -118,41 +118,76 @@ public class LogroService {
             throw new IllegalArgumentException("El miembro no puede ser nulo");
         }
 
-        // Verificar si ya tiene una medalla
-        boolean yaTieneMedalla = miembro.getLogros().stream()
-                .anyMatch(logro -> logro.getTipo() == TipoLogro.MEDALLA);
-
-        // Otorgar medalla si cumple la condición
-        if (!yaTieneMedalla && miembro.getTareasCompletadas() >= 10) {
-            Logro logro = new Logro();
-            logro.setTipoLogro(TipoLogro.MEDALLA);
-            miembro.addLogro(logro);
-            System.out.println("🏅 Se otorgó una medalla a " + miembro.getNombre());
-        } else {
+        // Nuevo comportamiento: medallas por umbrales que se duplican (2,4,8,16...)
+        int tareas = miembro.getTareasCompletadas();
+        if (tareas <= 0) {
             System.out.println("ℹ️ " + miembro.getNombre() + " aún no cumple los requisitos para una medalla.");
+            return;
+        }
+
+        // Calcular umbrales alcanzados (2^k) hasta el número de tareas actual
+        java.util.List<Integer> umbrales = new java.util.ArrayList<>();
+        for (int um = 2; um <= tareas; um *= 2) {
+            umbrales.add(um);
+            // proteger contra overflow infinito
+            if (um > Integer.MAX_VALUE / 2) break;
+        }
+
+        boolean otorgado = false;
+        for (int umbral : umbrales) {
+            // Si ya tiene una medalla para ese umbral, la saltamos (revisar persistencia primero)
+            Long miembroId = miembro.getId();
+            String logroId = "MEDALLA_" + umbral;
+            boolean tienePersistente = (miembroId != null) && achievementRepository.tieneLogro(miembroId, logroId);
+            boolean tieneEnMemoria = miembro.getLogros().stream()
+                    .anyMatch(l -> l.getTipo() == TipoLogro.MEDALLA && l.getTareasRequeridas() == umbral);
+            if (!tienePersistente && !tieneEnMemoria) {
+                // Persistir usando el repository si es posible
+                if (miembroId != null) {
+                    try {
+                        achievementRepository.guardarLogro(miembroId, logroId);
+                    } catch (Exception ex) {
+                        System.out.println("[WARN] No se pudo persistir medalla " + logroId + " para miembroId=" + miembroId + ": " + ex.getMessage());
+                    }
+                }
+                // Añadir al objeto en memoria para que la vista actual lo muestre sin necesidad de recargar desde BD
+                Logro logro = new Logro(logroId, TipoLogro.MEDALLA, umbral);
+                miembro.addLogro(logro);
+                System.out.println("🏅 Se otorgó medalla por " + umbral + " tareas a " + miembro.getNombre());
+                otorgado = true;
+            }
+        }
+        if (!otorgado) {
+            System.out.println("ℹ️ " + miembro.getNombre() + " aún no cumple los requisitos para una nueva medalla.");
         }
 
 
     }
 
     public Logro verificarLogro(MiembroHogar miembro) {
-        // Si ya tiene una medalla, no se le da otra
-        boolean yaTieneMedalla = miembro.getLogros().stream()
-                .anyMatch(l -> l.getTipo() == TipoLogro.MEDALLA);
+        if (miembro == null) return null;
 
-        if (yaTieneMedalla) {
-            return null;
+        int tareas = miembro.getTareasCompletadas();
+        if (tareas < 2) return null;
+
+        // Buscar el mayor umbral 2^k <= tareas para el que aún no tenga medalla
+        int umbral = 2;
+        int ultimo = 0;
+        while (umbral <= tareas) {
+            ultimo = umbral;
+            if (umbral > Integer.MAX_VALUE / 2) break;
+            umbral *= 2;
         }
 
-        // Si completó más de 10 tareas, se le otorga la medalla
-        if (miembro.getTareasCompletadas() >= 10) {
-            Logro medalla = new Logro();
-            medalla.setTipoLogro(TipoLogro.MEDALLA);
-            miembro.addLogro(medalla);
-            return medalla;
-        }
+    // Si ya tiene medalla para el último umbral, no otorgar
+    final int ultimoFinal = ultimo;
+    boolean tiene = miembro.getLogros().stream()
+        .anyMatch(l -> l.getTipo() == TipoLogro.MEDALLA && l.getTareasRequeridas() == ultimoFinal);
+    if (tiene) return null;
 
-        return null;
+    Logro medalla = new Logro("MEDALLA_" + ultimoFinal, TipoLogro.MEDALLA, ultimoFinal);
+        miembro.addLogro(medalla);
+        return medalla;
     }
 
     // DTO simple para notificar tipo y mensaje del logro

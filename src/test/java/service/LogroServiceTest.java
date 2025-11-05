@@ -30,9 +30,10 @@ public class LogroServiceTest {
 
     @Parameterized.Parameters(name = "{index}: {0} tareas => medalla? {1}")
     public static Collection<Object[]> data() {
+        // Ajustado a nueva lógica: umbrales 2,4,8,... -> primera medalla desde 2 tareas
         return Arrays.asList(new Object[][] {
-                {5, false},
-                {10, true}
+                {1, false},
+                {2, true}
         });
     }
 
@@ -63,15 +64,15 @@ public class LogroServiceTest {
         // Arrange
         MiembroHogar miembro = new MiembroHogar("Mateo", 20);
         miembro.setTareasCompletadas(12);
-        Logro logroExistente = new Logro();
-        logroExistente.setTipoLogro(TipoLogro.MEDALLA);
+        // Simular que ya tiene la medalla correspondiente al último umbral alcanzado (8)
+        Logro logroExistente = new Logro("MEDALLA_8", TipoLogro.MEDALLA, 8);
         miembro.addLogro(logroExistente);
 
         // Act
         Logro nuevoLogro = logroService.verificarLogro(miembro);
 
-        // Assert
-        assertNull("No debe otorgarse otra medalla si el miembro ya tiene una", nuevoLogro);
+        // Assert: como ya tiene la medalla para el umbral 8 y no ha alcanzado 16, no se otorga nueva
+        assertNull("No debe otorgarse otra medalla si el miembro ya tiene la del umbral alcanzado", nuevoLogro);
         assertEquals("Debe seguir teniendo solo una medalla", 1, miembro.getLogros().size());
     }
 

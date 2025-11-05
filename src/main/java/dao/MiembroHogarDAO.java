@@ -50,10 +50,12 @@ public class MiembroHogarDAO {
         MiembroHogar miembro = null;
         try {
             // Siempre usar fetch join para inicializar incentivos y quehaceres
+            // Asegurarnos de inicializar también la colección de logros para evitar LazyInitialization
             miembro = em.createQuery(
                 "SELECT m FROM MiembroHogar m " +
                 "LEFT JOIN FETCH m.incentivos " +
                 "LEFT JOIN FETCH m.quehaceres " +
+                "LEFT JOIN FETCH m.logros " +
                 "WHERE m.id = :id", MiembroHogar.class)
                 .setParameter("id", id)
                 .getSingleResult();
@@ -119,6 +121,8 @@ public class MiembroHogarDAO {
                     managed.setLiga(miembro.getLiga());
                     managed.setEdad(miembro.getEdad());
                     managed.setNombre(miembro.getNombre());
+                    // Persistir contador de tareas completadas también
+                    managed.setTareasCompletadas(miembro.getTareasCompletadas());
                     // NUEVO: persistir el estado de congelamiento de racha
                     managed.setRachaCongelada(miembro.getRachaCongelada());
                     System.out.println("[MiembroHogarDAO.update] Valores aplicados en managed: puntos ahora=" + managed.getPuntos() + ", rachaCongelada=" + managed.getRachaCongelada());

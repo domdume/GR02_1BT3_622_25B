@@ -614,7 +614,16 @@ public class QuehacerServlet extends HttpServlet {
 
                 // Llamar al nuevo servicio para que gestione si se debe asignar un logro de ascenso.
                 // El servicio se encarga de la lógica interna (si es el primer logro, si hubo ascenso, etc.)
+                // 1) Incrementar contador de tareas completadas (criterio de aceptación 1)
+                miembro.setTareasCompletadas(miembro.getTareasCompletadas() + 1);
+
+                // 2) Verificar y asignar medallas por tareas completadas (criterio de aceptación 2)
+                logroService.verificarLogroPorQuehaceres(miembro);
+
+                // 3) Intentar asignar emblemas por ascenso de liga
                 logroService.asignarEmblemaAscenso(miembro, ligaAnterior, ligaNueva);
+
+                // 4) Aplicar incentivo que actualiza puntos y persiste
                 Incentivo.aplicarIncentivo(miembro, quehacer);
                 // Como el nuevo servicio no devuelve un mensaje específico, creamos uno genérico
                 // si detectamos que el miembro ha subido de liga.

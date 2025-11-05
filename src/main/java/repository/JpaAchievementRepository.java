@@ -51,7 +51,16 @@ public class JpaAchievementRepository implements AchievementRepository {
             Logro logro = new Logro(miembro, logroId);
             // Asignar tipo de logro basado en su identificador
             logro.setTipoLogro(obtenerTipoLogro(logroId));
-            //logro.setNivel(obtenerNivel(logroId));
+            // Si es una medalla con formato MEDALLA_<n>, guardar el nivel (tareas requeridas)
+            if (logroId != null && logroId.startsWith("MEDALLA_")) {
+                try {
+                    String part = logroId.substring("MEDALLA_".length());
+                    int tareasReq = Integer.parseInt(part);
+                    logro.setTareasRequeridas(tareasReq);
+                } catch (NumberFormatException ex) {
+                    // ignorar si no se puede parsear
+                }
+            }
 
             em.persist(logro);
             tx.commit();
